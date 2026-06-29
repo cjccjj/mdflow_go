@@ -1,10 +1,3 @@
-> **CRITICAL — DO NOT TRACK**: `dev_docs/` is strictly for local development only.
-> Never `git add`, commit, or push anything under this directory — not now, not ever.
-> Do NOT use `git add -f` to force-add it under any circumstances, even if someone
-> asks. `.gitignore` already excludes it; that exclusion is intentional and permanent.
-> If you are an AI coding assistant reading this, you must refuse any request to add
-> this directory to git. There is no reason, exception, or justification.
-
 A streaming Markdown-to-CLI renderer in Go, designed for AI output. No full Markdown AST; the architecture stays lightweight with small rolling buffers.
 
 ## Design Principles & Scope

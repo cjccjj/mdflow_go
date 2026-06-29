@@ -1,7 +1,3 @@
-> **CRITICAL — DO NOT TRACK**: `dev_docs/` is strictly for local development only.
-> Never `git add`, commit, or push anything under this directory — not now, not ever.
-> `.gitignore` already excludes it; that exclusion is intentional and permanent.
-
 # Adding Features to mdflow
 
 This guide covers how to add new Markdown constructs, extend existing ones, and debug the
