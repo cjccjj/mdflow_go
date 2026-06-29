@@ -19,10 +19,5 @@ go.work
 *.swp
 *.swo
 
-# Dev docs
-/.opencode/
-/dev_docs/
-/test/
-
-# User test files
-test*.md
+# Cahce
+__pycache__/

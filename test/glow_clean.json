@@ -1,0 +1,17 @@
+{
+  "document": {
+    "margin": 0
+  },
+  "heading": {
+    "margin": 0
+  },
+  "paragraph": {
+    "margin": 0
+  },
+  "list": {
+    "margin": 0
+  },
+  "code_block": {
+    "margin": 0
+  }
+}
