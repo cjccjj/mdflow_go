@@ -6,27 +6,28 @@ type Style struct {
 }
 
 type Theme struct {
-	H1            Style
-	H2            Style
-	H3            Style
-	H4            Style
-	H5            Style
-	H6            Style
-	Bold          Style
-	Italic        Style
-	Strikethrough Style
-	InlineCode    Style
-	CodeBlock     Style
-	CodeBlockLang Style
+	H1             Style
+	H2             Style
+	H3             Style
+	H4             Style
+	H5             Style
+	H6             Style
+	Bold           Style
+	Italic         Style
+	Strikethrough  Style
+	InlineCode     Style
+	CodeBlock      Style
+	CodeBlockLang  Style
 	HorizontalRule Style
-	BulletItem    Style
-	Blockquote    Style
-	TableBorder   Style
-	TableHeader   Style
-	TableCell     Style
-	LinkText      Style
-	LinkURL       Style
-	Text          Style
+	BulletItem     Style
+	Blockquote     Style
+	TableBorder    Style
+	TableHeader    Style
+	TableCell      Style
+	LinkText       Style
+	LinkURL        Style
+	ImageLabel     Style
+	Text           Style
 }
 
 var DefaultTheme = Theme{
@@ -108,6 +109,10 @@ var DefaultTheme = Theme{
 	},
 	LinkURL: Style{
 		Prefix: "\033[2;34m",
+		Suffix: "\033[0m",
+	},
+	ImageLabel: Style{
+		Prefix: "\033[2m",
 		Suffix: "\033[0m",
 	},
 	Text: Style{},

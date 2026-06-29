@@ -88,7 +88,7 @@ func (lrd *linkRefDefParser) tryLinkRefDef() ([]Event, bool) {
 		return nil, true
 	}
 
-			lrd.p.state = NormalState
+	lrd.p.state = NormalState
 	return []Event{{Type: LinkRefDefEvent, Value: label, URL: url}}, true
 }
 
@@ -119,7 +119,7 @@ func (lrd *linkRefDefParser) processLinkRefDef() []Event {
 	if ok {
 		lrd.lrdBuf = nil
 		lrd.lrdWaiting = false
-			lrd.p.state = NormalState
+		lrd.p.state = NormalState
 		return []Event{{Type: LinkRefDefEvent, Value: label, URL: url}}
 	}
 

@@ -10,14 +10,14 @@ type Parser struct {
 	state State
 	tokenBuffer
 	lineContext
-		blockParser      *blockParser
+	blockParser      *blockParser
 	linkRefDefParser *linkRefDefParser
 	setextParser     *setextParser
 	htmlBlockParser  *htmlBlockParser
 
-	linkParser      *linkParser
-	emphasisParser  *emphasisParser
-	tableParser     *tableParser
+	linkParser     *linkParser
+	emphasisParser *emphasisParser
+	tableParser    *tableParser
 }
 
 type tokenBuffer struct {
@@ -30,8 +30,6 @@ type lineContext struct {
 	prevChar      byte
 	contentIndent int
 }
-
-
 
 func New() *Parser {
 	p := &Parser{state: NormalState, lineContext: lineContext{lineStart: true}}
@@ -148,6 +146,10 @@ func (p *Parser) processNormal() []Event {
 	}
 
 	if events, handled := p.processInlineStart(first); handled {
+		return events
+	}
+
+	if events, handled := p.tryImage(); handled {
 		return events
 	}
 
@@ -408,6 +410,37 @@ func (p *Parser) handleIndentedListRemaining(remaining string) []Event {
 	return nil
 }
 
+func (p *Parser) tryImage() ([]Event, bool) {
+	if len(p.buf) < 2 {
+		return nil, false
+	}
+	tok := p.buf[0]
+	if tok.Type != tokenizer.TextToken {
+		return nil, false
+	}
+	val := tok.Value
+	if !strings.HasSuffix(val, "!") {
+		return nil, false
+	}
+	if p.buf[1].Type != tokenizer.LeftBracketToken {
+		return nil, false
+	}
+	if len(val) >= 2 {
+		prev := val[len(val)-2]
+		if prev == '<' || prev == '!' {
+			return nil, false
+		}
+	}
+	var events []Event
+	if len(val) > 1 {
+		events = append(events, Event{Type: TextEvent, Value: val[:len(val)-1]})
+	}
+	p.consume(1)
+	p.consume(1)
+	p.linkParser.startImageText()
+	return events, true
+}
+
 func (p *Parser) emitTextOrSpecial() []Event {
 	var events []Event
 	for len(p.buf) > 0 {
@@ -439,5 +472,3 @@ func (p *Parser) emitTextOrSpecial() []Event {
 	}
 	return events
 }
-
-

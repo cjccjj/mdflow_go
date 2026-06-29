@@ -18,6 +18,7 @@ type linkParser struct {
 	urlDone             bool
 	urlHadNewline       bool
 	linkTitleBuf        []tokenizer.Token
+	isImage             bool
 
 	p *Parser // back-pointer for shared state (buf, state, lineStart, etc.)
 }
@@ -36,12 +37,21 @@ func (lp *linkParser) reset() {
 	lp.urlDone = false
 	lp.urlHadNewline = false
 	lp.linkTitleBuf = nil
+	lp.isImage = false
 }
 
 // startLinkText is called when a '[' is encountered in processInlineStart.
 // It initializes link state and transitions to LinkTextState.
 func (lp *linkParser) startLinkText() {
 	lp.reset()
+	lp.p.enterState(LinkTextState)
+}
+
+// startImageText is called when '![' is detected. It sets the isImage flag
+// and enters link text parsing, sharing all link parsing infrastructure.
+func (lp *linkParser) startImageText() {
+	lp.reset()
+	lp.isImage = true
 	lp.p.enterState(LinkTextState)
 }
 
@@ -353,13 +363,19 @@ func (lp *linkParser) processLinkRefLabel() []Event {
 			}
 			textStr := resolveEntities(textBuilder.String())
 			labelStr := resolveEntities(refLabel.String())
+			isImg := lp.isImage
 			lp.linkBuf = nil
 			lp.linkBracketConsumed = false
+			lp.isImage = false
 			p.state = NormalState
 			if len(textStr) > 0 {
 				p.prevChar = textStr[len(textStr)-1]
 			}
-			return []Event{{Type: LinkRefEvent, Value: textStr, URL: labelStr}}
+			evtType := LinkRefEvent
+			if isImg {
+				evtType = ImageRefEvent
+			}
+			return []Event{{Type: evtType, Value: textStr, URL: labelStr}}
 		}
 		p.consume(1)
 		refLabel.WriteString(tok.Value)
@@ -501,8 +517,8 @@ func (lp *linkParser) skipURLWhitespace() {
 	}
 }
 
-// emitLinkEvent builds and emits a LinkEvent from the collected link text and URL,
-// resets link state, and transitions back to NormalState.
+// emitLinkEvent builds and emits a LinkEvent (or ImageEvent) from the collected
+// text and URL, resets link state, and transitions back to NormalState.
 func (lp *linkParser) emitLinkEvent() []Event {
 	p := lp.p
 	var textBuilder strings.Builder
@@ -516,19 +532,27 @@ func (lp *linkParser) emitLinkEvent() []Event {
 	textStr := resolveEntities(textBuilder.String())
 	urlStr := resolveEntities(urlBuilder.String())
 
+	isImg := lp.isImage
 	lp.reset()
 	p.state = NormalState
 	if len(textStr) > 0 {
 		p.prevChar = textStr[len(textStr)-1]
 	}
-	return []Event{{Type: LinkEvent, Value: textStr, URL: urlStr}}
+	evtType := LinkEvent
+	if isImg {
+		evtType = ImageEvent
+	}
+	return []Event{{Type: evtType, Value: textStr, URL: urlStr}}
 }
 
 // flushLinkAsText emits the incomplete link as literal text ([text] or [text](url)).
-// This is called when link syntax is invalid or when the document ends during link parsing.
+// When isImage is set, prepends '!' for image syntax (![text] or ![text](url)).
 func (lp *linkParser) flushLinkAsText() []Event {
 	p := lp.p
 	var events []Event
+	if lp.isImage {
+		events = append(events, Event{Type: TextEvent, Value: "!"})
+	}
 	events = append(events, Event{Type: TextEvent, Value: "["})
 	for _, tok := range lp.linkBuf {
 		events = append(events, Event{Type: TextEvent, Value: resolveEntities(tok.Value)})
@@ -543,6 +567,7 @@ func (lp *linkParser) flushLinkAsText() []Event {
 	}
 	lp.linkBuf = nil
 	lp.linkBracketConsumed = false
+	lp.isImage = false
 	wasLinkURL := p.state == LinkURLState
 	p.state = NormalState
 	if wasLinkURL {

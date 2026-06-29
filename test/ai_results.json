@@ -13930,23 +13930,22 @@
     "html": "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Inline image syntax is a foundational feature used widely in READMEs, docs, blogs and chat output; incorrect handling (including alt text or title extraction) would break visuals and harm accessibility, so failure here is critical.",
-    "mdflow_terminal": "![foo](/url \"title\")\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m (\u001b[2;34m/url\u001b[0m \"title\")\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo /url                                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_structure": 0,
+    "glow_style": 0,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A emitted the raw image markdown instead of rendering it; alt text, src, and title were not presented.",
-      "Renderer A did not extract or display the image URL (/url) or the title, so the important information is lost to the reader.",
-      "Renderer A included a stray ANSI reset control sequence (\\u001b[0m) in the output."
+      "Renderer A uses a literal '[IMG:' prefix and parentheses to convey image src/title instead of a more neutral representation; this is a presentation choice but not incorrect.",
+      "Renderer A styles the alt text like a link (underlined/blue), which could be slightly misleading to users who expect links to be clickable."
     ],
-    "explanation": "Renderer A failed to render the inline image: it left the literal markdown (![foo](/url \"title\")) in the output and did not present the alt text, source URL, or title in a human-usable form (and even emitted a stray ANSI reset). Renderer B, by contrast, exposed the alt text and URL (\"foo /url\"), preserving the essential information. Because inline images and their accessible alt/text/URL are fundamental (weight 1.0), Renderer A does not pass."
+    "explanation": "Renderer A preserves the important information (alt text 'foo', src '/url', and title 'title'), clearly indicates the element is an image, and uses reasonable ANSI styling to differentiate parts—so content, structure, and style are all present (score 3). Renderer B preserves the alt text and URL but drops the title and provides no indication that the item is an image (content=1, structure=0, style=0, score=1). Given the high weight of inline images and that A communicates the same information and structure as the HTML result, Renderer A passes."
   },
   {
     "section": "Images",
@@ -13955,7 +13954,7 @@
     "html": "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Images and alt text are common in READMEs and docs; getting reference-style images, titles, and especially alt text wrong (e.g., leaving markup in the alt attribute or mis-handling titles/escaping) harms accessibility and misrepresents content, so this is a critical feature.",
-    "mdflow_terminal": "![foo \u001b[3mbar\u001b[0m]\n\n\u001b[2m[Link Def: foo *bar* → train.jpg]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "![foo *bar*]\n\n\u001b[2m[Link Def: foo *bar* → train.jpg]\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -13963,16 +13962,17 @@
     "glow_terminal": "foo bar /train.jpg                                                              ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
+    "glow_style": 0,
+    "glow_score": 2,
     "pass": false,
     "issues": [
-      "Alt text was rendered with emphasis (ANSI italics) instead of as plain text — the alt should be the plain string 'foo bar'.",
-      "The image title (\"train & tracks\") is not rendered or preserved; the link definition line only shows the target (train.jpg) and omits the title/escaped ampersand.",
-      "Renderer emits a diagnostic/dim '[Link Def: ...]' line containing the original label with markup (foo *bar*) instead of using it to produce a proper image node.",
-      "The output does not present the element as an image (no clear image structure/semantics), and includes misleading styling that changes the content's meaning."
+      "Did not render the reference-style image as an image; left the original markdown '![foo *bar*]' visible.",
+      "Alt text was not rendered as plain text — emphasis markup (*bar*) was not stripped from the alt string.",
+      "Title (\"train & tracks\") was omitted entirely from the rendered output.",
+      "Output used a diagnostic '[Link Def: ...]' line instead of conveying an image element or accessible alt text.",
+      "Styling (dim) was used for a link-def diagnostic but that does not compensate for missing semantic/accessible information."
     ],
-    "explanation": "Renderer A fails to preserve the semantics of the reference-style image: it renders the alt text with emphasis (ANSI italics) rather than the plain alt string, omits the image title, and emits a diagnostic link-definition line containing the raw label instead of producing an image node. These are accessibility- and correctness-critical errors for images, so A does not pass. Renderer B, by contrast, shows the plain alt text and the image path, preserving the key information and structure for a terminal reader."
+    "explanation": "Renderer A failed to produce the expected image representation: it left the raw markdown image syntax visible, retained emphasis markup inside the alt text, omitted the image title, and emitted a diagnostic link-definition line instead of rendering an image or its accessible alt/title. This loses critical accessibility and content (the plain alt text and title), so content, structure, and style are all scored 0 and the renderer fails. Renderer B conveyed the plain alt text and the image path (content=1, structure=1) though it lacks styling, but B's performance does not affect the pass/fail for A."
   },
   {
     "section": "Images",
@@ -13981,24 +13981,22 @@
     "html": "<p><img src=\"/url2\" alt=\"foo bar\" /></p>\n",
     "weight": 0.5,
     "weight_explanation": "This is an edge case about nested inline elements inside an image description — relatively uncommon in everyday docs but images and correct alt text are foundational for rendering and accessibility; incorrect handling can break parsing or produce wrong alt text, so it’s moderately important.",
-    "mdflow_terminal": "![foo ![bar](/url)](/url2)\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo ![bar]\u001b[0m (\u001b[2;34m/url\u001b[0m)](/url2)\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo bar /url2                                                                   ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A emitted the raw Markdown instead of rendering the image; the alt text 'foo bar' is not presented.",
-      "Renderer A failed to parse the nested inline image description (the inner `![bar](/url)` should contribute 'bar' to the alt text).",
-      "Renderer A includes a stray ANSI reset escape (\\u001b[0m) with no visible rendering of the image.",
-      "No visual indication that an image was present (no alt text or reference to the source /url2)."
+      "Renderer A did not convert the nested inline image in the alt text to its plain string: it leaves the literal '![bar]' and the inner destination '(/url)' visible instead of producing alt text 'foo bar'.",
+      "Renderer A exposes inner-image URL and raw Markdown punctuation, which is noisy and not the expected cleaned alt text representation."
     ],
-    "explanation": "Renderer A failed to render the image: it outputs the raw Markdown (plus an ANSI reset) rather than presenting the alt text and source. As a result the important content ('foo bar') and the image structure are lost, so content, structure, and style are all scored 0 and the renderer fails. Renderer B, by contrast, shows the alt text and URL ('foo bar /url2'), so its content and structure are preserved (but it applies no styling), yielding a higher score. Given the moderate weight of this feature (nested inline elements inside an image description) and the complete loss of the expected image/alt rendering in A, the decision is fail."
+    "explanation": "Renderer A clearly signals an image (prefixed '[IMG:') and preserves the important pieces (foo, bar, and the outer URL), and uses reasonable ANSI styling; a human can infer this is an image with alt text and a source. However it misparses the nested inline image by leaving raw Markdown ('![bar](/url)') in the alt instead of emitting plain text 'bar' — and it shows the inner URL unnecessarily. Given the moderate weight (0.5) this is acceptable: the content and image structure are still conveyed and styling is appropriate, so Renderer A passes. Renderer B preserves the plain text 'foo bar' and the outer URL but flattens structure and provides no styling, so it scores lower on structure and style."
   },
   {
     "section": "Images",
@@ -14007,23 +14005,23 @@
     "html": "<p><img src=\"/url2\" alt=\"foo bar\" /></p>\n",
     "weight": 0.5,
     "weight_explanation": "Images and alt text are common and important for accessibility, but embedding link-like markup inside an image description is relatively uncommon; incorrect handling would moderately degrade accessibility and could produce misleading alt text, but it isn't as critical as core block-level features.",
-    "mdflow_terminal": "![foo \u001b[4;34mbar\u001b[0m (\u001b[2;34m/url\u001b[0m)](/url2)\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo [bar]\u001b[0m (\u001b[2;34m/url\u001b[0m)](/url2)\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
+    "mdflow_structure": 1,
     "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_score": 2,
     "glow_terminal": "foo bar /url2                                                                   ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 0,
     "glow_score": 2,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A emits the literal Markdown image syntax (![...](...)) instead of rendering an image/alt representation.",
-      "The inner link markup inside the image description is not reduced to plain alt text — brackets and the inner URL are left visible and styled, rather than producing the alt string \"foo bar\".",
-      "ANSI styling is applied to link-like fragments (underlining/dim) but this is confusing when the surrounding markdown punctuation is left intact; overall output is misleading for accessibility."
+      "Renderer A preserves the words but leaves raw link markup inside the image alt (shows 'foo [bar]' rather than plain 'foo bar').",
+      "Renderer A prints the inner link destination and the outer '(/url2)' marker literally, producing noisy and potentially confusing output.",
+      "Styling in A (underlining/blue for the inner link text) is misleading because it suggests an active link inside the alt text; overall ANSI styling is confusing rather than clarifying."
     ],
-    "explanation": "Renderer A preserves the textual pieces (the words \"foo\" and \"bar\" and both URLs), so content is not lost, but it fails to present them as an image alt string: it leaves the raw Markdown punctuation and shows the nested link markup with ANSI styling rather than producing the plain alt text \"foo bar\" and the image source. This breaks the expected structure and produces confusing, misleading styling, so structure and style are scored 0. Renderer B more cleanly presents the alt text and source as plain text. Given the moderate weight of image/alt handling and the accessibility impact of incorrect alt rendering, Renderer A does not pass."
+    "explanation": "Renderer A preserves the important information (the alt text words and both URLs) and explicitly marks the item as an image, so structure and content are recoverable; however it fails to strip or flatten nested link markup from the alt text and uses styling that can mislead (underline/blue inside the alt and literal '(/url2)' text), so style is poor. Renderer B presents the plain alt text and the image URL succinctly but offers no explicit image label or styling. Given the moderate weight of this feature and that A keeps the critical information and indicates an image, A passes despite the noisy and misleading styling/markup issues."
   },
   {
     "section": "Images",
@@ -14032,11 +14030,11 @@
     "html": "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>\n",
     "weight": 0.9,
     "weight_explanation": "Images (including reference-style) are common in READMEs and docs and correct alt text is important for accessibility; rendering inline formatting inside the alt or mishandling titles/entities would be misleading and break assistive tools, so this is highly important though slightly more specific than core block elements.",
-    "mdflow_terminal": "![foo \u001b[3mbar\u001b[0m][]\n\n\u001b[2m[Link Def: foo *bar* → train.jpg]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo *bar*\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: foo *bar* → train.jpg]\u001b[0m\u001b[0m",
     "mdflow_content": 0,
-    "mdflow_structure": 0,
+    "mdflow_structure": 1,
     "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_score": 1,
     "glow_terminal": "foo bar /train.jpg                                                              ",
     "glow_content": 1,
     "glow_structure": 1,
@@ -14044,12 +14042,12 @@
     "glow_score": 2,
     "pass": false,
     "issues": [
-      "Renderer A did not render the image: it left the literal image markdown rather than producing an image representation.",
-      "Renderer A preserved inline emphasis inside the alt text (rendered as ANSI italic) instead of using the plain string 'foo bar' for alt — alt text must be plain for accessibility.",
-      "Renderer A exposed a dim link-definition line but omitted the image title ('train & tracks') and did not escape the ampersand, losing important metadata.",
-      "Renderer A therefore fails to convey the correct image semantics (alt/title/src) to assistive users."
+      "Alt text rendered with literal inline markup 'foo *bar*' instead of the plain string 'foo bar' (inline formatting should be stripped in alt).",
+      "Title 'train & tracks' is not presented as a title/tooltip and the ampersand is not shown/escaped; the expected accessible title is missing.",
+      "Renderer exposes the reference/link definition line ('Link Def: foo *bar* → train.jpg') instead of resolving the reference inline to an image.",
+      "Output shows raw markup indicators ([*], reference marker '[→ ref]') which is confusing and not a faithful terminal representation of an <img> element."
     ],
-    "explanation": "Renderer A fails: it does not convert the reference-style image into an image representation. Instead it prints the raw markdown with ANSI emphasis inside the alt text and a dim link-def line, omitting the title and proper alt handling; this loses important semantic and accessibility information. Renderer B, while plain, at least presents the alt text 'foo bar' and the image path, preserving the core content and making the image intent understandable. Given the high importance of correct alt/title rendering for images (weight 0.9), Renderer A's complete failure to provide the plain alt and title means it does not pass."
+    "explanation": "Renderer A indicates there is an image (shows an '[IMG:]' placeholder and a link-def line) so the structure is partially perceptible, but it fails to preserve crucial content: the alt text contains literal Markdown formatting ('*bar*') instead of the plain string 'foo bar', and the title 'train & tracks' is not rendered. It also leaks the reference definition rather than resolving the image inline. Because alt/title are important for accessibility and the test weight is high (0.9), these failures are significant — overall A does not correctly render the image and therefore fails. Renderer B, by contrast, shows the plain alt text and the image path (though it omits the title), so it preserves the key information better."
   },
   {
     "section": "Images",
@@ -14058,11 +14056,11 @@
     "html": "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Image reference syntax and correct alt/title rendering are fundamental: images are common in docs and READMEs, alt text must be the plain string for accessibility and emphasis must not appear in the alt attribute; incorrect handling would be misleading to readers and assistive tech.",
-    "mdflow_terminal": "![foo \u001b[3mbar\u001b[0m][foobar]\n\n\u001b[2m[Link Def: FOOBAR → train.jpg]\u001b[0m\u001b[0m",
-    "mdflow_content": 1,
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo *bar*\u001b[0m [→ foobar]\n\n\u001b[2m[Link Def: FOOBAR → train.jpg]\u001b[0m\u001b[0m",
+    "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_score": 0,
     "glow_terminal": "foo bar /train.jpg                                                              ",
     "glow_content": 1,
     "glow_structure": 1,
@@ -14070,11 +14068,12 @@
     "glow_score": 2,
     "pass": false,
     "issues": [
-      "Alt text was rendered with emphasis/ANSI styling (foo *bar* → foo <italic>bar</italic>) instead of as a plain string.",
-      "Image title (\"train & tracks\") was not exposed; only the target URL (train.jpg) was shown via a link-def note.",
-      "Renderer left raw markdown/reference syntax visible and printed a link-definition note instead of rendering the image as an image element (or a clear image placeholder)."
+      "Renderer A did not resolve the reference image to its src/title; it printed a separate link definition instead of producing an inline image src/title.",
+      "Renderer A preserved raw emphasis markup in the alt text (showed '*bar*' literally) instead of using the plain string 'foo bar' for the alt text.",
+      "Renderer A did not present the image title ('train & tracks') nor HTML-escaped ampersand; the important accessible information is missing or not integrated.",
+      "Renderer A's output is a placeholder and link-def dump rather than a correct image rendering, which is misleading for readers/assistive tech."
     ],
-    "explanation": "Renderer A preserves the visible words (the alt text and the target filename), so content is mostly present, but it fails on fundamental image handling: the alt text is emitted with emphasis styling rather than as a plain string and the title metadata is omitted. It also leaves the raw markdown/reference syntax and emits a link-definition note instead of treating the reference as an image with alt and title. Structure and style are therefore inadequate for this core feature. Renderer B shows the alt text and URL plainly and conveys the association (better structure), but also lacks title and styling. Given the importance of correct alt/title handling for images (weight 1.0) Renderer A does not meet the required behavior and therefore does not pass."
+    "explanation": "Renderer A fails: it outputs an image placeholder and a separate link-definition line rather than rendering the image with the plain alt text and the resolved src/title. The alt text still contains literal emphasis markers ('*bar*') instead of the plain string 'foo bar', and the title 'train & tracks' is not presented. These are fundamental failures for image/reference handling (weight 1.0), so it does not pass. Renderer B, by contrast, at least presents the alt text and a path to the image, preserving content and structure, though it lacks terminal styling."
   },
   {
     "section": "Images",
@@ -14083,24 +14082,23 @@
     "html": "<p><img src=\"train.jpg\" alt=\"foo\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Inline image syntax is a fundamental Markdown feature used widely in READMEs, docs, and messages; failing to render images or produce correct alt text breaks content and accessibility and would be highly confusing to readers.",
-    "mdflow_terminal": "![foo](train.jpg)\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m (\u001b[2;34mtrain.jpg\u001b[0m)\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo /train.jpg                                                                  ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A emits the raw Markdown image syntax (![foo](train.jpg)) instead of rendering an image placeholder or extracted alt text.",
-      "Renderer A does not convey image structure or accessibility information (no explicit alt text presentation or image marker).",
-      "Renderer A includes a visible/trailing ANSI reset escape sequence (\\x1b[0m) in output.",
-      "No styling or visual hint is provided to indicate this element is an image."
+      "Renderer A displays a visible '[IMG:' label and surrounding punctuation (bracket/colon and parentheses) which is slightly noisy but does not lose information.",
+      "Renderer A styles the alt text as underlined/blue which could be mistaken for a link in some contexts.",
+      "Renderer B preserves the alt text and filename but provides no indication that the element is an image and shows the path with a leading slash (\"/train.jpg\"), which may be incorrect or confusing."
     ],
-    "explanation": "Renderer A prints the literal Markdown image syntax rather than presenting the alt text or a clear image placeholder; although the alt text and filename are present in the literal, the output fails to convey image structure or accessibility (structure=0, style=0). Renderer B extracts and shows the alt text and path ('foo /train.jpg'), making the image intent and content clear (content=1, structure=1). Because inline image handling and accessible alt text are fundamental (weight=1.0), Renderer A fails despite containing the raw information."
+    "explanation": "Renderer A preserves the important content (alt text 'foo' and source 'train.jpg'), clearly indicates the element is an image, and uses reasonable ANSI styling to differentiate parts, so it fully communicates the information — therefore it passes. Renderer B also shows the text and filename but fails to convey image structure (no marker that this is an image) and offers no styling, resulting in a lower score. The minor styling/noise issues in A do not undermine its correctness for this high-weight feature."
   },
   {
     "section": "Images",
@@ -14109,23 +14107,22 @@
     "html": "<p>My <img src=\"/path/to/train.jpg\" alt=\"foo bar\" title=\"title\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Image syntax is a fundamental Markdown feature used frequently in READMEs, docs, blogs and chat; correct rendering (including proper src, title and plain-text alt content for accessibility) is essential and incorrect behavior would be confusing and harmful.",
-    "mdflow_terminal": "My ![foo bar](/path/to/train.jpg  \"title\"   )\n\u001b[0m",
+    "mdflow_terminal": "My \u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo bar\u001b[0m (\u001b[2;34m/path/to/train.jpg\u001b[0m \"title\")\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "My foo bar /path/to/train.jpg                                                   ",
     "glow_content": 1,
-    "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_structure": 0,
+    "glow_style": 0,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A left the raw Markdown image syntax verbatim instead of rendering the image or presenting clean alt text.",
-      "Renderer A did not convey image structure or semantics (no alt-only fallback) and included a stray ANSI reset sequence.",
-      "Renderer A did not expose the title attribute in a usable/plain form."
+      "Renderer A emits an explicit '[IMG:' marker and shows the URL and title in parentheses rather than rendering an inline image; this is verbose though informative.",
+      "The alt text is styled (underlined/blue) which could be mistaken for a link, but the plain alt string is present and readable."
     ],
-    "explanation": "Renderer A displays the raw image markup (My ![foo bar](/path/to/train.jpg \"title\")) which still contains the alt text and URL but fails to present the image as an accessible inline element or a clean alt-text fallback; it also emits an extraneous ANSI reset. This loses the intended document structure/semantics for an image, so despite content being readable, structure and style are not conveyed — a critical failure for a core Markdown feature. Renderer B, by contrast, shows the alt text and the image path plainly, preserving content and intent. Therefore Renderer A does not pass."
+    "explanation": "Renderer A preserves the important information (alt text 'foo bar', image src '/path/to/train.jpg', and title) and makes it clear this element is an image by labeling it and grouping the URL/title, so content and structure are conveyed and styling is reasonable. Renderer B preserves the alt and URL but omits the title and gives no indication that the text is an image (structure and style lost). Given the weight of image syntax and that A communicates the image semantics and all key fields, Renderer A passes."
   },
   {
     "section": "Images",
@@ -14134,23 +14131,21 @@
     "html": "<p><img src=\"url\" alt=\"foo\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Inline image syntax is a foundational Markdown feature used frequently in READMEs, docs, and blogs; failing to render it or to produce correct src/alt attributes would be immediately visible and break content accessibility, so this is critical.",
-    "mdflow_terminal": "![foo](<url>)\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m (\u001b[2;34murl\u001b[0m)\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo /url                                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A emitted the raw Markdown image syntax instead of rendering an image representation (no clear alt/src output).",
-      "Renderer A does not present the image as a structured element (no indication this is an image rather than literal text).",
-      "Renderer A includes an extraneous ANSI reset escape (\\u001b[0m) with no useful styling."
+      "Renderer A emits a textual placeholder '[IMG: ...]' rather than a purely minimal representation, which is slightly verbose though informative."
     ],
-    "explanation": "Renderer A leaves the input as raw Markdown (`![foo](<url>)`) rather than producing a readable image representation (alt text and URL) or otherwise indicating an image element; although the alt and URL are present in the literal markup (content=1), the renderer fails to convey structure or apply any useful styling (structure=0, style=0). Renderer B presents the alt and URL clearly (content=1) and more usefully indicates the image relationship (structure=1), though without styling (style=0). Because inline image handling is a fundamental Markdown feature, Renderer A fails."
+    "explanation": "Renderer A preserves the important information: the alt text 'foo' and the target URL 'url', and clearly indicates an image via the '[IMG: ...]' placeholder with reasonable ANSI styling (dim and blue/underline for the link), so a reader can perceive this was an image and access the link; Renderer B also preserves the alt and URL but offers no explicit image indicator or styling (flattening structure), making A the better rendering for this element, so A passes."
   },
   {
     "section": "Images",
@@ -14159,23 +14154,22 @@
     "html": "<p><img src=\"/url\" alt=\"\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Image syntax is a fundamental, frequently used Markdown feature in READMEs, docs, blogs and chat; failing to support or incorrectly render images (including alt/URL handling) would noticeably break common documents and accessibility.",
-    "mdflow_terminal": "![](/url)\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34m\u001b[0m (\u001b[2;34m/url\u001b[0m)\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": " /url                                                                           ",
     "glow_content": 1,
-    "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_structure": 0,
+    "glow_style": 0,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A emits the literal markdown '![](/url)' instead of rendering an image or a meaningful image placeholder.",
-      "Renderer A provides no visible image structure (no alt text/placeholder) or styling to indicate an image.",
-      "Renderer A adds an ANSI reset escape with no useful visual representation of the image."
+      "Renderer A emits a textual '[IMG:' label (nonstandard HTML->terminal mapping) which is slightly verbose but still informative.",
+      "Renderer A relies on ANSI styling; in environments that don't support ANSI the visual cues may be lost or appear as raw escape sequences."
     ],
-    "explanation": "Renderer A leaves the source markdown verbatim, so while the URL is visible (content=1), it fails to present the element as an image or provide any structural or styled cue (structure=0, style=0). Renderer B, by contrast, shows the image URL as a distinct placeholder line, conveying both content and structure. Because image syntax is a fundamental Markdown feature (weight=1.0) and Renderer A does not convey that structure or a usable image placeholder, it fails."
+    "explanation": "Renderer A clearly communicates that the element is an image, preserves the src (/url) and the empty alt (nothing shown between the label and URL), and uses reasonable dim/underline/color styling to differentiate the image indicator and URL. This preserves both content and structure and the styling choices are appropriate for a terminal, so it passes. Renderer B only prints the URL, losing the explicit image semantics and structural cue, so it scores lower, but B's performance does not affect the pass decision for A."
   },
   {
     "section": "Images",
@@ -14184,24 +14178,23 @@
     "html": "<p><img src=\"/url\" alt=\"foo\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Images (including reference-style images) are common in READMEs, docs and chat output and are foundational; incorrect handling (wrong src, wrong alt text, or including formatted/HTML content in alt) breaks accessibility and can be misleading or insecure, so correct support is critical.",
-    "mdflow_terminal": "![foo][bar]\n\n\u001b[2m[Link Def: bar → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m [→ bar]\n\n\u001b[2m[Link Def: bar → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
+    "mdflow_structure": 1,
     "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_score": 2,
     "glow_terminal": "foo /url                                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A outputs the raw markdown '![foo][bar]' instead of representing an image or its alt text.",
-      "Renderer A exposes a dimmed '[Link Def: bar → /url]' annotation rather than resolving the reference to provide the image src.",
-      "Image semantics and accessible alt text are not conveyed plainly; the renderer forces the reader to reconstruct the image from raw syntax and a separate link-def note.",
-      "Styling (dim link-def) does not compensate for the loss of structure or accessibility; it is misleading rather than helpful."
+      "The image alt text ('foo') is rendered with link-like ANSI styling (underline/blue), which is misleading — alt should be presented as plain text, not as a formatted/linked element.",
+      "The reference label '[→ bar]' is shown inline instead of resolving the reference directly to the URL in-place.",
+      "The renderer prints the link definition ('[Link Def: bar → /url]') as visible output, leaking reference metadata into the rendered document rather than rendering the image cleanly."
     ],
-    "explanation": "Renderer A preserves the literal pieces (the markdown image syntax and a dimmed reference-definition note), so the underlying information (alt 'foo' and URL '/url') can be reconstructed — hence content=1. However it fails to present the item as an image or to surface the alt text cleanly, so document structure (that this is an image with alt text and src) is not conveyed and styling does not make up for that, giving structure=0 and style=0. Renderer B shows the alt text and URL plainly, conveying the intent (content=1, structure=1). Given the high importance of correctly handling images and alt text for accessibility and semantics, Renderer A's failure to resolve the reference and to present image semantics is a critical defect, so it does not pass."
+    "explanation": "Renderer A preserves the important information (the alt text 'foo' and the URL '/url') and clearly marks an image, so content and basic structure are present. However, it formats the alt text with link-style ANSI and exposes the reference label and link definition in the output instead of resolving the reference into a plain alt+src rendering. Because images are an accessibility-sensitive, foundational feature and the alt text must be presented as an unformatted string, this incorrect handling is significant; therefore Renderer A does not pass. Renderer B simply prints the alt and URL without image semantics (content present but no structure or styling)."
   },
   {
     "section": "Images",
@@ -14210,23 +14203,22 @@
     "html": "<p><img src=\"/url\" alt=\"foo\" /></p>\n",
     "weight": 0.9,
     "weight_explanation": "Reference-style images with case-insensitive labels are common in READMEs and documentation; failing to support them (or treating labels as case-sensitive) will often break or expose raw Markdown instead of images, which is confusing and harms readability.",
-    "mdflow_terminal": "![foo][bar]\n\n\u001b[2m[Link Def: BAR → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m [→ bar]\n\n\u001b[2m[Link Def: BAR → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo /url                                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Does not resolve reference-style image: original image syntax is left verbatim instead of rendered as an image or an image placeholder.",
-      "Prints link definition separately (dimmed) rather than using it to render the image; the renderer therefore fails to connect the reference [bar] to the definition [BAR].",
-      "Fails to present the document structure (an image) — output looks like raw Markdown plus metadata rather than an image element or clear image placeholder."
+      "Renderer A does not render the image as a simple inline alt text; it emits a verbose placeholder '[IMG: ...]' and shows the reference label inline ('[→ bar]'), which is noisier than the expected inline image/alt representation.",
+      "Renderer A prints the link definition separately ('[Link Def: BAR → /url]'), exposing reference bookkeeping instead of resolving it inline to behave like an <img> element."
     ],
-    "explanation": "Renderer A preserves the raw information (the alt text and the URL are visible via the literal image markup and the printed link definition), so content is not lost. However it fails to resolve the reference-style image into an image/placeholder (structure=0) and merely prints the link definition in dim text (style not used to indicate an image), so it does not convey the intended document structure. Given the high weight of correctly handling reference-style images, this is a failure. Renderer B more directly surfaces the alt text and URL (content=1, structure=1) but that comparison does not affect the decision for Renderer A."
+    "explanation": "Renderer A preserves the important information: it identifies an image with alt text 'foo', correctly resolves the case-insensitive reference label to /url, and uses terminal styling to indicate the image and link definition. Although it is noisier than the HTML expectation (it shows a placeholder and separately prints the link definition), a human can clearly perceive that an image with alt 'foo' points to /url, so content and structure are intact and styling is reasonable. Renderer B also preserves content but loses structural indication that the item is an image and provides no styling. Given the high weight for reference-style image support and the fact that A correctly resolves the case-insensitive label while conveying image meaning, A passes despite the noisy presentation."
   },
   {
     "section": "Images",
@@ -14235,24 +14227,23 @@
     "html": "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Images (including reference-style images) are common in READMEs, docs, and chat output; failing to parse them or to produce correct src/alt/title (important for display and accessibility) would be a critical break.",
-    "mdflow_terminal": "![foo][]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
     "mdflow_score": 0,
     "glow_terminal": "foo /url                                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": false,
     "issues": [
-      "Did not render the reference-style image as an image: left the raw markup '![foo][]' in output.",
-      "Did not produce an image representation combining alt, src, and title—only emitted a dimmed link-definition line with the label and URL; the title is missing.",
-      "Structure is lost: there is no indication this element is an image (no alt rendered as image text or placeholder).",
-      "Styling is misleading: dimming a link-def is fine for definitions but does not communicate an image or its accessibility text."
+      "Renderer A does not include the image title (\"title\") from the reference definition.",
+      "Renderer A emits a nonstandard diagnostic-style representation ([IMG: ...] and a separate [Link Def: ...]) instead of rendering an inline image element with src/alt/title.",
+      "Because the title is omitted and the image is not rendered as a proper image element, accessibility/display information is incomplete."
     ],
-    "explanation": "Renderer A fails to parse and render the reference-style image. Instead of presenting an image alt/text and its source (and title), it leaves the original markdown '![foo][]' verbatim and only emits a dim '[Link Def: foo → /url]' line (no title). This loses the expected image semantics and accessibility info, so content, structure, and style are all inadequate. Renderer B at least presents the alt and URL (making the intent clear), but A does not, so A fails."
+    "explanation": "Renderer A shows the alt text and exposes the reference URL, but it fails to include the image title and replaces the image with a diagnostic/reference listing rather than rendering an inline image element (src/alt/title). That omission of the title (and the nonstandard presentation) means important image metadata is lost, so A fails. Renderer B likewise only prints minimal info (alt and URL) and offers no structural cues that this was an image; it scores low for structure/style but does preserve basic content. Overall, A does not preserve the required src/alt/title semantics and therefore does not pass."
   },
   {
     "section": "Images",
@@ -14261,24 +14252,23 @@
     "html": "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>\n",
     "weight": 0.8,
     "weight_explanation": "Image syntax and correct alt-text extraction are common and important for accessibility and correctness; failing to strip inline formatting or mis-handle reference/shortcut labels would produce misleading alt attributes or broken images, so this behavior is fairly important though slightly more specialized than core headings/links.",
-    "mdflow_terminal": "![\u001b[3mfoo\u001b[0m bar][]\n\n\u001b[2m[Link Def: *foo* bar → /url]\u001b[0m\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34m*foo* bar\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: *foo* bar → /url]\u001b[0m\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 2,
     "glow_terminal": "foo bar /url                                                                    ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A prints the raw image markdown (![...]) instead of presenting the image/alt semantics.",
-      "Renderer A fails to strip inline formatting from the alt text: it renders ANSI italics/asterisks inside the alt instead of the plain string \"foo bar\".",
-      "Renderer A does not include the image title (\"title\").",
-      "Renderer A exposes the link definition as debug text (dimmed) containing literal asterisks, which is misleading rather than providing a proper alt/title/src representation."
+      "Renderer A preserves inline markdown marker (*) in the image alt text instead of extracting the plain string 'foo bar'.",
+      "Renderer A does not show the image src/title inline with the image; it emits a separate link-definition line and a '[→ ref]' marker, which hides the title and splits the information.",
+      "Renderer A's alt text rendering could mislead or break accessibility (screen-readers expect plain alt text)."
     ],
-    "explanation": "Renderer A preserves the visible words (\"foo bar\") and shows the target URL, so basic content is present, but it fails to extract and present the alt text as a plain string (it leaves inline emphasis formatting and the original markdown syntax), does not render the image semantics, and omits the title. Structurally it behaves like raw markdown/debug output rather than an image element. Renderer B shows the plain alt text plus URL which better matches the expected information. Given the high weight for correct image/alt handling (0.8), Renderer A's failure to strip formatting and represent the image semantics is significant, so it does not pass."
+    "explanation": "Renderer A makes the image's presence clear (prints an '[IMG:]' indicator and a link-definition), and uses reasonable ANSI styling, but it fails the core requirement: it does not strip inline formatting from the alt text (shows '*foo* bar' rather than 'foo bar') and does not surface the title with the image. Because alt-text extraction is an important behavior for images (accessibility and correctness) and the weight is high (0.8), this failure is sufficient to fail. Renderer B, by contrast, presents the plain alt text and URL ('foo bar /url') but flattens the structure and provides no styling; B's output is useful as a reference but does not affect the pass/fail decision for A."
   },
   {
     "section": "Images",
@@ -14287,24 +14277,23 @@
     "html": "<p><img src=\"/url\" alt=\"Foo\" title=\"title\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Image syntax (including reference-style and shortcut labels) is a foundational feature used widely in READMEs, docs and chat; incorrect handling breaks images, harms accessibility (alt/title), and would be highly visible and confusing.",
-    "mdflow_terminal": "![Foo][]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mFoo\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "Foo /url                                                                        ",
     "glow_content": 1,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A did not render the image; it emitted the literal markdown '![Foo][]' instead of an image representation.",
-      "Renderer A only exposed a dimmed link-def summary '[Link Def: foo → /url]' and omitted the link title (\"title\").",
-      "Document structure (this is an image element with alt/title/src) is not conveyed — accessibility information (title as title attribute) is lost.",
-      "Styling is misleading: showing raw markdown plus a dimmed link-def is not an appropriate terminal representation for an image."
+      "Title attribute (\"title\") from the reference definition is not rendered/attached to the image.",
+      "Renderer prints the link definition verbatim (\"[Link Def: foo → /url]\") instead of using it silently to populate the image src/title.",
+      "Shows a reference marker token (\"[→ ref]\") which is more implementation/debug output than normal inline image rendering."
     ],
-    "explanation": "Both renderers preserve the alt text and URL (content=1) but neither conveys image structure or renders an image element. Renderer A shows the raw image markdown and a dimmed link-definition note, and it omits the title attribute; this fails to present the image as an image (structure=0) and uses styling that is not a correct substitute (style=0). Because image syntax/reference images are a core feature, Renderer A does not meet the requirement and therefore fails."
+    "explanation": "Renderer A clearly communicates that there is an image with alt text \"Foo\" and exposes the reference target (/url), using terminal styling to distinguish the element; a reader can perceive this as an image and find the URL, so content and structure are preserved and styling is reasonable. The main defect is omission of the title attribute and that implementation details (reference token and explicit link-definition line) are printed instead of attaching the title to the image. Renderer B only prints the alt text and URL in-line with no indication that the element is an image, so it loses structural information. Given that A preserves the important information and structure (despite the missing title and noisy debug-like output), it passes."
   },
   {
     "section": "Images",
@@ -14313,7 +14302,7 @@
     "html": "<p><img src=\"/url\" alt=\"foo\" title=\"title\" />\n[]</p>\n",
     "weight": 0.5,
     "weight_explanation": "Images and reference-style links are common, but this particular pattern (an image followed by a lone [] on the next line) is an edge-case of reference parsing; incorrect rendering could be confusing but is not as critical as basic image/link support.",
-    "mdflow_terminal": "![foo] \n[]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "![foo]\n[]\n\n\u001b[2m[Link Def: foo → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 1,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -14321,15 +14310,16 @@
     "glow_terminal": "foo /url                                                                        \n[]                                                                              ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
+    "glow_style": 0,
+    "glow_score": 2,
     "pass": false,
     "issues": [
-      "Renderer A did not render the reference-style image; it left the raw markup '![foo]' visible rather than producing an inline image equivalent.",
-      "Renderer A emitted a dim '[Link Def: foo → /url]' diagnostic instead of using the definition to render the image (the title \"title\" was also not presented).",
-      "Document structure is wrong: the image was not integrated inline and the output looks like raw markdown plus a footnote, which is misleading compared with the expected image+literal '[]'."
+      "Image not rendered: the raw token '![foo]' is printed instead of showing the image alt-text/placeholder.",
+      "Reference definition leaked as a debug/footer line ('[Link Def: foo → /url]') rather than being resolved inline.",
+      "The standalone '[]' is placed on its own line instead of appearing as literal '[]' after the image in the same paragraph.",
+      "Image title (\"title\") is not preserved or shown."
     ],
-    "explanation": "Renderer A preserves the URL information (via a dim link-definition note) and the literal '[]' is present, so core content is partially available (content=1). However it fails to parse and render the reference-style image inline, leaves raw '![foo]' text, and appends a diagnostic-style link definition instead of producing an image with alt/title — so the document structure is not conveyed (structure=0) and the styling choice (a debugging note) is not a reasonable render (style=0). Given the moderate weight of this feature (0.5) and that the image is not rendered correctly, Renderer A does not pass. Renderer B by comparison shows a clearer mapping of alt→URL on one line and preserves structure and styling acceptably (score=3) but B does not affect the pass/fail decision for A."
+    "explanation": "Renderer A fails to resolve the reference-style image: it prints the raw '![foo]' and a dim diagnostic '[Link Def: foo → /url]' instead of rendering the image alt text/placeholder with the URL/title inline, and it misplaces the lone '[]'. Content-wise the URL and label are visible via the debug line (so content=1), but the document structure is incorrect (structure=0) and styling is not used to clarify (style=0). Renderer B, by contrast, at least shows the alt text and URL inline and keeps the literal '[]' visible (content=1, structure=1), though it applies no ANSI styling (style=0). Given the moderate weight of image/reference behavior and that A does not render the image as expected, Renderer A does not pass."
   },
   {
     "section": "Images",
@@ -14363,24 +14353,24 @@
     "html": "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>\n",
     "weight": 1.0,
     "weight_explanation": "Image syntax and correct alt-text handling are fundamental—images are common in READMEs and docs and alt text affects accessibility; if a renderer preserves formatting or inline elements instead of the plain string, it will produce incorrect alt attributes and potentially misleading or broken output.",
-    "mdflow_terminal": "![\u001b[3mfoo\u001b[0m bar]\n\n\u001b[2m[Link Def: *foo* bar → /url]\u001b[0m\u001b[0m",
+    "mdflow_terminal": "![*foo* bar]\n\n\u001b[2m[Link Def: *foo* bar → /url]\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
     "mdflow_score": 0,
     "glow_terminal": "foo bar /url                                                                    ",
     "glow_content": 1,
-    "glow_structure": 0,
-    "glow_style": 0,
-    "glow_score": 1,
+    "glow_structure": 1,
+    "glow_style": 1,
+    "glow_score": 3,
     "pass": false,
     "issues": [
-      "Renderer A did not produce an image element or show the image src/title; the URL and title are missing from the visible output.",
-      "Renderer A preserved inline formatting (ANSI italics) inside the image alt instead of rendering the alt as plain string 'foo bar'.",
-      "Renderer A emitted a debug-style link definition line rather than integrating the reference into an image, which is misleading.",
-      "Styling in the alt text is actively incorrect: alt text should be plain text (no emphasis), so the ANSI styling is harmful here."
+      "Did not render the reference image as an image; left literal markdown '![*foo* bar]' in output.",
+      "Alt text was not produced as the plain string 'foo bar' — emphasis markup (*foo*) was preserved instead of being stripped.",
+      "Title attribute ('title') from the reference definition is not rendered or exposed.",
+      "Renderer exposes the link definition as a dim debug line ('[Link Def: *foo* bar → /url]') rather than using it to render an image."
     ],
-    "explanation": "Renderer A fails to render the reference-style image correctly: it shows ANSI formatting inside the alt text and prints a debug link-def line instead of producing an image representation with the plain alt text and the image src/title, so content, structure, and style are all lost or misleading (score 0). Renderer B preserves the plain text and the URL (content=1) but does not indicate image structure or styling (structure=0, style=0). Because image rendering and correct alt-text handling are fundamental here, Renderer A fails."
+    "explanation": "Renderer A fails to convert the reference-style image into an image representation: it leaves the original markdown with emphasis markup intact, shows a dimmed link-definition debug line, and omits the image title. This loses the correct plain alt text and the semantic image structure, so it does not meet the expected behavior. Renderer B, by contrast, at least presents the plain alt text and URL, but the pass/fail decision is based solely on A, which fails."
   },
   {
     "section": "Images",

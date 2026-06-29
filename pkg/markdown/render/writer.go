@@ -197,6 +197,51 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(")")
 		return err
 
+	case parser.ImageEvent:
+		if _, err := w.aw.WriteString(w.theme.ImageLabel.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString("[IMG: "); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.ImageLabel.Suffix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(e.Value); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.LinkText.Suffix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(" ("); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.LinkURL.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(e.URL); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.LinkURL.Suffix); err != nil {
+			return err
+		}
+		if e.Title != "" {
+			if _, err := w.aw.WriteString(" \""); err != nil {
+				return err
+			}
+			if _, err := w.aw.WriteString(e.Title); err != nil {
+				return err
+			}
+			if _, err := w.aw.WriteString("\""); err != nil {
+				return err
+			}
+		}
+		_, err := w.aw.WriteString(")")
+		return err
+
 	case parser.HTMLBlockStartEvent:
 		_, err := w.aw.WriteString("\033[2m")
 		return err
@@ -224,6 +269,38 @@ func (w *Writer) Handle(e parser.Event) error {
 		return nil
 
 	case parser.LinkRefEvent:
+		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(e.Value); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.LinkText.Suffix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(" [\u2192 "); err != nil {
+			return err
+		}
+		label := e.URL
+		if label == "" {
+			label = "ref"
+		}
+		if _, err := w.aw.WriteString(label); err != nil {
+			return err
+		}
+		_, err := w.aw.WriteString("]")
+		return err
+
+	case parser.ImageRefEvent:
+		if _, err := w.aw.WriteString(w.theme.ImageLabel.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString("[IMG: "); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(w.theme.ImageLabel.Suffix); err != nil {
+			return err
+		}
 		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
 			return err
 		}

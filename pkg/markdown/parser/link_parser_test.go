@@ -375,3 +375,285 @@ func TestLinkParser_EscapedParenInURL(t *testing.T) {
 		t.Errorf("expected LinkEvent, got %s", events[0].Type.String())
 	}
 }
+
+// --- Image parser tests ---
+
+func TestImageParser_BasicImage(t *testing.T) {
+	types := linkEventTypes("![alt](img.png)")
+	if len(types) != 1 {
+		t.Fatalf("expected 1 event, got %d: %v", len(types), types)
+	}
+	if types[0] != "Image" {
+		t.Errorf("expected Image event, got %s", types[0])
+	}
+}
+
+func TestImageParser_ImageValueAndURL(t *testing.T) {
+	events := linkEventValues("![cat](photo.jpg)")
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].Value != "cat" {
+		t.Errorf("expected Value='cat', got '%s'", events[0].Value)
+	}
+	if events[0].URL != "photo.jpg" {
+		t.Errorf("expected URL='photo.jpg', got '%s'", events[0].URL)
+	}
+}
+
+func TestImageParser_ImageWithTitle(t *testing.T) {
+	events := linkEventValues(`![text](url "title")`)
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].Title != "title" {
+		t.Errorf("expected Title='title', got '%s'", events[0].Title)
+	}
+}
+
+func TestImageParser_EmptyAltText(t *testing.T) {
+	events := linkEventValues(`![](/url)`)
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].Value != "" {
+		t.Errorf("expected empty alt text, got '%s'", events[0].Value)
+	}
+	if events[0].URL != "/url" {
+		t.Errorf("expected URL='/url', got '%s'", events[0].URL)
+	}
+}
+
+func TestImageParser_AngleBracketURL(t *testing.T) {
+	events := linkEventValues("![text](<https://example.com/img.png>)")
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].URL != "https://example.com/img.png" {
+		t.Errorf("expected URL without angle brackets, got '%s'", events[0].URL)
+	}
+}
+
+func TestImageParser_BalancedParensInURL(t *testing.T) {
+	events := linkEventValues("![text](/foo(and(bar)).jpg)")
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].URL != "/foo(and(bar)).jpg" {
+		t.Errorf("expected URL with balanced parens, got '%s'", events[0].URL)
+	}
+}
+
+// --- Image reference links ---
+
+func TestImageParser_FullReferenceImage(t *testing.T) {
+	events := linkEventValues("![text][label]")
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageRefEvent {
+		t.Errorf("expected ImageRef event, got %s", events[0].Type.String())
+	}
+	if events[0].Value != "text" {
+		t.Errorf("expected Value='text', got '%s'", events[0].Value)
+	}
+	if events[0].URL != "label" {
+		t.Errorf("expected URL='label', got '%s'", events[0].URL)
+	}
+}
+
+func TestImageParser_CollapsedReferenceImage(t *testing.T) {
+	events := linkEventValues("![text][]")
+	if len(events) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(events))
+	}
+	if events[0].Type != ImageRefEvent {
+		t.Errorf("expected ImageRef event, got %s", events[0].Type.String())
+	}
+}
+
+// --- Not an image ---
+
+func TestImageParser_HTMLDeclarationNotImage(t *testing.T) {
+	// <![CDATA[ should be an HTML block, not an image
+	events := linkEventValues("<![CDATA[some data]]>")
+	for _, e := range events {
+		if e.Type == ImageEvent || e.Type == ImageRefEvent {
+			t.Errorf("HTML declaration should not be an image, got %s", e.Type.String())
+		}
+	}
+}
+
+func TestImageParser_DoubleBangNotImage(t *testing.T) {
+	// !! should not trigger image parsing
+	events := linkEventValues("!![text](url)")
+	for _, e := range events {
+		if e.Type == ImageEvent {
+			t.Errorf("double-bang should not be an image, got %s", e.Type.String())
+		}
+	}
+}
+
+func TestImageParser_SpaceBetweenBangAndBracket(t *testing.T) {
+	// "! [" with space is not an image
+	events := linkEventValues("! [text](url)")
+	for _, e := range events {
+		if e.Type == ImageEvent {
+			t.Errorf("'! [' should not be an image, got %s", e.Type.String())
+		}
+	}
+}
+
+func TestImageParser_TextBeforeImage(t *testing.T) {
+	// "Hello![cat](photo.jpg)" → text "Hello" + image "cat"
+	events := linkEventValues("Hello![cat](photo.jpg)")
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events, got %d: %v", len(events), events)
+	}
+	if events[0].Type != TextEvent || events[0].Value != "Hello" {
+		t.Errorf("expected TextEvent 'Hello', got %s '%s'", events[0].Type.String(), events[0].Value)
+	}
+	if events[1].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[1].Type.String())
+	}
+	if events[1].Value != "cat" {
+		t.Errorf("expected Value='cat', got '%s'", events[1].Value)
+	}
+	if events[1].URL != "photo.jpg" {
+		t.Errorf("expected URL='photo.jpg', got '%s'", events[1].URL)
+	}
+}
+
+func TestImageParser_NestedImage(t *testing.T) {
+	// Nested image: inner content goes into outer alt text
+	events := linkEventValues("![foo ![bar](/url)](/url2)")
+	images := 0
+	for _, e := range events {
+		if e.Type == ImageEvent {
+			images++
+		}
+	}
+	if images != 1 {
+		t.Errorf("expected 1 outer image event, got %d", images)
+	}
+}
+
+// --- Image streaming ---
+
+func TestImageParser_StreamingImageAcrossChunks(t *testing.T) {
+	p := New()
+
+	// Chunk 1: ! plus opening bracket
+	events := p.Parse(tokenizer.Tokenize([]byte("![al")))
+	if len(events) != 0 {
+		t.Errorf("chunk 1: expected 0 events, got %d", len(events))
+	}
+	if p.state != LinkTextState {
+		t.Errorf("expected LinkTextState, got %v", p.state)
+	}
+
+	// Chunk 2: closing bracket and url
+	events = p.Parse(tokenizer.Tokenize([]byte("t](pho")))
+	if len(events) != 0 {
+		t.Errorf("chunk 2: expected 0 events, got %d", len(events))
+	}
+	if p.state != LinkURLState {
+		t.Errorf("expected LinkURLState, got %v", p.state)
+	}
+
+	// Chunk 3: closing paren
+	p.eof = true
+	events = p.Parse(tokenizer.Tokenize([]byte("to.jpg)")))
+	events = append(events, p.CloseStates()...)
+	if len(events) != 1 {
+		t.Fatalf("chunk 3: expected 1 event, got %d: %v", len(events), events)
+	}
+	if events[0].Type != ImageEvent {
+		t.Errorf("expected ImageEvent, got %s", events[0].Type.String())
+	}
+	if events[0].Value != "alt" {
+		t.Errorf("expected Value='alt', got '%s'", events[0].Value)
+	}
+	if events[0].URL != "photo.jpg" {
+		t.Errorf("expected URL='photo.jpg', got '%s'", events[0].URL)
+	}
+}
+
+func TestImageParser_FlushImageAsText(t *testing.T) {
+	// Image text with newline flushes as text with ! prefix
+	p := New()
+	p.eof = true
+	events := p.Parse(tokenizer.Tokenize([]byte("![text\n")))
+	events = append(events, p.CloseStates()...)
+
+	allText := ""
+	for _, e := range events {
+		if e.Type == TextEvent {
+			allText += e.Value
+		}
+	}
+	if allText != "![text]" {
+		t.Errorf("expected '![text]' as text, got '%s'", allText)
+	}
+}
+
+func TestImageParser_Reset(t *testing.T) {
+	p := New()
+	// Start an image
+	p.Parse(tokenizer.Tokenize([]byte("![text")))
+	if p.state != LinkTextState {
+		t.Fatalf("expected LinkTextState after ![ , got %v", p.state)
+	}
+	if !p.linkParser.isImage {
+		t.Error("expected isImage to be true")
+	}
+
+	// Reset
+	p.Reset()
+
+	if p.state != NormalState {
+		t.Errorf("expected NormalState after Reset, got %v", p.state)
+	}
+	if p.linkParser.isImage {
+		t.Error("isImage should be false after Reset")
+	}
+}
+
+func TestImageParser_BangOnlyNotImage(t *testing.T) {
+	// A lone ! should just be text
+	events := linkEventValues("!")
+	hasImage := false
+	for _, e := range events {
+		if e.Type == ImageEvent || e.Type == ImageRefEvent {
+			hasImage = true
+		}
+	}
+	if hasImage {
+		t.Error("lone ! should not be an image")
+	}
+}
+
+func TestImageParser_EscapedExclamation(t *testing.T) {
+	// \![text](url) — escaped ! should be literal text
+	events := linkEventValues(`\![text](url)`)
+	for _, e := range events {
+		if e.Type == ImageEvent {
+			t.Errorf("escaped ! should not trigger image parsing, got %s", e.Type.String())
+		}
+	}
+}

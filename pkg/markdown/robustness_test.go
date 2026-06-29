@@ -240,8 +240,11 @@ func TestRobustness_LinkPrintsRaw(t *testing.T) {
 
 func TestRobustness_ImagePrintsRaw(t *testing.T) {
 	out := renderOutput("![alt](img.png)\n")
-	if !strings.Contains(out, "![alt](img.png)") {
-		t.Errorf("image syntax lost: %q", out)
+	if !strings.Contains(out, "alt") {
+		t.Errorf("image alt text missing: %q", out)
+	}
+	if !strings.Contains(out, "img.png") {
+		t.Errorf("image url missing: %q", out)
 	}
 }
 

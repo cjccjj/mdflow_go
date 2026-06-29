@@ -158,15 +158,15 @@ var sectionCategory = map[string]Category{
 	"Container blocks and leaf blo": CatSkip,
 
 	// Chapter 4: Leaf blocks
-	"Thematic breaks":          CatPartial,
-	"ATX headings":             CatPartial,
-	"Setext headings":          CatSupported,
-	"Indented code blocks":     CatPartial,
-	"Fenced code blocks":       CatPartial,
-	"HTML blocks":              CatPassThrough,
+	"Thematic breaks":           CatPartial,
+	"ATX headings":              CatPartial,
+	"Setext headings":           CatSupported,
+	"Indented code blocks":      CatPartial,
+	"Fenced code blocks":        CatPartial,
+	"HTML blocks":               CatPassThrough,
 	"Link reference definition": CatPassThrough,
-	"Paragraphs":               CatSupported,
-	"Blank lines":              CatPartial,
+	"Paragraphs":                CatSupported,
+	"Blank lines":               CatPartial,
 
 	// Chapter 5: Container blocks
 	"Block quotes": CatPartial,
@@ -175,18 +175,18 @@ var sectionCategory = map[string]Category{
 	"Motivation":   CatSkip, // sub-section of lists, explanatory
 
 	// Chapter 6: Inlines
-	"Code spans":                     CatPartial,
-	"Emphasis and strong emphasis":   CatPartial,
-	"Links":                          CatPartial,
-	"Images":                         CatPassThrough,
-	"Autolinks":                      CatPassThrough,
-	"Raw HTML":                       CatSkip,
-	"Hard line breaks":               CatPartial,
-	"Soft line breaks":               CatPartial,
-	"Textual content":                CatPartial,
+	"Code spans":                   CatPartial,
+	"Emphasis and strong emphasis": CatPartial,
+	"Links":                        CatPartial,
+	"Images":                       CatPassThrough,
+	"Autolinks":                    CatPassThrough,
+	"Raw HTML":                     CatSkip,
+	"Hard line breaks":             CatPartial,
+	"Soft line breaks":             CatPartial,
+	"Textual content":              CatPartial,
 
 	// Appendix
-	"A parsing strategy":                          CatSkip,
+	"A parsing strategy":                           CatSkip,
 	"An algorithm for parsing nested emphasis and": CatSkip,
 }
 

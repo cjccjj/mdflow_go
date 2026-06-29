@@ -300,10 +300,34 @@ var goldenCases = []goldenCase{
 		wantANSI: []string{"\033[4;34m", "\033[2;34m", "\033[0m"},
 	},
 	{
-		name:     "image_not_link",
+		name:     "image_inline",
 		input:    "![alt](img.png)",
-		wantText: []string{"![alt](img.png)"},
-		wantANSI: nil,
+		wantText: []string{"[IMG: alt (img.png)"},
+		wantANSI: []string{"\033[4;34m", "\033[2;34m", "\033[2m", "\033[0m"},
+	},
+	{
+		name:     "image_with_title",
+		input:    "![foo](/url \"title\")",
+		wantText: []string{"[IMG: foo (/url \"title\")"},
+		wantANSI: []string{"\033[4;34m", "\033[2;34m", "\033[2m", "\033[0m"},
+	},
+	{
+		name:     "image_empty_alt",
+		input:    "![](/url)",
+		wantText: []string{"[IMG:  (/url)"},
+		wantANSI: []string{"\033[2m", "\033[2;34m", "\033[0m"},
+	},
+	{
+		name:     "image_reference",
+		input:    "![foo][bar]",
+		wantText: []string{"[IMG: foo [→ bar]"},
+		wantANSI: []string{"\033[2m", "\033[4;34m", "\033[0m"},
+	},
+	{
+		name:     "image_text_before",
+		input:    "Hello![cat](photo.jpg)",
+		wantText: []string{"Hello[IMG: cat (photo.jpg)"},
+		wantANSI: []string{"\033[4;34m", "\033[2;34m", "\033[2m", "\033[0m"},
 	},
 	{
 		name:     "bracket_not_link",
@@ -399,8 +423,8 @@ func TestGolden_CrossBoundary(t *testing.T) {
 
 func TestGolden_ANSIPairing(t *testing.T) {
 	pairCases := []struct {
-		input  string
-		opens  []string
+		input string
+		opens []string
 	}{
 		{"**text**", []string{"\033[1m"}},
 		{"*text*", []string{"\033[3m"}},
@@ -524,9 +548,9 @@ func TestGolden_SetextHeading(t *testing.T) {
 
 	// Not setext headings (blank line between or empty content)
 	notHeading := []string{
-		"text\n\n---\n",     // blank line before ---
-		"text\n\n===\n",     // blank line before ===
-		"\n===\n",           // empty candidate line
+		"text\n\n---\n", // blank line before ---
+		"text\n\n===\n", // blank line before ===
+		"\n===\n",       // empty candidate line
 	}
 	for _, input := range notHeading {
 		out := renderOneShot(input)
@@ -610,17 +634,12 @@ func TestGolden_LinkStreaming(t *testing.T) {
 
 func TestGolden_LinkNotALink(t *testing.T) {
 	notLinks := []string{
-		"[text]",                   // no parens
-		"[text] not parens",       // space before (
-		"[text]()",                // empty URL - should still render
-		"![alt](img.png)",         // image syntax
+		"[text]",            // no parens
+		"[text] not parens", // space before (
 	}
 	for _, input := range notLinks {
 		out := renderOneShot(input)
 		if strings.Contains(out, "\033[4;34m") {
-			if input == "[text]()" {
-				continue // this one IS a valid link with empty URL
-			}
 			t.Errorf("should not be link: input=%q output=%q", input, out)
 		}
 	}
