@@ -161,3 +161,19 @@ Follow the sub-parser pattern established by the refactor. See `dev_docs/Adding_
 3. **New emphasis-like construct**: extend `emphasisParser` — add a new frame state, a new opener function following the `tryStar`/`tryUnderscore`/`tryTilde` pattern, register in `processInlineStart()`, handle in `enterEmphasis`/`exitEmphasis` for ANSI composition.
 
 4. **Always**: add tests in the sub-parser's test file, wire `Reset()` to call the sub-parser's `reset()`, update `finalizeState` in `close.go`, and ensure streaming across chunk boundaries works (test with `Parse()` called in multiple chunks).
+
+## Role of CommonMark spec
+
+CommonMark is a reference and robustness benchmark, not a strict compliance target.
+
+`dev_docs/commonMark_spec.txt` contains the spec and examples. It is long and sectioned, so consult only the relevant parts for the feature being worked on.
+
+Key points:
+
+1. **Output differs** — CommonMark defines HTML output; mdflow renders ANSI terminal output, so expected results are not directly comparable.
+
+2. **Architecture differs** — CommonMark assumes full-document parsing; mdflow is a streaming state machine that cannot buffer the whole document.
+
+3. **Streaming comes first** — When strict CommonMark behavior conflicts with incremental rendering, prefer predictable streaming behavior.
+
+4. **Tests are for robustness** — `commonmark_spec_test.go` uses the spec examples to check no-crash behavior and text preservation, not full CommonMark conformance.
