@@ -158,6 +158,10 @@ func (p *Parser) processNormal() []Event {
 		return events
 	}
 
+	if events, handled := p.tryInlineHTML(); handled {
+		return events
+	}
+
 	if p.lineStart {
 		if events, handled := p.processDeferredLineStart(first); handled {
 			return events

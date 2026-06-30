@@ -51,7 +51,7 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 
 | Sub-parser | File | Owns | Key methods |
 |---|---|---|---|
-| `linkParser` | `link_parser.go` | `linkBuf`, `linkURLBuf`, `linkDepth`, `urlParenDepth`, `urlAngleBracket`, `urlDone`, `urlHadNewline`, `linkTitleBuf`, `linkBracketConsumed` | `processLinkText()`, `processLinkURL()`, `flushLinkAsText()`, `emitLinkEvent()`, `collectTitle()` |
+| `linkParser` | `link_parser.go` | `linkBuf`, `linkURLBuf`, `linkDepth`, `urlParenDepth`, `urlAngleBracket`, `urlDone`, `urlHadNewline`, `linkTitleBuf`, `linkBracketConsumed`, `isImage` | `processLinkText()`, `processLinkURL()`, `flushLinkAsText()`, `emitLinkEvent()`, `collectTitle()`, `startImageText()` |
 | `emphasisParser` | `emphasis.go` | `emphStack []emphasisFrame` | `tryStar()`, `tryUnderscore()`, `tryTilde()`, `tryCloser()`, `tryBulletOrBold()`, `drain()` |
 | `tableParser` | `tables.go` | `tableHeaderBuf`, `tableColWidths`, `tableColAligns` | `tryTableHeader()`, `processTablePending()`, `processTableBody()`, `readTableCells()` |
 | `blockParser` | `block_parser.go` | `headerLvl`, `fenceLen`, `fenceChar`, `codeBlockFirst`, `codeBlockIndent`, `blockquoteHadBlank` | (state only; block methods still on `*Parser` in `blocks.go`) |
@@ -70,12 +70,12 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 
 | File | Responsibility |
 |---|---|
-| `parser.go` | Core: `Parser` struct, `New()`/`Reset()`/`Parse()`, `process()` dispatch loop, `processNormal()` with ordered dispatch stages, `emitTextOrSpecial()`, `processBacktickStart()`, `handleIndentedList()` |
+| `parser.go` | Core: `Parser` struct, `New()`/`Reset()`/`Parse()`, `process()` dispatch loop, `processNormal()` with ordered dispatch stages, `emitTextOrSpecial()`, `processBacktickStart()`, `handleIndentedList()`, `tryImage()`, `tryAutolink()` with URI/email validation |
 | `blocks.go` | Block-level methods (still on `*Parser`, accessing sub-parser state): ATX/setext headings, fenced/indented code blocks, blockquotes, thematic breaks, lists, HTML blocks. ~1175 lines (was ~1470 before refactor). |
 | `inlines.go` | `processInlineCode()` — inline code span processing. Link and emphasis methods moved to sub-parsers; dead Bold/Italic/Strikethrough handlers removed. ~150 lines (was ~665). |
 | `emphasis.go` | `emphasisParser` type, stack ops (`push`/`pop`/`top`/`drain`), flanking predicates (`canUnderscoreOpen`/`canUnderscoreClose`), `tryStar()`/`tryUnderscore()`/`tryTilde()`/`tryCloser()`, `tryBulletOrBold()` |
 | `tables.go` | `tableParser` type, GFM table parsing: `readTableCells()`, `parseSeparatorAligns()`, `normalizeTableCells()` |
-| `link_parser.go` | `linkParser` type, inline links `[text](url)` and reference links `[text][label]` |
+| `link_parser.go` | `linkParser` type, inline links `[text](url)`, reference links `[text][label]`, images `![alt](url)` |
 | `link_ref_def_parser.go` | `linkRefDefParser` type, `parseLinkRefDefLine()`, `findUnescapedBracket()` |
 | `setext_parser.go` | `setextParser` type, `flushSetext()` |
 | `html_block_parser.go` | `htmlBlockParser` type (state only) |
@@ -85,7 +85,7 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 | `entities.go` | HTML entity decoding, `resolveEntities()` |
 | `recognizers.go` | Thin wrappers adapting sub-parser methods to the `Recognizer` signature for `processNormal()` dispatch |
 | `helpers.go` | `orderedListPrefix()`, `tabRemainingEquiv()`, indent ops, flanking checks (`isLeftFlankingRun`/`isRightFlankingRun`), whitespace helpers |
-| `events.go` | `EventType` enum and `Event` struct |
+| `events.go` | `EventType` enum and `Event` struct — includes `ImageEvent`, `ImageRefEvent`, `AutolinkURLEvent`, `AutolinkEmailEvent` |
 | `state.go` | `State` enum |
 
 **The process loop** (`parser.go:process()`): iterates while tokens are available, dispatching to the current state's handler (which may delegate to a sub-parser). Breaks if no progress was made (state unchanged + buffer not consumed), waiting for more input.
@@ -94,8 +94,10 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 1. `processEscapeOrEntity()` — backslash escapes and `&` entities
 2. `processLineStartBlock()` — thematic breaks, ATX headings, blockquotes, bullets, ordered lists, fenced code, HTML blocks, link ref defs *(line-start only)*
 3. `processInlineStart()` — backtick (inline code / fenced code block), `[` (link), `~`/`*`/`_` (emphasis) *(always)*
-4. `processDeferredLineStart()` — tables, indented code, setext candidates *(line-start only)*
-5. `emitTextOrSpecial()` — fallback: emit plain text, checking `bufferHasPattern()` at each step for early break
+4. `tryImage()` — `![` detection, delegates to `linkParser.startImageText()` *(always)*
+5. `tryAutolink()` — `<URI>` and `<email>` autolink detection with URI/email validation *(always)*
+6. `processDeferredLineStart()` — tables, indented code, setext candidates *(line-start only)*
+7. `emitTextOrSpecial()` — fallback: emit plain text, checking `bufferHasPattern()` at each step for early break
 
 ### 3. Writer (`pkg/markdown/render/`)
 
@@ -105,7 +107,7 @@ Converts parser `Event` values to ANSI terminal output via `AnsiWriter`.
 |---|---|
 | `writer.go` | `Handle(Event)` — maps each event type to ANSI output. Manages emphasis SGR code composition for nested bold/italic/strikethrough |
 | `ansi.go` | `AnsiWriter` — thin wrapper over `io.Writer` with `WriteStyled(text, Style)` |
-| `styles.go` | `Theme` struct (26 `Style` fields) and `DefaultTheme` with ANSI escape codes |
+| `styles.go` | `Theme` struct (27 `Style` fields) and `DefaultTheme` with ANSI escape codes |
 | `table.go` | Full table rendering with live redraw: uses `\033[nA` cursor-up codes to repaint tables when column widths change as more rows arrive. Caps repaints at 50/table to bound cost |
 | `tty.go` | `IsTerminal(w)` and `TerminalWidth(w)` — terminal detection via `golang.org/x/term` |
 | `util.go` | `VisibleLen` (ANSI-aware string width), `RenderInline` (one-shot inline parse+render for table cells), `WrapContent` (width-aware line wrapping preserving ANSI codes) |
@@ -132,11 +134,12 @@ r.Close()       // flush + close open styles + reset
 
 ## Testing
 
-- `pkg/markdown/golden_test.go` — 32 golden cases comparing one-shot vs line-chunked vs arbitrary-split rendering; verifies streaming yields same output as whole-document rendering
+- `pkg/markdown/golden_test.go` — 39 golden cases comparing one-shot vs line-chunked vs arbitrary-split rendering; verifies streaming yields same output as whole-document rendering
 - `pkg/markdown/commonmark_spec_test.go` — parses 652 CommonMark spec examples from `dev_docs/commonMark_spec.txt`; verifies no-crash and text preservation
 - `pkg/markdown/parser/parser_test.go` — unit tests for parser states, token→event transformation, separator alignment
 - `pkg/markdown/parser/characterization_test.go` — streaming boundary tests for flush/close behavior across chunks
-- `pkg/markdown/parser/link_parser_test.go` — 23 tests: inline links, reference links, balanced brackets, streaming, titles, edge cases
+- `pkg/markdown/parser/link_parser_test.go` — 41 tests: inline links, reference links, balanced brackets, streaming, titles, images, edge cases
+- `pkg/markdown/parser/autolink_parser_test.go` — 24 tests: URI autolinks, email autolinks, validation, streaming, edge cases
 - `pkg/markdown/parser/emphasis_parser_test.go` — 24 tests: bold/italic/strikethrough, nesting, flanking, intraword, multiple-of-3, streaming, close drain
 - `pkg/markdown/parser/table_parser_test.go` — 11 tests: table detection, alignments, multiple rows, streaming, flush, edge cases
 - `pkg/markdown/render/*_test.go` — unit tests for writer, styles, ANSI output, table rendering

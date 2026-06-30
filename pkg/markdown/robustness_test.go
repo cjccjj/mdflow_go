@@ -250,8 +250,11 @@ func TestRobustness_ImagePrintsRaw(t *testing.T) {
 
 func TestRobustness_HTMLPrintsRaw(t *testing.T) {
 	out := renderOutput("<b>html bold</b>\n")
-	if !strings.Contains(out, "<b>html bold</b>") {
+	if !strings.Contains(out, "html bold") {
 		t.Errorf("html text lost: %q", out)
+	}
+	if strings.Contains(out, "<b>") || strings.Contains(out, "</b>") {
+		t.Errorf("html tags should be stripped: %q", out)
 	}
 }
 
