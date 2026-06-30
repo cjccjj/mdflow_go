@@ -330,6 +330,24 @@ var goldenCases = []goldenCase{
 		wantANSI: []string{"\033[4;34m", "\033[2;34m", "\033[2m", "\033[0m"},
 	},
 	{
+		name:     "autolink_uri",
+		input:    "<http://foo.bar>",
+		wantText: []string{"http://foo.bar"},
+		wantANSI: []string{"\033[2;34m", "\033[0m"},
+	},
+	{
+		name:     "autolink_email",
+		input:    "<foo@bar.com>",
+		wantText: []string{"foo@bar.com"},
+		wantANSI: []string{"\033[4;34m", "\033[0m"},
+	},
+	{
+		name:     "autolink_text_before",
+		input:    "see <https://example.com> now",
+		wantText: []string{"see https://example.com now"},
+		wantANSI: []string{"\033[2;34m", "\033[0m"},
+	},
+	{
 		name:     "bracket_not_link",
 		input:    "[text] not a link",
 		wantText: []string{"[text] not a link"},

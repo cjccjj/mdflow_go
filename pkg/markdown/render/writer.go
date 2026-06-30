@@ -323,6 +323,26 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString("]")
 		return err
 
+	case parser.AutolinkURLEvent:
+		if _, err := w.aw.WriteString(w.theme.LinkURL.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(e.Value); err != nil {
+			return err
+		}
+		_, err := w.aw.WriteString(w.theme.LinkURL.Suffix)
+		return err
+
+	case parser.AutolinkEmailEvent:
+		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
+			return err
+		}
+		if _, err := w.aw.WriteString(e.Value); err != nil {
+			return err
+		}
+		_, err := w.aw.WriteString(w.theme.LinkText.Suffix)
+		return err
+
 	default:
 		return nil
 	}

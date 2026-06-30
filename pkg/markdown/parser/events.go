@@ -32,6 +32,8 @@ const (
 	LinkRefDefEvent
 	LinkRefEvent
 	ImageRefEvent
+	AutolinkURLEvent
+	AutolinkEmailEvent
 )
 
 type Event struct {
@@ -105,6 +107,10 @@ func (e EventType) String() string {
 		return "LinkRef"
 	case ImageRefEvent:
 		return "ImageRef"
+	case AutolinkURLEvent:
+		return "AutolinkURL"
+	case AutolinkEmailEvent:
+		return "AutolinkEmail"
 	default:
 		return "Unknown"
 	}

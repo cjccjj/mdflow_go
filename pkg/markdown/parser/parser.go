@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/cjccjj/mdflow/pkg/markdown/tokenizer"
@@ -150,6 +151,10 @@ func (p *Parser) processNormal() []Event {
 	}
 
 	if events, handled := p.tryImage(); handled {
+		return events
+	}
+
+	if events, handled := p.tryAutolink(); handled {
 		return events
 	}
 
@@ -439,6 +444,109 @@ func (p *Parser) tryImage() ([]Event, bool) {
 	p.consume(1)
 	p.linkParser.startImageText()
 	return events, true
+}
+
+var emailAutolinkRe = regexp.MustCompile(
+	`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9](?:` +
+		`[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.` +
+		`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
+
+func (p *Parser) tryAutolink() ([]Event, bool) {
+	if len(p.buf) < 2 {
+		return nil, false
+	}
+	tok := p.buf[0]
+	if tok.Type != tokenizer.TextToken {
+		return nil, false
+	}
+	val := tok.Value
+	ltIdx := strings.Index(val, "<")
+	if ltIdx == -1 {
+		return nil, false
+	}
+	gtIdx := -1
+	for i := 1; i < len(p.buf); i++ {
+		bt := p.buf[i]
+		if bt.Type == tokenizer.NewlineToken {
+			return nil, false
+		}
+		if bt.Type == tokenizer.GreaterToken {
+			gtIdx = i
+			break
+		}
+	}
+	if gtIdx == -1 {
+		return nil, false
+	}
+
+	var content strings.Builder
+	content.WriteString(val[ltIdx+1:])
+	for i := 1; i < gtIdx; i++ {
+		content.WriteString(p.buf[i].Value)
+	}
+	contentStr := content.String()
+
+	var events []Event
+	if ltIdx > 0 {
+		events = append(events, Event{Type: TextEvent, Value: val[:ltIdx]})
+	}
+
+	if isValidAutolinkURI(contentStr) {
+		p.consume(1)
+		for i := 1; i < gtIdx; i++ {
+			p.consume(1)
+		}
+		p.consume(1)
+		p.lineStart = false
+		events = append(events, Event{Type: AutolinkURLEvent, Value: contentStr, URL: contentStr})
+		if len(contentStr) > 0 {
+			p.prevChar = contentStr[len(contentStr)-1]
+		}
+		return events, true
+	}
+
+	if emailAutolinkRe.MatchString(contentStr) {
+		p.consume(1)
+		for i := 1; i < gtIdx; i++ {
+			p.consume(1)
+		}
+		p.consume(1)
+		p.lineStart = false
+		url := "mailto:" + contentStr
+		events = append(events, Event{Type: AutolinkEmailEvent, Value: contentStr, URL: url})
+		if len(contentStr) > 0 {
+			p.prevChar = contentStr[len(contentStr)-1]
+		}
+		return events, true
+	}
+
+	return nil, false
+}
+
+func isValidAutolinkURI(s string) bool {
+	if s == "" {
+		return false
+	}
+	colon := strings.Index(s, ":")
+	if colon < 2 || colon > 32 {
+		return false
+	}
+	scheme := s[:colon]
+	if !isASCIILetter(scheme[0]) {
+		return false
+	}
+	for i := 1; i < len(scheme); i++ {
+		b := scheme[i]
+		if !isASCIILetter(b) && !isDigit(b) && b != '+' && b != '.' && b != '-' {
+			return false
+		}
+	}
+	for _, c := range s[colon+1:] {
+		if c <= 0x1F || c == 0x7F || c == ' ' || c == '<' || c == '>' {
+			return false
+		}
+	}
+	return true
 }
 
 func (p *Parser) emitTextOrSpecial() []Event {

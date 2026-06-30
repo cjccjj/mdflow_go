@@ -14477,23 +14477,19 @@
     "html": "<p><a href=\"http://foo.bar.baz\">http://foo.bar.baz</a></p>\n",
     "weight": 0.9,
     "weight_explanation": "Autolinks are a common, basic inline-link feature (URLs and emails in <...>) seen frequently in READMEs, docs, and chat; failing to render them correctly would break automatic linking and confuse readers. While not as foundational as headings, they are widely used and important for usability.",
-    "mdflow_terminal": "<http://foo.bar.baz>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mhttp://foo.bar.baz\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "http://foo.bar.baz                                                              ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 0,
     "glow_score": 2,
-    "pass": false,
-    "issues": [
-      "Renderer A preserves the raw angle-bracketed source (<http://foo.bar.baz>) instead of presenting the link label without markup or as a distinguishable link.",
-      "Renderer A provides no visual/link styling (no underline, color, or hyperlink support) making it indistinguishable from ordinary text.",
-      "Renderer A emits an ANSI reset escape (\\u001b[0m) with no other styling — stray control code suggests improper handling of styling state."
-    ],
-    "explanation": "Renderer A shows the URL only as raw Markdown source with angle brackets and an extraneous ANSI reset, failing to present the autolink as a normal URL or visually distinguish it as a link; this loses the expected inline-link representation (structure/style). Renderer B displays the URL itself (http://foo.bar.baz), which preserves the content and makes the link recognizable to a human even without styling. Because autolinks are a common inline feature (weight 0.9) and A does not render them as usable/recognizable links or provide reasonable terminal styling, Renderer A fails."
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the autolink text and styles it (dim blue), which clearly communicates that the text is a link in terminal form; content and inline structure are intact and the ANSI styling is appropriate. Renderer B also preserves the URL text (so content and basic structure are present) but provides no styling to signal it as a link, making it less visually distinct. Given the high weight of autolinks and that A conveys the link clearly via conventional terminal styling, Renderer A passes."
   },
   {
     "section": "Autolinks",
@@ -14502,23 +14498,22 @@
     "html": "<p><a href=\"https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean\">https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>\n",
     "weight": 0.8,
     "weight_explanation": "Autolinks are a common, user-friendly way to include URLs and email addresses and appear often in READMEs, chats, and docs; failing to parse or escape them correctly (e.g., query string ampersands) would frequently break links or confuse readers.",
-    "mdflow_terminal": "<https://foo.bar.baz/test?q=hello&id=22&boolean>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mhttps://foo.bar.baz/test?q=hello&id=22&boolean\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
     "mdflow_structure": 1,
-    "mdflow_style": 0,
-    "mdflow_score": 2,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "https://foo.bar.baz/test?q=hello&id=22&boolean                                  ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_style": 0,
+    "glow_score": 2,
+    "pass": true,
     "issues": [
-      "Renderer A outputs visible ANSI escape sequence characters (e.g. ESC[0m) instead of applying styling invisibly.",
-      "Renderer A retains the angle brackets around the autolink instead of presenting the URL plainly; this is minor but non-idiomatic for terminal rendering.",
-      "No clear link styling (underline/color) is applied; combined with the visible escape sequence this may be confusing."
+      "Renderer A uses the ANSI 'dim' attribute (ESC[2;34m) which can make the link less legible on some terminals or themes.",
+      "Renderer A emits an extra reset/blank line (redundant ESC[0m), minor but unnecessary."
     ],
-    "explanation": "Renderer A preserves the important content (the full URL) and the simple paragraph structure, so content and structure are both scored 1. However, it produces a visible ANSI escape sequence in the output and does not present the link in a clean, non-confusing way, so style is scored 0. Renderer B presents the plain URL cleanly (content=1, structure=1) and uses reasonable, non-confusing terminal styling (effectively none), so it scores 3. Because the visible escape characters in A are an actual bug that makes the output confusing and potentially misleading, and autolinks are a fairly important/common feature (weight 0.8), I do not pass Renderer A."
+    "explanation": "Renderer A preserves the important content (the full URL) and clearly conveys structure (a standalone link/paragraph) while applying reasonable terminal styling (colored link), so it fulfills the autolink rendering requirement. Renderer B also preserves content and structure but provides no styling. The minor issues (use of dim and a redundant reset) do not undermine correctness or usability, and given the weight of this feature (0.8) Renderer A passes."
   },
   {
     "section": "Autolinks",
@@ -14527,23 +14522,23 @@
     "html": "<p><a href=\"irc://foo.bar:2233/baz\">irc://foo.bar:2233/baz</a></p>\n",
     "weight": 0.8,
     "weight_explanation": "Autolinks are commonly used in READMEs, chat, and technical docs to turn raw URIs and email addresses inside angle brackets into clickable links; failing to support them would frequently leave obvious URLs or addresses unlinked and harm usability, though it's slightly less fundamental than basic block-level syntax like headings.",
-    "mdflow_terminal": "<irc://foo.bar:2233/baz>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mirc://foo.bar:2233/baz\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "irc://foo.bar:2233/baz                                                          ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 0,
     "glow_score": 2,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A does not render the autolink as a link (no hyperlink escape sequence or visual indication that this is a link).",
-      "Renderer A leaves the angle brackets around the URI, which prevents clearer presentation and may inhibit terminal auto-linking.",
-      "Renderer A emits an extraneous ANSI reset sequence (\\x1b[0m) after the text."
+      "Renderer A does not emit terminal OSC 8 hyperlink escapes, so the link is not clickable in supporting terminals (only visually styled).",
+      "Renderer A contains a redundant/reset ANSI escape sequence on a separate line (extra '\\u001b[0m').",
+      "Renderer B fails to visually distinguish the autolink from plain text (no styling or link affordance)."
     ],
-    "explanation": "Renderer A preserves the URI text (content=1) but fails to communicate that it is a link: there is no hyperlinking or visual styling and the angle brackets are retained, plus an extraneous ANSI reset is emitted. Given the weight of 0.8 for autolinks (commonly used and important), this lack of link rendering is a meaningful failure, so the renderer does not pass. Renderer B presents the bare URI (more usable for terminals that auto-detect links), but the pass/fail decision is based solely on Renderer A."
+    "explanation": "Renderer A preserves the URI text exactly and uses dim blue ANSI styling to indicate a link, so content and inline structure are clear and the styling is appropriate; therefore it meets the feature's intent given the weight (0.8) and passes. Renderer B also preserves the content but provides no visual affordance for a link (style=0). The only notable shortcomings for A are the lack of OSC 8 hyperlink escapes (so not clickable) and a redundant reset escape, which are minor compared with its correct rendering of the autolink."
   },
   {
     "section": "Autolinks",
@@ -14552,24 +14547,22 @@
     "html": "<p><a href=\"MAILTO:FOO@BAR.BAZ\">MAILTO:FOO@BAR.BAZ</a></p>\n",
     "weight": 0.9,
     "weight_explanation": "Autolinks are a common, fundamental convenience for making raw URIs and email addresses clickable; failing to recognize forms like uppercase schemes or the MAILTO: URI would frequently leave links unlinked or mis-linked and confuse readers.",
-    "mdflow_terminal": "<MAILTO:FOO@BAR.BAZ>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mMAILTO:FOO@BAR.BAZ\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "MAILTO:FOO@BAR.BAZ                                                              ",
     "glow_content": 1,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A did not recognize the autolink semantics — it printed the angle-bracketed text rather than presenting it as a link label.",
-      "Renderer A emitted a stray ANSI reset escape (\\x1B[0m) in the output.",
-      "Renderer A provides no visual cue that the text is a link (no underline/color/striped angle brackets), so document structure (a link) is lost.",
-      "Renderer B also fails to style as a link, but that is only for reference and does not affect A's evaluation."
+      "Renderer A does not emit a terminal hyperlink (OSC 8) escape sequence, it only styles the autolink with dim blue color.",
+      "Renderer A includes an extra reset control sequence on a separate line which is harmless but unnecessary."
     ],
-    "explanation": "Renderer A preserves the important text (the MAILTO: URI) but fails to convey link structure or styling: it leaves the angle brackets and emits an extraneous ANSI reset escape, providing no visual indication that this was an autolink. Renderer B likewise shows the text without link semantics. Because autolinks are a core convenience (weight 0.9) and A does not present the content as a recognizable link, it does not meet the expected behavior and therefore fails."
+    "explanation": "Renderer A preserves the visible content exactly (MAILTO:FOO@BAR.BAZ) and uses dim blue ANSI styling to clearly indicate a link, so a human can perceive the autolink (content=1, structure=1, style=1). Renderer B also preserves the content but provides no visual distinction for a link (content=1, structure=0, style=0). Given the high weight for autolinks (0.9) and that Renderer A conveys both the information and an appropriate link style, it passes. The only minor shortcomings are lack of an actual clickable terminal hyperlink escape (OSC 8) and an unnecessary reset sequence on its own line, neither of which undermines recognition of the autolink."
   },
   {
     "section": "Autolinks",
@@ -14578,23 +14571,22 @@
     "html": "<p><a href=\"a+b+c:d\">a+b+c:d</a></p>\n",
     "weight": 0.7,
     "weight_explanation": "Autolinks are common and some real-world schemes include '+' (e.g. git+ssh, git+https); failing to accept '+' in the scheme would cause valid URIs not to render as links. This is important but not as fundamental as basic heading/paragraph handling.",
-    "mdflow_terminal": "<a+b+c:d>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34ma+b+c:d\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "a+b+c:d                                                                         ",
     "glow_content": 1,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A does not recognize '+' characters in the URI scheme (fails to parse the autolink) and leaves the raw '<a+b+c:d>' markup in output.",
-      "Renderer A provides no visual indication that the text is a link (no link styling or hyperlink sequence), so document structure (inline link) is lost.",
-      "Renderer A emits a stray ANSI reset but offers no useful styling to denote link semantics."
+      "Renderer A uses colored/dim text to indicate a link but does not emit terminal hyperlink escape sequences (OSC 8), so the link may not be clickable in supporting terminals.",
+      "Dim blue styling might be subtle on some backgrounds; no underline or explicit URL shown."
     ],
-    "explanation": "Both renderers preserve the visible text of the URI (content=1), but Renderer A fails to parse the autolink when the scheme contains '+' and leaves the raw angle-bracketed markup, providing no link semantics or styling (structure=0, style=0). Renderer B at least outputs the URI label without the angle brackets, but also provides no link styling. Given the moderate-to-high weight (0.7) for correct autolink parsing and the fact that '+' is explicitly allowed in schemes by the spec, Renderer A's failure to parse and present the input as a link is a substantive correctness problem; therefore it does not pass."
+    "explanation": "Renderer A correctly recognized the autolink with '+' characters in the scheme, preserved the link label \"a+b+c:d\", and presented it with ANSI styling (dim blue), so content, structure (link vs plain text), and style are all communicated — score 3. Renderer B only printed the plain text with no visual indication that it is a link (content=1, structure=0, style=0, score=1). Given the feature weight (0.7) and that A accurately parsed and presented the autolink, Renderer A passes. The only minor shortcomings are no clickable OSC 8 hyperlink emission and potentially subtle styling choices."
   },
   {
     "section": "Autolinks",
@@ -14603,23 +14595,19 @@
     "html": "<p><a href=\"made-up-scheme://foo,bar\">made-up-scheme://foo,bar</a></p>\n",
     "weight": 1.0,
     "weight_explanation": "Autolinks (URLs and emails in <...>) are a common, user-friendly way to create links; failure to render them correctly would frequently leave obvious URLs unlinked or display confusing literal angle brackets, harming readability and link functionality.",
-    "mdflow_terminal": "<made-up-scheme://foo,bar>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mmade-up-scheme://foo,bar\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "made-up-scheme://foo,bar                                                        ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
-    "issues": [
-      "Renderer A preserves the raw text including angle brackets instead of rendering the autolink label (should show the URI without surrounding < > and/or be presented as a link).",
-      "Renderer A emits an extraneous ANSI reset escape (\\x1b[0m) with no useful styling, indicating broken or incomplete styling behavior.",
-      "Renderer A provides no visual indication that the text is a link (no styling or link semantics), so the document structure (autolink) is lost to the reader."
-    ],
-    "explanation": "Renderer A leaves the autolink verbatim with angle brackets and an unnecessary ANSI reset, so although the URI text is present (content=1) the autolink structure and any link styling are not conveyed (structure=0, style=0). Renderer B shows the URI without brackets, which better preserves the intended link label (content=1, structure=1) though it lacks explicit styling (style=0). Because autolinks are a fundamental, common feature, Renderer A's failure to present the link as the URI label or otherwise indicate link structure is a material defect — it does not meet the expected behavior, so it fails."
+    "glow_score": 1,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the important text (the URI) and renders it without the angle brackets using blue/dim ANSI styling that clearly indicates a link-like element, so content, structure, and style are all conveyed (score 3). Renderer B preserves the text but provides no visual cue that it is a link (content=1, structure=0, style=0). Given autolinks are a core feature for readability and Renderer A communicates both the content and link semantics appropriately, Renderer A passes."
   },
   {
     "section": "Autolinks",
@@ -14628,23 +14616,19 @@
     "html": "<p><a href=\"https://../\">https://../</a></p>\n",
     "weight": 1.0,
     "weight_explanation": "Autolinks are a common, foundational Markdown feature used widely in READMEs, docs, and chat; failing to recognize or render them (even odd-looking URIs like <https://../>) would break many real-world documents and confuse readers.",
-    "mdflow_terminal": "<https://../>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mhttps://../\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "https://../                                                                     ",
     "glow_content": 1,
-    "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
-    "issues": [
-      "Renderer A did not recognize the autolink syntax: it left the literal angle brackets (<...>) instead of rendering the URL label.",
-      "Renderer A provides no link structure or visual indication that the text is a link (no removal of brackets, no underline/color, no OSC8 hyperlink escape).",
-      "Renderer A outputs a stray ANSI reset sequence (\\u001b[0m) with no useful styling."
-    ],
-    "explanation": "Renderer A preserves the URL text but fails to parse it as an autolink: it leaves the angle brackets and provides no link semantics or styling, so a reader cannot perceive this as a link. That yields content=1 but structure=0 and style=0 (score 1). Renderer B correctly presents the URL without angle brackets, conveying both content and link structure cleanly with reasonable terminal presentation (score 3). Given the high weight of autolinks as a core Markdown feature and Renderer A's failure to convey link structure, Renderer A does not pass."
+    "glow_structure": 0,
+    "glow_style": 0,
+    "glow_score": 1,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserved the important text (the autolink) and rendered it in a distinguishable terminal style (dim blue), so a reader can both see the URL and infer its role as a link — content, structure, and style are all effectively conveyed. Renderer B shows the URL text but provides no visual indication that it is a link (structure and style absent). Because autolinks are a fundamental Markdown feature and Renderer A communicates them clearly, it passes."
   },
   {
     "section": "Autolinks",
@@ -14653,23 +14637,22 @@
     "html": "<p><a href=\"localhost:5001/foo\">localhost:5001/foo</a></p>\n",
     "weight": 0.8,
     "weight_explanation": "Autolinks are a common, foundational convenience — users often put URIs (including local endpoints like localhost:5001) in angle brackets in READMEs, chats and docs; failing to render them as links would frequently break expected behavior and confuse readers, even if the specific non‑registered scheme example is somewhat less common.",
-    "mdflow_terminal": "<localhost:5001/foo>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2;34mlocalhost:5001/foo\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "localhost:5001/foo                                                              ",
     "glow_content": 1,
-    "glow_structure": 1,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A did not recognize/parse the autolink: it left the angle brackets in place instead of presenting the URL label or link.",
-      "Renderer A emitted a visible ANSI escape sequence (ESC[0m) in the output rather than using it invisibly to style/reset, which is distracting or garbled for readers.",
-      "Renderer A did not produce any link-like treatment (no hyperlink OSC 8, no underline/color, and no plain URL label), so the semantic of an autolink is lost."
+      "Renderer A colors the autolink (dim blue) but does not emit OSC 8 terminal hyperlink escapes, so the link may not be clickable in terminals that support inline links.",
+      "Renderer A output includes an extra standalone reset control sequence on a following blank line (harmless but untidy)."
     ],
-    "explanation": "Renderer A preserves the raw text of the autolink so the URL content is present (content=1) but fails to convey link structure or apply reasonable terminal styling (structure=0, style=0). It even exposes an ANSI reset sequence in the output, which is distracting. Renderer B displays the URL without angle brackets, making the link intent clear (content=1, structure=1) though it applies no styling (style=0). Given the weight (0.8) for autolinks as a common, important feature, Renderer A's failure to parse or present the autolink appropriately is a significant defect, so it does not pass."
+    "explanation": "Renderer A preserves the URL text and clearly conveys link structure via dim blue styling, so content and structure are intact and styling is appropriate; given the high weight (0.8) this is sufficient to pass. Renderer B also preserves the text but provides no visual indication that the text is a link (structure and style = 0). The minor issues with A are stylistic (no OSC 8 hyperlink and an extra reset sequence) and do not undermine its ability to communicate the autolink, so Renderer A passes."
   },
   {
     "section": "Autolinks",
@@ -14702,24 +14685,21 @@
     "html": "<p><a href=\"https://example.com/%5C%5B%5C\">https://example.com/\\[\\</a></p>\n",
     "weight": 1.0,
     "weight_explanation": "Autolinks are a common way to write URLs and emails; mishandling characters inside them (for example failing to percent‑encode reserved characters or incorrectly treating backslashes as escapes) will produce broken or incorrect links and directly harms readability and functionality.",
-    "mdflow_terminal": "<https://example.com/[>\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "\u001b[2;34mhttps://example.com/\\[\\\u001b[0m\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "https://example.com/[\\                                                          ",
-    "glow_content": 1,
-    "glow_structure": 1,
+    "glow_content": 0,
+    "glow_structure": 0,
     "glow_style": 0,
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 0,
+    "pass": true,
     "issues": [
-      "Renderer A dropped/removed backslashes inside the autolink (treated them as escapes) and therefore lost important characters from the URL.",
-      "Renderer A failed to percent-encode or otherwise preserve reserved characters and printed the raw angle-bracketed text instead of a usable link label.",
-      "Renderer A did not recognize or render the autolink correctly (no link presentation, mangled content).",
-      "Renderer B preserves more of the URL text but still omits the closing '>' and/or the final backslash and emits trailing spaces, so it is imperfect though more informative than A."
+      "Renderer A emits an extra ANSI reset sequence on a following blank line (cosmetic)."
     ],
-    "explanation": "Renderer A fails: it removes backslashes and prints the raw angle-bracketed input rather than preserving the exact URL characters or percent-encoding them, so the important information is mangled and the autolink is not rendered correctly (content=0, structure=0, style=0). Renderer B retains most of the visible URL text (content=1) and presents it as plain text so a reader can understand the link (structure=1), though it still has minor issues (missing/shifted trailing characters and extra spaces), and offers no styling (style=0). Given the weight of this feature (1.0) and that A loses essential characters and link semantics, Renderer A does not pass."
+    "explanation": "Renderer A preserves the full visible autolink text (https://example.com/\\[\\) and presents it in blue/dim styling so a human can perceive it as a link; content, structure, and style are all effectively communicated, so it passes. Renderer B loses or mangles the backslashes and produces trailing spacing, losing important characters from the autolink, and provides no link styling."
   },
   {
     "section": "Autolinks",
@@ -14728,23 +14708,22 @@
     "html": "<p><a href=\"mailto:foo@bar.example.com\">foo@bar.example.com</a></p>\n",
     "weight": 0.8,
     "weight_explanation": "Autolinks (e.g., <http://...> and <user@host>) are a common, convenient form of inline links and email addresses in READMEs, chats, and docs; incorrect handling would noticeably break many real-world documents, though explicit link syntax can sometimes compensate.",
-    "mdflow_terminal": "<foo@bar.example.com>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[4;34mfoo@bar.example.com\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo@bar.example.com mailto:foo@bar.example.com                                  ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_style": 0,
+    "glow_score": 2,
+    "pass": true,
     "issues": [
-      "Renderer A emits the literal text '<foo@bar.example.com>' instead of presenting it as a link (no mailto: URL or link labeling).",
-      "Renderer A gives no visual indication that the text is a link (no link label/URL or styling), so link structure is lost.",
-      "Renderer A includes a stray ANSI reset escape (ESC[0m) after the output."
+      "Renderer A does not disclose the explicit mailto: URL target (it renders only the email label as a styled link).",
+      "Renderer A emits a stray ANSI reset sequence on its own trailing line (harmless but noisy)."
     ],
-    "explanation": "Renderer A preserves the visible email address text (content=1) but fails to convey link structure or provide the mailto: URL and gives no useful styling (structure=0, style=0). Renderer B clearly shows the label and the mailto: URL, preserving both content and link structure (score 3). Given the high importance of autolinks (weight 0.8) and that Renderer A does not communicate that the text is a link or its mailto target, it fails."
+    "explanation": "Renderer A preserves the important content (the email address) and conveys link structure by rendering it as underlined blue text, which is an appropriate terminal convention for links, so content, structure, and style are all satisfied (3/3). Renderer B also preserves content and makes the mailto: target explicit, but it provides no styling to indicate link semantics (content=1, structure=1, style=0 → 2/3). Given the weight (0.8) and that Renderer A clearly communicates both the address and that it is a link in a reasonable terminal style, Renderer A passes despite not printing the literal mailto: URL; the extra reset escape is a minor implementation issue only."
   },
   {
     "section": "Autolinks",
@@ -14753,23 +14732,21 @@
     "html": "<p><a href=\"mailto:foo+special@Bar.baz-bar0.com\">foo+special@Bar.baz-bar0.com</a></p>\n",
     "weight": 1.0,
     "weight_explanation": "Email autolinks are a common inline-link pattern in docs, READMEs and messages; failing to render them (including generating mailto: links and handling valid characters like + and uppercase) would break expected linking behavior and confuse readers, so this is a critical feature.",
-    "mdflow_terminal": "<foo+special@Bar.baz-bar0.com>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[4;34mfoo+special@Bar.baz-bar0.com\u001b[0m\n\u001b[0m",
     "mdflow_content": 1,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "foo+special@Bar.baz-bar0.com mailto:foo+special@Bar.baz-bar0.com                ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
-    "pass": false,
+    "glow_style": 0,
+    "glow_score": 2,
+    "pass": true,
     "issues": [
-      "Renderer A does not convert the email autolink into a link target (no mailto: href is exposed).",
-      "Renderer A leaves the angle-bracketed text verbatim instead of signaling a link (no link styling or URL shown).",
-      "Renderer A emits an extraneous ANSI reset code but provides no useful hyperlink formatting."
+      "Renderer A does not show the underlying mailto: URL explicitly (only renders the email as blue+underlined text), so terminals that do not map that styling to a clickable mailto may lose the actual link target."
     ],
-    "explanation": "Renderer A preserves the visible email address text but fails to convey that it is an autolink: it leaves the angle brackets verbatim, does not expose the mailto: target, and applies no hyperlink styling or indication, so a reader cannot reliably identify or use the link as intended. Renderer B clearly shows the label and the mailto: URL, preserving both content and link structure. Because email autolinks are a critical feature (weight 1.0) and A does not present the link target or link semantics, it fails."
+    "explanation": "Renderer A preserves the important content (the full email address), clearly signals a link via blue underlined styling, and uses reasonable terminal styling, so a human can perceive this as an email autolink; therefore it meets the critical requirement and passes. Renderer B also preserves content and shows the explicit mailto: URL (useful), but uses no visual styling to indicate a link, so its styling score is lower. The lack of an explicit mailto: in A is noted as a potential issue for some terminal environments, but overall A communicates the autolink adequately and passes."
   },
   {
     "section": "Autolinks",

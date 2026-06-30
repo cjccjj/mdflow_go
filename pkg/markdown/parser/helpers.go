@@ -371,6 +371,10 @@ func isDigitsOnly(s string) bool {
 	return true
 }
 
+func isDigit(b byte) bool {
+	return b >= '0' && b <= '9'
+}
+
 func isWhitespaceByte(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == '\xa0'
 }
