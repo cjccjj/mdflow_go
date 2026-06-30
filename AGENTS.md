@@ -69,23 +69,24 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 **Source file map:**
 
 | File | Responsibility |
-|---|---|
+|  |--- |--- |
 | `parser.go` | Core: `Parser` struct, `New()`/`Reset()`/`Parse()`, `process()` dispatch loop, `processNormal()` with ordered dispatch stages, `emitTextOrSpecial()`, `processBacktickStart()`, `handleIndentedList()`, `tryImage()`, `tryAutolink()` with URI/email validation |
-| `blocks.go` | Block-level methods (still on `*Parser`, accessing sub-parser state): ATX/setext headings, fenced/indented code blocks, blockquotes, thematic breaks, lists, HTML blocks. ~1175 lines (was ~1470 before refactor). |
+| `blocks.go` | Block-level methods (still on `*Parser`, accessing sub-parser state): ATX/setext headings, fenced/indented code blocks, blockquotes, thematic breaks, lists, HTML blocks with tag stripping (`stripHTMLOpening`/`stripHTMLClosing`/`findUnquotedGreater`). ~1246 lines. |
 | `inlines.go` | `processInlineCode()` — inline code span processing. Link and emphasis methods moved to sub-parsers; dead Bold/Italic/Strikethrough handlers removed. ~150 lines (was ~665). |
+| `inline_html.go` | `tryInlineHTML()` — inline HTML tag detection and stripping (open/close tags, comments, PIs, declarations, CDATA). Stateless scan following the `tryAutolink` pattern. Helper functions: `classifyHTMLStart`, `findHTMLTagEnd`, `findOpenTagEnd`/`findCommentEnd`/`findPIEnd`/`findDeclEnd`/`findCDATAEnd`, `bufferLooksLikeAutolink` (to avoid swallowing `<URI>` autolinks). ~336 lines. |
 | `emphasis.go` | `emphasisParser` type, stack ops (`push`/`pop`/`top`/`drain`), flanking predicates (`canUnderscoreOpen`/`canUnderscoreClose`), `tryStar()`/`tryUnderscore()`/`tryTilde()`/`tryCloser()`, `tryBulletOrBold()` |
 | `tables.go` | `tableParser` type, GFM table parsing: `readTableCells()`, `parseSeparatorAligns()`, `normalizeTableCells()` |
 | `link_parser.go` | `linkParser` type, inline links `[text](url)`, reference links `[text][label]`, images `![alt](url)` |
 | `link_ref_def_parser.go` | `linkRefDefParser` type, `parseLinkRefDefLine()`, `findUnescapedBracket()` |
 | `setext_parser.go` | `setextParser` type, `flushSetext()` |
-| `html_block_parser.go` | `htmlBlockParser` type (state only) |
+| `html_block_parser.go` | `htmlBlockParser` type — `htmlBlockType`, `htmlIndent` (state only; block methods on `*Parser` in `blocks.go`) |
 | `block_parser.go` | `blockParser` type (state only) |
-| `close.go` | `CloseStates()`, `Flush()`, `safeFlush()`, `finalizeState()` — per-state switch delegates to sub-parsers |
+| `close.go` | `CloseStates()`, `Flush()`, `safeFlush()`, `finalizeState()` — per-state switch delegates to sub-parsers. HTMLBlockState calls `reset()` with no end event. |
 | `escapes.go` | Backslash escapes, hard line breaks, `hasMatchingCloser()`/`hasFlankingCloser()` helpers |
 | `entities.go` | HTML entity decoding, `resolveEntities()` |
 | `recognizers.go` | Thin wrappers adapting sub-parser methods to the `Recognizer` signature for `processNormal()` dispatch |
 | `helpers.go` | `orderedListPrefix()`, `tabRemainingEquiv()`, indent ops, flanking checks (`isLeftFlankingRun`/`isRightFlankingRun`), whitespace helpers |
-| `events.go` | `EventType` enum and `Event` struct — includes `ImageEvent`, `ImageRefEvent`, `AutolinkURLEvent`, `AutolinkEmailEvent` |
+| `events.go` | `EventType` enum and `Event` struct — includes `ImageEvent`, `ImageRefEvent`, `AutolinkURLEvent`, `AutolinkEmailEvent`, `HTMLBlockStartEvent`/`HTMLBlockEndEvent` (retained in enum, no longer emitted or rendered) |
 | `state.go` | `State` enum |
 
 **The process loop** (`parser.go:process()`): iterates while tokens are available, dispatching to the current state's handler (which may delegate to a sub-parser). Breaks if no progress was made (state unchanged + buffer not consumed), waiting for more input.
@@ -96,8 +97,9 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 3. `processInlineStart()` — backtick (inline code / fenced code block), `[` (link), `~`/`*`/`_` (emphasis) *(always)*
 4. `tryImage()` — `![` detection, delegates to `linkParser.startImageText()` *(always)*
 5. `tryAutolink()` — `<URI>` and `<email>` autolink detection with URI/email validation *(always)*
-6. `processDeferredLineStart()` — tables, indented code, setext candidates *(line-start only)*
-7. `emitTextOrSpecial()` — fallback: emit plain text, checking `bufferHasPattern()` at each step for early break
+6. `tryInlineHTML()` — `<tag>` inline HTML detection and stripping: open/close tags, self-closing, comments, PIs, declarations, CDATA. Handles `>` inside quoted attributes. Delegates contains `@` or `:` in tag-name position to `tryAutolink` *(always)*
+7. `processDeferredLineStart()` — tables, indented code, setext candidates *(line-start only)*
+8. `emitTextOrSpecial()` — fallback: emit plain text, checking `bufferHasPattern()` at each step for early break
 
 ### 3. Writer (`pkg/markdown/render/`)
 
@@ -105,7 +107,7 @@ Converts parser `Event` values to ANSI terminal output via `AnsiWriter`.
 
 | File | Responsibility |
 |---|---|
-| `writer.go` | `Handle(Event)` — maps each event type to ANSI output. Manages emphasis SGR code composition for nested bold/italic/strikethrough |
+| `writer.go` | `Handle(Event)` — maps each event type to ANSI output. Manages emphasis SGR code composition for nested bold/italic/strikethrough. HTML blocks are plain text (tags stripped by parser). |
 | `ansi.go` | `AnsiWriter` — thin wrapper over `io.Writer` with `WriteStyled(text, Style)` |
 | `styles.go` | `Theme` struct (27 `Style` fields) and `DefaultTheme` with ANSI escape codes |
 | `table.go` | Full table rendering with live redraw: uses `\033[nA` cursor-up codes to repaint tables when column widths change as more rows arrive. Caps repaints at 50/table to bound cost |
@@ -139,6 +141,8 @@ r.Close()       // flush + close open styles + reset
 - `pkg/markdown/parser/parser_test.go` — unit tests for parser states, token→event transformation, separator alignment
 - `pkg/markdown/parser/characterization_test.go` — streaming boundary tests for flush/close behavior across chunks
 - `pkg/markdown/parser/link_parser_test.go` — 41 tests: inline links, reference links, balanced brackets, streaming, titles, images, edge cases
+- `pkg/markdown/parser/inline_html_test.go` — 30 tests: open/close tags, self-closing, comments, PIs, declarations, CDATA, `>` in quoted attrs, streaming, EOF handling, autolink non-interference, edge cases
+- `pkg/markdown/html_block_test.go` — 12 tests: single-line and multi-line `<pre>`/`<script>`/`<style>`, comments, PIs, declarations, CDATA, tag stripping verification, layout preservation
 - `pkg/markdown/parser/autolink_parser_test.go` — 24 tests: URI autolinks, email autolinks, validation, streaming, edge cases
 - `pkg/markdown/parser/emphasis_parser_test.go` — 24 tests: bold/italic/strikethrough, nesting, flanking, intraword, multiple-of-3, streaming, close drain
 - `pkg/markdown/parser/table_parser_test.go` — 11 tests: table detection, alignments, multiple rows, streaming, flush, edge cases
@@ -151,6 +155,7 @@ r.Close()       // flush + close open styles + reset
 - **Parser states can pause** — if a state handler doesn't consume tokens and doesn't change state, the loop breaks and waits for more input. This is how streaming works across chunk boundaries.
 - **EOF-awareness** — the parser has an `eof` flag on the token buffer. States use it to decide "no more data coming, resolve with what we have."
 - **Recovery on panic** — `Parse()` recovers from panics via `safeFlush()`, emitting remaining buffered tokens as text and resetting state, so a bug in one chunk doesn't break the entire stream.
+- **HTML handling** — HTML tags (both block and inline) are stripped by the parser, emitting only visible text. Inline HTML is detected in the `processNormal()` dispatch and stripped in a stateless scan; block HTML is handled in `HTMLBlockState` with opening/closing tag stripping. `HTMLBlockStartEvent`/`HTMLBlockEndEvent` are retained in the event enum but no longer emitted or rendered. Autolink URIs and emails are preserved and rendered normally.
 - **Tables repaint in place** — in a live terminal, tables redraw as column widths grow. The writer tracks how many lines it emitted and uses ANSI cursor-up codes to overwrite. Repaints are capped at 50 per table session.
 
 ## Adding new features
