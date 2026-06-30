@@ -242,14 +242,6 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(")")
 		return err
 
-	case parser.HTMLBlockStartEvent:
-		_, err := w.aw.WriteString("\033[2m")
-		return err
-
-	case parser.HTMLBlockEndEvent:
-		_, err := w.aw.WriteString("\033[0m")
-		return err
-
 	case parser.LinkRefDefEvent:
 		if _, err := w.aw.WriteString("\033[2m[Link Def: "); err != nil {
 			return err

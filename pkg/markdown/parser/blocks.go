@@ -930,23 +930,23 @@ func (p *Parser) tryHTMLBlock() ([]Event, bool) {
 
 	p.consume(lineEnd + 1)
 
-	p.state = HTMLBlockState
-	p.htmlBlockParser.htmlBlockType = bt
-	p.htmlBlockParser.htmlIndent = indent
-	p.lineStart = true
+	sameLine := checkHTMLEndCondition(fullText, bt)
+
+	visible := stripHTMLOpening(fullText, bt)
+	if sameLine {
+		visible = stripHTMLClosing(visible, bt)
+		p.lineStart = true
+	} else {
+		p.state = HTMLBlockState
+		p.htmlBlockParser.htmlBlockType = bt
+		p.htmlBlockParser.htmlIndent = indent
+		p.lineStart = true
+	}
 
 	var events []Event
-	events = append(events, Event{Type: HTMLBlockStartEvent})
-	for _, tok := range lineTokens {
-		events = append(events, Event{Type: TextEvent, Value: tok.Value})
-	}
-	events = append(events, Event{Type: TextEvent, Value: "\n"})
-
-	if checkHTMLEndCondition(fullText, bt) {
-		events = append(events, Event{Type: HTMLBlockEndEvent})
-		p.state = NormalState
-		p.htmlBlockParser.htmlBlockType = 0
-		p.htmlBlockParser.htmlIndent = 0
+	if visible != "" {
+		events = append(events, Event{Type: TextEvent, Value: visible})
+		events = append(events, Event{Type: TextEvent, Value: "\n"})
 	}
 
 	return events, true
@@ -962,7 +962,8 @@ func (p *Parser) processHTMLBlock() []Event {
 	hasNewline := len(trail) > 0 && trail[0].Type == tokenizer.NewlineToken
 
 	lineText := rebuildLineText(tokens)
-	endInfo := checkHTMLEndCondition(lineText, p.htmlBlockParser.htmlBlockType)
+	bt := p.htmlBlockParser.htmlBlockType
+	endInfo := checkHTMLEndCondition(lineText, bt)
 
 	p.consume(len(tokens))
 	if hasNewline {
@@ -970,15 +971,21 @@ func (p *Parser) processHTMLBlock() []Event {
 	}
 
 	var events []Event
-	for _, tok := range tokens {
-		events = append(events, Event{Type: TextEvent, Value: tok.Value})
+
+	if bt == 1 {
+		visible := lineText
+		if endInfo {
+			visible = stripHTMLClosing(lineText, bt)
+		}
+		if visible != "" {
+			events = append(events, Event{Type: TextEvent, Value: visible})
+		}
 	}
 	if hasNewline {
 		events = append(events, Event{Type: TextEvent, Value: "\n"})
 	}
 
 	if endInfo {
-		events = append(events, Event{Type: HTMLBlockEndEvent})
 		p.state = NormalState
 		p.lineStart = true
 		p.htmlBlockParser.htmlBlockType = 0
@@ -1065,6 +1072,69 @@ func checkHTMLEndCondition(lineText string, blockType int) bool {
 		return strings.Contains(lineText, "]]>")
 	}
 	return true
+}
+
+func stripHTMLOpening(line string, blockType int) string {
+	switch blockType {
+	case 1:
+		idx := findUnquotedGreater(line)
+		if idx < 0 {
+			return ""
+		}
+		return line[idx+1:]
+	case 2, 3, 4, 5:
+		return ""
+	}
+	return line
+}
+
+func stripHTMLClosing(line string, blockType int) string {
+	switch blockType {
+	case 1:
+		lower := strings.ToLower(line)
+		tags := []string{"</pre>", "</script>", "</style>", "</textarea>"}
+		for _, tag := range tags {
+			if idx := strings.Index(lower, tag); idx >= 0 {
+				return line[:idx]
+			}
+		}
+		return line
+	case 2:
+		if idx := strings.Index(line, "-->"); idx >= 0 {
+			return ""
+		}
+		return ""
+	case 3:
+		if idx := strings.Index(line, "?>"); idx >= 0 {
+			return ""
+		}
+		return ""
+	case 4:
+		if idx := findUnquotedGreater(line); idx >= 0 {
+			return ""
+		}
+		return ""
+	case 5:
+		if idx := strings.Index(line, "]]>"); idx >= 0 {
+			return ""
+		}
+		return ""
+	}
+	return line
+}
+
+func findUnquotedGreater(s string) int {
+	inSQ, inDQ := false, false
+	for i, c := range s {
+		if c == '\'' && !inDQ {
+			inSQ = !inSQ
+		} else if c == '"' && !inSQ {
+			inDQ = !inDQ
+		} else if c == '>' && !inSQ && !inDQ {
+			return i
+		}
+	}
+	return -1
 }
 
 // tryLinkRefDef, parseLinkRefDefLine, findUnescapedBracket,

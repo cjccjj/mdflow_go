@@ -14920,22 +14920,23 @@
     "html": "<p><a><bab><c2c></p>\n",
     "weight": 0.8,
     "weight_explanation": "Parsing raw HTML tags is common in real-world Markdown (embedding custom tags, HTML snippets); failing to recognize tags (or mis-handling names with digits) would visibly change output or break embedded content, so correct handling is important though not as universally critical as core elements like headings or links.",
-    "mdflow_terminal": "<a><bab><c2c>\n\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "",
     "glow_content": 0,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 0,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits a trailing ANSI reset sequence (ESC[0m) with no visible styling — harmless but unnecessary.",
-      "Renderer B drops the raw HTML tags entirely, losing content."
+      "Renderer A omits the raw HTML tag text entirely (output is effectively empty/only an ANSI reset), losing visible content.",
+      "Renderer A fails to recognize/render inline raw HTML tags (including tag names with digits like <c2c>), so the expected '<a><bab><c2c>' is not shown.",
+      "No structural or stylistic cues are provided for the HTML tags; output contains no readable representation."
     ],
-    "explanation": "Renderer A preserves the important visible content (the three raw HTML tags), so a reader sees the same information; the document is effectively a simple paragraph and that structure is preserved, and there is no misleading styling (the stray reset is minor). Renderer B produces no visible output, losing the content entirely. Given the weight (0.8) and that A conveys the information accurately, Renderer A passes despite the minor unnecessary ANSI reset."
+    "explanation": "Both renderers produced no visible output for the input containing inline raw HTML tags; Renderer A in particular emitted only an ANSI reset and no tag text. Because the important visible content (<a><bab><c2c>) is lost, content, structure, and style are all 0 for Renderer A. Given the test weight (0.8) and that Renderer A fails to preserve or represent the tags, it does not pass."
   },
   {
     "section": "Raw HTML",
@@ -14944,23 +14945,24 @@
     "html": "<p><a/><b2/></p>\n",
     "weight": 0.7,
     "weight_explanation": "Inline/raw HTML is relatively common in real-world Markdown (for <br>, <img>, custom tags, etc.), so failing to recognize simple open/self-closing tags (including tag names with digits) would often change rendering and confuse readers — important but not as foundational as headings or links.",
-    "mdflow_terminal": "<a/><b2/>\n\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "",
     "glow_content": 0,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 0,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits a trailing ANSI reset escape (\\u001b[0m) which is harmless but unnecessary.",
-      "Renderer A prints the HTML tags verbatim rather than providing any special terminal formatting for them (acceptable here).",
-      "Renderer B drops the visible content entirely."
+      "Renderer A produced no visible content for the input; the expected inline/raw HTML tags '<a/>' and '<b2/>' are not present (output contains only an ANSI reset escape).",
+      "Renderer A failed to preserve paragraph structure or any readable representation of the inline HTML.",
+      "Renderer A applied no meaningful terminal styling to convey structure or content.",
+      "Renderer B (reference) likewise produced no visible content, so it also failed to render the inline/raw HTML."
     ],
-    "explanation": "Renderer A preserves the visible inline HTML tags (<a/> and <b2/>) so a human reading the terminal output sees the important content; structure is intact for this simple paragraph-like inline content and the styling (no confusing or misleading ANSI use) is reasonable. Renderer B produces no visible output, losing the content. Given the medium weight (0.7) and that Renderer A clearly preserves meaning and readability, Renderer A passes despite the minor issue of emitting an unnecessary ANSI reset code."
+    "explanation": "Both renderers produced no visible output for the Markdown containing inline/raw HTML tags. Renderer A emitted only an ANSI reset code and omitted the expected text '<a/><b2/>', so content and structure are lost and no styling is applicable. Given the moderate weight (0.7) of inline/raw HTML support and that the important visible information (the tags) is missing, Renderer A fails this test."
   },
   {
     "section": "Raw HTML",
