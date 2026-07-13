@@ -32,7 +32,7 @@ go test ./pkg/markdown/... -run TestSpec -v
 Three-layer streaming pipeline: **Tokenizer → Parser → Writer**
 
 ```
-io.Writer → Renderer → Pipeline → Tokenizer.Tokenize(line) → Parser.Parse(tokens) → Writer.Handle(events) → AnsiWriter → os.Stdout
+io.Writer → Renderer → Pipeline → streamChunker → Tokenizer.Tokenize(chunk) → Parser.Parse(tokens) → []event.Event → Writer.Handle(event) → AnsiWriter → os.Stdout
 ```
 
 ### 1. Tokenizer (`pkg/markdown/tokenizer/`)
@@ -41,7 +41,7 @@ Converts raw bytes into typed tokens (`TextToken`, `StarToken`, `BacktickToken`,
 
 ### 2. Parser (`pkg/markdown/parser/`)
 
-State-machine parser that consumes tokens from a buffer and emits semantic `Event` values. The parser can pause mid-stream: if the buffer doesn't contain enough tokens to decide, it waits for more input.
+State-machine parser that consumes tokens from a buffer and emits canonical `event.Event` values. `parser.Event`, `parser.EventType`, and event constants are aliases retained for source compatibility. The parser can pause mid-stream: if the buffer doesn't contain enough tokens to decide, it waits for more input.
 
 **13 parser states** (`state.go`): `NormalState`, `HeaderState`, `InlineCodeState`, `CodeBlockState`, `IndentedCodeBlockState`, `BlockquoteState`, `TablePendingState`, `TableBodyState`, `SetextPendingState`, `LinkTextState`, `LinkURLState`, `HTMLBlockState`, `LinkRefDefState`.
 
@@ -84,9 +84,12 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 | `close.go` | `CloseStates()`, `Flush()`, `safeFlush()`, `finalizeState()` — per-state switch delegates to sub-parsers. HTMLBlockState calls `reset()` with no end event. |
 | `escapes.go` | Backslash escapes, hard line breaks, `hasMatchingCloser()`/`hasFlankingCloser()` helpers |
 | `entities.go` | HTML entity decoding, `resolveEntities()` |
-| `recognizers.go` | Thin wrappers adapting sub-parser methods to the `Recognizer` signature for `processNormal()` dispatch |
+| `recognizers.go` | Shared line-start recognizers and parser predicates; `processNormal()` keeps precedence explicit rather than using a recognizer abstraction |
+| `token_stream.go` | Bounded token cursor (`tokenBuffer`) and append/prepend/consume mechanics |
+| `line_context.go` | Line-boundary context (`lineStart`, `prevChar`, `contentIndent`) |
 | `helpers.go` | `orderedListPrefix()`, `tabRemainingEquiv()`, indent ops, flanking checks (`isLeftFlankingRun`/`isRightFlankingRun`), whitespace helpers |
-| `events.go` | `EventType` enum and `Event` struct — includes `ImageEvent`, `ImageRefEvent`, `AutolinkURLEvent`, `AutolinkEmailEvent`, `HTMLBlockStartEvent`/`HTMLBlockEndEvent` (retained in enum, no longer emitted or rendered) |
+| `events.go` | Compatibility aliases for `event.Type`, `event.Event`, and all event constants |
+| `../event/event.go` | Canonical parser/renderer semantic-event contract; includes `ImageEvent`, `ImageRefEvent`, autolinks, and retained HTML-block event types |
 | `state.go` | `State` enum |
 
 **The process loop** (`parser.go:process()`): iterates while tokens are available, dispatching to the current state's handler (which may delegate to a sub-parser). Breaks if no progress was made (state unchanged + buffer not consumed), waiting for more input.
@@ -103,23 +106,23 @@ State-machine parser that consumes tokens from a buffer and emits semantic `Even
 
 ### 3. Writer (`pkg/markdown/render/`)
 
-Converts parser `Event` values to ANSI terminal output via `AnsiWriter`.
+Converts canonical `event.Event` values to ANSI terminal output via `AnsiWriter`.
 
 | File | Responsibility |
 |---|---|
-| `writer.go` | `Handle(Event)` — maps each event type to ANSI output. Manages emphasis SGR code composition for nested bold/italic/strikethrough. HTML blocks are plain text (tags stripped by parser). |
+| `writer.go` | `Handle(event.Event)` routes semantic events to ANSI output. Manages emphasis SGR composition and accepts an injected `InlineRenderer` for table cells; HTML blocks are plain text (tags stripped by parser). |
 | `ansi.go` | `AnsiWriter` — thin wrapper over `io.Writer` with `WriteStyled(text, Style)` |
 | `styles.go` | `Theme` struct (27 `Style` fields) and `DefaultTheme` with ANSI escape codes |
-| `table.go` | Full table rendering with live redraw: uses `\033[nA` cursor-up codes to repaint tables when column widths change as more rows arrive. Caps repaints at 50/table to bound cost |
+| `table.go` | Full table rendering with live redraw: uses `\033[nA` cursor-up codes to repaint tables when column widths change as more rows arrive. Cell Markdown is rendered through `Writer`'s injected `InlineRenderer`; repaints are capped at 50/table. |
 | `tty.go` | `IsTerminal(w)` and `TerminalWidth(w)` — terminal detection via `golang.org/x/term` |
-| `util.go` | `VisibleLen` (ANSI-aware string width), `RenderInline` (one-shot inline parse+render for table cells), `WrapContent` (width-aware line wrapping preserving ANSI codes) |
+| `util.go` | `VisibleLen` (ANSI-aware string width), deprecated compatibility `RenderInline`, and `WrapContent` (width-aware line wrapping preserving ANSI codes) |
 
 ### Pipeline (`pkg/markdown/pipeline.go`)
 
-The `Pipeline` struct connects all three layers:
-- Splits input at `\n` boundaries
-- Handles UTF-8 partial byte sequences at chunk boundaries (saves incomplete bytes in `utf8Buf`)
-- Feeds each line through Tokenize → Parse → Handle
+The `Pipeline` struct composes parser and renderer services:
+- `streamChunker` owns newline splitting and incomplete UTF-8 sequences at write boundaries
+- Each emitted chunk flows through Tokenize → Parse → shared event-emission helper → Handle
+- It supplies a parser-backed `InlineRenderer` to table rendering, so production `render` code depends only on `event` and injected services
 - `Flush()` drains buffered parser state without closing open constructs
 - `Close()` drains UTF-8 buffer, flushes parser, then calls `CloseStates()` to emit end events for any open constructs
 
@@ -146,13 +149,15 @@ r.Close()       // flush + close open styles + reset
 - `pkg/markdown/parser/autolink_parser_test.go` — 24 tests: URI autolinks, email autolinks, validation, streaming, edge cases
 - `pkg/markdown/parser/emphasis_parser_test.go` — 24 tests: bold/italic/strikethrough, nesting, flanking, intraword, multiple-of-3, streaming, close drain
 - `pkg/markdown/parser/table_parser_test.go` — 11 tests: table detection, alignments, multiple rows, streaming, flush, edge cases
-- `pkg/markdown/render/*_test.go` — unit tests for writer, styles, ANSI output, table rendering
+- `pkg/markdown/render/*_test.go` — unit tests for writer, styles, ANSI output, table rendering, and injected table-cell inline rendering
+- `pkg/markdown/stream_chunker_test.go` — UTF-8 boundary preservation plus chunker drain/reset lifecycle tests
 - `pkg/markdown/robustness_test.go` — edge-case, streaming, large input, and custom theme tests
 
 ## Key design constraints
 
-- **Never buffers the full document** — processes line-by-line. Some features (shortcut reference links, nested structures) are deliberately limited or omitted because they require lookahead or full-document context.
+- **Never buffers the full document** — `streamChunker` and the parser retain only bounded input required to resolve current constructs. Some features (shortcut reference links, nested structures) are deliberately limited or omitted because they require lookahead or full-document context.
 - **Parser states can pause** — if a state handler doesn't consume tokens and doesn't change state, the loop breaks and waits for more input. This is how streaming works across chunk boundaries.
+- **Canonical event contract** — production parser/renderer communication uses `event.Event`. Keep `parser.Event` aliases intact for downstream source compatibility.
 - **EOF-awareness** — the parser has an `eof` flag on the token buffer. States use it to decide "no more data coming, resolve with what we have."
 - **Recovery on panic** — `Parse()` recovers from panics via `safeFlush()`, emitting remaining buffered tokens as text and resetting state, so a bug in one chunk doesn't break the entire stream.
 - **HTML handling** — HTML tags (both block and inline) are stripped by the parser, emitting only visible text. Inline HTML is detected in the `processNormal()` dispatch and stripped in a stateless scan; block HTML is handled in `HTMLBlockState` with opening/closing tag stripping. `HTMLBlockStartEvent`/`HTMLBlockEndEvent` are retained in the event enum but no longer emitted or rendered. Autolink URIs and emails are preserved and rendered normally.
@@ -162,9 +167,9 @@ r.Close()       // flush + close open styles + reset
 
 Follow the sub-parser pattern established by the refactor. See `dev_docs/Adding_Features.md` for detailed guidance. In brief:
 
-1. **New inline construct** (e.g., `==highlight==`): create a `highlightParser` with its own state fields, a `*Parser` back-pointer, a `reset()` method, and `tryHighlight()` entry point. Register it in `processInlineStart()`. Add start/end events. Handle in `Writer.Handle()`. Add a `finalizeState` case in `close.go`.
+1. **New inline construct** (e.g., `==highlight==`): create a `highlightParser` with its own state fields, a `*Parser` back-pointer, a `reset()` method, and `tryHighlight()` entry point. Register it in `processInlineStart()`. Add start/end values in `event`. Handle them in `Writer.Handle()`. Keep parser aliases only for compatibility. Add a `finalizeState` case in `close.go`.
 
-2. **New block construct**: create a `blockParser` sub-type (or add a new sub-parser). Register in `processLineStartBlock()` or `processDeferredLineStart()`. Add a parser state if the construct spans multiple lines. Handle start/end events in the writer.
+2. **New block construct**: create a `blockParser` sub-type (or add a new sub-parser). Register in `processLineStartBlock()` or `processDeferredLineStart()`. Add a parser state if the construct spans multiple lines. Handle start/end `event` values in the writer.
 
 3. **New emphasis-like construct**: extend `emphasisParser` — add a new frame state, a new opener function following the `tryStar`/`tryUnderscore`/`tryTilde` pattern, register in `processInlineStart()`, handle in `enterEmphasis`/`exitEmphasis` for ANSI composition.
 

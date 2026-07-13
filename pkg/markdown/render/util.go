@@ -29,6 +29,9 @@ func VisibleLen(s string) int {
 	return n
 }
 
+// RenderInline is retained for compatibility. New production code injects an
+// InlineRenderer into Writer instead of importing parser from this package.
+// Deprecated: use Writer.SetInlineRenderer.
 func RenderInline(text string, theme Theme) string {
 	var buf bytes.Buffer
 	aw := NewAnsiWriter(&buf)

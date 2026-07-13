@@ -21,17 +21,6 @@ type Parser struct {
 	tableParser    *tableParser
 }
 
-type tokenBuffer struct {
-	buf []tokenizer.Token
-	eof bool
-}
-
-type lineContext struct {
-	lineStart     bool
-	prevChar      byte
-	contentIndent int
-}
-
 func New() *Parser {
 	p := &Parser{state: NormalState, lineContext: lineContext{lineStart: true}}
 	p.linkParser = newLinkParser(p)

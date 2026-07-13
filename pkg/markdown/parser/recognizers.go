@@ -6,14 +6,8 @@ import (
 	"github.com/cjccjj/mdflow/pkg/markdown/tokenizer"
 )
 
-type Recognizer func(p *Parser) (events []Event, handled bool)
-
 func (p *Parser) enterState(state State) {
 	p.state = state
-}
-
-func (p *Parser) exitToNormal() {
-	p.state = NormalState
 }
 
 // tryThematicBreak checks for a horizontal rule using all three marker types.
@@ -28,16 +22,6 @@ func (p *Parser) tryThematicBreak() ([]Event, bool) {
 		}
 	}
 	return nil, false
-}
-
-// tryStarEmphasis handles *-based bold and italic.
-func (p *Parser) tryStarEmphasis() ([]Event, bool) {
-	return p.emphasisParser.tryStar()
-}
-
-// tryUnderscoreEmphasis handles _-based bold and italic.
-func (p *Parser) tryUnderscoreEmphasis() ([]Event, bool) {
-	return p.emphasisParser.tryUnderscore()
 }
 
 // tryOrderedList checks for an ordered list prefix (like "1. " or "2) ").
@@ -107,28 +91,6 @@ func (p *Parser) trySetextCandidate() ([]Event, bool) {
 	return nil, true
 }
 
-// tryBacktickInline handles inline code via backticks.
-func (p *Parser) tryBacktickInline() ([]Event, bool) {
-	return p.processBacktickStart()
-}
-
-// tryTildeInline handles strikethrough via tildes.
-func (p *Parser) tryTildeInline() ([]Event, bool) {
-	return p.emphasisParser.tryTilde()
-}
-
-// tryEscapeOrEntity handles backslash escapes and & entities.
-func (p *Parser) tryEscapeOrEntity() ([]Event, bool) {
-	first := p.buf[0]
-	if first.Type == tokenizer.BackslashToken {
-		return p.handleBackslash(), true
-	}
-	if first.Type == tokenizer.AmpersandToken {
-		return p.handleEntity(), true
-	}
-	return nil, false
-}
-
 // tryATXHeading handles all ATX heading cases.
 func (p *Parser) tryATXHeading() ([]Event, bool) {
 	first := p.buf[0]
@@ -160,30 +122,6 @@ func (p *Parser) tryATXHeading() ([]Event, bool) {
 	}
 
 	return nil, false
-}
-
-// tryBlockquoteR adapts tryBlockquote for the Recognizer signature.
-func (p *Parser) tryBlockquoteR() ([]Event, bool) {
-	events := p.tryBlockquote()
-	return events, events != nil
-}
-
-// tryBulletDash adapts tryBullet for the Recognizer signature.
-func (p *Parser) tryBulletDash() ([]Event, bool) {
-	events := p.tryBullet()
-	return events, events != nil
-}
-
-// tryBulletStarOrOrdered adapts tryBulletOrBold for the Recognizer signature.
-func (p *Parser) tryBulletStarOrOrdered() ([]Event, bool) {
-	events := p.emphasisParser.tryBulletOrBold()
-	return events, events != nil
-}
-
-// tryTableR adapts tryTableHeader for the Recognizer signature.
-func (p *Parser) tryTableR() ([]Event, bool) {
-	events := p.tableParser.tryTableHeader()
-	return events, events != nil
 }
 
 func (p *Parser) bufferHasPattern() bool {

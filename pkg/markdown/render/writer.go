@@ -1,8 +1,12 @@
 package render
 
 import (
-	"github.com/cjccjj/mdflow/pkg/markdown/parser"
+	"github.com/cjccjj/mdflow/pkg/markdown/event"
 )
+
+// InlineRenderer renders Markdown used inside a table cell. It is injected so the
+// production renderer does not depend on the parser package.
+type InlineRenderer func(text string) string
 
 type Writer struct {
 	aw                 *AnsiWriter
@@ -21,10 +25,22 @@ type Writer struct {
 	tableLines         int
 	termWidth          int
 	tableRepaintCount  int
+	inlineRenderer     InlineRenderer
 }
 
 func NewWriter(aw *AnsiWriter, theme Theme) *Writer {
 	return &Writer{aw: aw, theme: theme}
+}
+
+func (w *Writer) SetInlineRenderer(renderer InlineRenderer) {
+	w.inlineRenderer = renderer
+}
+
+func (w *Writer) renderInline(text string) string {
+	if w.inlineRenderer != nil {
+		return w.inlineRenderer(text)
+	}
+	return RenderInline(text, w.theme)
 }
 
 func (w *Writer) SetLive(v bool) {
@@ -35,13 +51,13 @@ func (w *Writer) SetTermWidth(width int) {
 	w.termWidth = width
 }
 
-func (w *Writer) Handle(e parser.Event) error {
+func (w *Writer) Handle(e event.Event) error {
 	switch e.Type {
-	case parser.TextEvent:
+	case event.TextEvent:
 		_, err := w.aw.WriteString(e.Value)
 		return err
 
-	case parser.NewlineEvent:
+	case event.NewlineEvent:
 		if _, err := w.aw.WriteString("\n"); err != nil {
 			return err
 		}
@@ -51,16 +67,16 @@ func (w *Writer) Handle(e parser.Event) error {
 		}
 		return nil
 
-	case parser.BlockquoteStartEvent:
+	case event.BlockquoteStartEvent:
 		w.inBlockquote = true
 		_, err := w.aw.WriteStyled("│ ", w.theme.Blockquote)
 		return err
 
-	case parser.BlockquoteEndEvent:
+	case event.BlockquoteEndEvent:
 		w.inBlockquote = false
 		return nil
 
-	case parser.HeaderStartEvent:
+	case event.HeaderStartEvent:
 		style := w.theme.H1
 		prefix := ""
 		switch e.Level {
@@ -84,7 +100,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(style.Prefix + prefix)
 		return err
 
-	case parser.HeaderEndEvent:
+	case event.HeaderEndEvent:
 		if w.activeHeaderSuffix != "" {
 			_, err := w.aw.WriteString(w.activeHeaderSuffix)
 			w.activeHeaderSuffix = ""
@@ -93,45 +109,45 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(w.theme.H1.Suffix)
 		return err
 
-	case parser.BoldStartEvent:
+	case event.BoldStartEvent:
 		return w.enterEmphasis("bold")
 
-	case parser.BoldEndEvent:
+	case event.BoldEndEvent:
 		return w.exitEmphasis("bold")
 
-	case parser.ItalicStartEvent:
+	case event.ItalicStartEvent:
 		return w.enterEmphasis("italic")
 
-	case parser.ItalicEndEvent:
+	case event.ItalicEndEvent:
 		return w.exitEmphasis("italic")
 
-	case parser.StrikethroughStartEvent:
+	case event.StrikethroughStartEvent:
 		return w.enterEmphasis("strikethrough")
 
-	case parser.StrikethroughEndEvent:
+	case event.StrikethroughEndEvent:
 		return w.exitEmphasis("strikethrough")
 
-	case parser.InlineCodeStartEvent:
+	case event.InlineCodeStartEvent:
 		_, err := w.aw.WriteString(w.theme.InlineCode.Prefix)
 		return err
 
-	case parser.InlineCodeEndEvent:
+	case event.InlineCodeEndEvent:
 		_, err := w.aw.WriteString(w.theme.InlineCode.Suffix)
 		return err
 
-	case parser.CodeBlockStartEvent:
+	case event.CodeBlockStartEvent:
 		_, err := w.aw.WriteString(w.theme.CodeBlock.Prefix)
 		return err
 
-	case parser.CodeBlockEndEvent:
+	case event.CodeBlockEndEvent:
 		_, err := w.aw.WriteString(w.theme.CodeBlock.Suffix)
 		return err
 
-	case parser.CodeBlockLangEvent:
+	case event.CodeBlockLangEvent:
 		_, err := w.aw.WriteString(w.theme.CodeBlockLang.Prefix + e.Value + w.theme.CodeBlockLang.Suffix)
 		return err
 
-	case parser.HorizontalRuleEvent:
+	case event.HorizontalRuleEvent:
 		if _, err := w.aw.WriteString(w.theme.HorizontalRule.Prefix); err != nil {
 			return err
 		}
@@ -144,7 +160,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString("\n")
 		return err
 
-	case parser.BulletItemEvent:
+	case event.BulletItemEvent:
 		if e.Value != "" {
 			_, err := w.aw.WriteString(e.Value)
 			return err
@@ -152,16 +168,16 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString("• ")
 		return err
 
-	case parser.TableStartEvent:
+	case event.TableStartEvent:
 		return w.handleTableStart(e)
 
-	case parser.TableRowEvent:
+	case event.TableRowEvent:
 		return w.handleTableRow(e)
 
-	case parser.TableEndEvent:
+	case event.TableEndEvent:
 		return w.handleTableEnd()
 
-	case parser.LinkEvent:
+	case event.LinkEvent:
 		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
 			return err
 		}
@@ -197,7 +213,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(")")
 		return err
 
-	case parser.ImageEvent:
+	case event.ImageEvent:
 		if _, err := w.aw.WriteString(w.theme.ImageLabel.Prefix); err != nil {
 			return err
 		}
@@ -242,7 +258,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(")")
 		return err
 
-	case parser.LinkRefDefEvent:
+	case event.LinkRefDefEvent:
 		if _, err := w.aw.WriteString("\033[2m[Link Def: "); err != nil {
 			return err
 		}
@@ -260,7 +276,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		}
 		return nil
 
-	case parser.LinkRefEvent:
+	case event.LinkRefEvent:
 		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
 			return err
 		}
@@ -283,7 +299,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString("]")
 		return err
 
-	case parser.ImageRefEvent:
+	case event.ImageRefEvent:
 		if _, err := w.aw.WriteString(w.theme.ImageLabel.Prefix); err != nil {
 			return err
 		}
@@ -315,7 +331,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString("]")
 		return err
 
-	case parser.AutolinkURLEvent:
+	case event.AutolinkURLEvent:
 		if _, err := w.aw.WriteString(w.theme.LinkURL.Prefix); err != nil {
 			return err
 		}
@@ -325,7 +341,7 @@ func (w *Writer) Handle(e parser.Event) error {
 		_, err := w.aw.WriteString(w.theme.LinkURL.Suffix)
 		return err
 
-	case parser.AutolinkEmailEvent:
+	case event.AutolinkEmailEvent:
 		if _, err := w.aw.WriteString(w.theme.LinkText.Prefix); err != nil {
 			return err
 		}

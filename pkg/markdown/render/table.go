@@ -5,10 +5,10 @@ import (
 	"math"
 	"strings"
 
-	"github.com/cjccjj/mdflow/pkg/markdown/parser"
+	"github.com/cjccjj/mdflow/pkg/markdown/event"
 )
 
-func (w *Writer) handleTableStart(e parser.Event) error {
+func (w *Writer) handleTableStart(e event.Event) error {
 	headerCells := e.Cells
 	sepWidths := e.Widths
 	if sepWidths == nil {
@@ -18,7 +18,7 @@ func (w *Writer) handleTableStart(e parser.Event) error {
 	widths := make([]int, len(sepWidths))
 	copy(widths, sepWidths)
 	for i, c := range headerCells {
-		rendered := RenderInline(c, w.theme)
+		rendered := w.renderInline(c)
 		needed := VisibleLen(rendered) + 2
 		if needed > widths[i] {
 			widths[i] = needed
@@ -60,7 +60,7 @@ func (w *Writer) handleTableStart(e parser.Event) error {
 	return nil
 }
 
-func (w *Writer) handleTableRow(e parser.Event) error {
+func (w *Writer) handleTableRow(e event.Event) error {
 	cells := e.Cells
 	w.tableRows = append(w.tableRows, cells)
 
@@ -70,7 +70,7 @@ func (w *Writer) handleTableRow(e parser.Event) error {
 		if i >= len(newWidths) {
 			break
 		}
-		rendered := RenderInline(c, w.theme)
+		rendered := w.renderInline(c)
 		needed := VisibleLen(rendered) + 2
 		if needed > newWidths[i] {
 			newWidths[i] = needed
@@ -236,7 +236,7 @@ func (w *Writer) drawRow(widths []int, cells []string, cellStyle Style, aligns [
 		if i < len(cells) {
 			cell = cells[i]
 		}
-		rendered := RenderInline(cell, w.theme)
+		rendered := w.renderInline(cell)
 		contentWidth := widths[i] - 2
 		if contentWidth < 1 {
 			contentWidth = 1

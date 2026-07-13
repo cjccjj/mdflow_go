@@ -1,117 +1,45 @@
 package parser
 
-type EventType int
+import "github.com/cjccjj/mdflow/pkg/markdown/event"
+
+// EventType is retained as an alias for source compatibility. New consumers
+// should import package event directly.
+type EventType = event.Type
+
+// Event is retained as an alias for source compatibility. New consumers
+// should import package event directly.
+type Event = event.Event
 
 const (
-	TextEvent EventType = iota
-	HeaderStartEvent
-	HeaderEndEvent
-	BoldStartEvent
-	BoldEndEvent
-	ItalicStartEvent
-	ItalicEndEvent
-	StrikethroughStartEvent
-	StrikethroughEndEvent
-	InlineCodeStartEvent
-	InlineCodeEndEvent
-	CodeBlockStartEvent
-	CodeBlockEndEvent
-	CodeBlockLangEvent
-	HorizontalRuleEvent
-	BulletItemEvent
-	NewlineEvent
-	TableStartEvent
-	TableRowEvent
-	TableEndEvent
-	BlockquoteStartEvent
-	BlockquoteEndEvent
-	LinkEvent
-	ImageEvent
-	HTMLBlockStartEvent
-	HTMLBlockEndEvent
-	LinkRefDefEvent
-	LinkRefEvent
-	ImageRefEvent
-	AutolinkURLEvent
-	AutolinkEmailEvent
+	TextEvent               = event.TextEvent
+	HeaderStartEvent        = event.HeaderStartEvent
+	HeaderEndEvent          = event.HeaderEndEvent
+	BoldStartEvent          = event.BoldStartEvent
+	BoldEndEvent            = event.BoldEndEvent
+	ItalicStartEvent        = event.ItalicStartEvent
+	ItalicEndEvent          = event.ItalicEndEvent
+	StrikethroughStartEvent = event.StrikethroughStartEvent
+	StrikethroughEndEvent   = event.StrikethroughEndEvent
+	InlineCodeStartEvent    = event.InlineCodeStartEvent
+	InlineCodeEndEvent      = event.InlineCodeEndEvent
+	CodeBlockStartEvent     = event.CodeBlockStartEvent
+	CodeBlockEndEvent       = event.CodeBlockEndEvent
+	CodeBlockLangEvent      = event.CodeBlockLangEvent
+	HorizontalRuleEvent     = event.HorizontalRuleEvent
+	BulletItemEvent         = event.BulletItemEvent
+	NewlineEvent            = event.NewlineEvent
+	TableStartEvent         = event.TableStartEvent
+	TableRowEvent           = event.TableRowEvent
+	TableEndEvent           = event.TableEndEvent
+	BlockquoteStartEvent    = event.BlockquoteStartEvent
+	BlockquoteEndEvent      = event.BlockquoteEndEvent
+	LinkEvent               = event.LinkEvent
+	ImageEvent              = event.ImageEvent
+	HTMLBlockStartEvent     = event.HTMLBlockStartEvent
+	HTMLBlockEndEvent       = event.HTMLBlockEndEvent
+	LinkRefDefEvent         = event.LinkRefDefEvent
+	LinkRefEvent            = event.LinkRefEvent
+	ImageRefEvent           = event.ImageRefEvent
+	AutolinkURLEvent        = event.AutolinkURLEvent
+	AutolinkEmailEvent      = event.AutolinkEmailEvent
 )
-
-type Event struct {
-	Type   EventType
-	Value  string
-	Level  int
-	Cells  []string
-	Widths []int
-	Aligns []int
-	URL    string
-	Title  string
-}
-
-func (e EventType) String() string {
-	switch e {
-	case TextEvent:
-		return "Text"
-	case HeaderStartEvent:
-		return "HeaderStart"
-	case HeaderEndEvent:
-		return "HeaderEnd"
-	case BoldStartEvent:
-		return "BoldStart"
-	case BoldEndEvent:
-		return "BoldEnd"
-	case ItalicStartEvent:
-		return "ItalicStart"
-	case ItalicEndEvent:
-		return "ItalicEnd"
-	case StrikethroughStartEvent:
-		return "StrikethroughStart"
-	case StrikethroughEndEvent:
-		return "StrikethroughEnd"
-	case InlineCodeStartEvent:
-		return "InlineCodeStart"
-	case InlineCodeEndEvent:
-		return "InlineCodeEnd"
-	case CodeBlockStartEvent:
-		return "CodeBlockStart"
-	case CodeBlockEndEvent:
-		return "CodeBlockEnd"
-	case CodeBlockLangEvent:
-		return "CodeBlockLang"
-	case HorizontalRuleEvent:
-		return "HorizontalRule"
-	case BulletItemEvent:
-		return "BulletItem"
-	case NewlineEvent:
-		return "Newline"
-	case TableStartEvent:
-		return "TableStart"
-	case TableRowEvent:
-		return "TableRow"
-	case TableEndEvent:
-		return "TableEnd"
-	case BlockquoteStartEvent:
-		return "BlockquoteStart"
-	case BlockquoteEndEvent:
-		return "BlockquoteEnd"
-	case LinkEvent:
-		return "Link"
-	case ImageEvent:
-		return "Image"
-	case HTMLBlockStartEvent:
-		return "HTMLBlockStart"
-	case HTMLBlockEndEvent:
-		return "HTMLBlockEnd"
-	case LinkRefDefEvent:
-		return "LinkRefDef"
-	case LinkRefEvent:
-		return "LinkRef"
-	case ImageRefEvent:
-		return "ImageRef"
-	case AutolinkURLEvent:
-		return "AutolinkURL"
-	case AutolinkEmailEvent:
-		return "AutolinkEmail"
-	default:
-		return "Unknown"
-	}
-}
