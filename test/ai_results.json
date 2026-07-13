@@ -192,24 +192,19 @@
     "html": "<p><a href=\"https://example.com?find=%5C*\">https://example.com?find=\\*</a></p>\n",
     "weight": 0.5,
     "weight_explanation": "Autolinks and correct escaping/percent-encoding in URLs are common enough that mishandling can break links or produce misleading display text, but backslashes inside real URLs are relatively rare, so this is moderately important rather than critical.",
-    "mdflow_terminal": "<https://example.com?find=*>\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "\u001b[2;34mhttps://example.com?find=\\*\u001b[0m\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "https://example.com?find=*                                                      ",
     "glow_content": 0,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 0,
-    "pass": false,
-    "issues": [
-      "Renderer A dropped the backslash from the autolink display (shows '*' not '\\\\*'), losing important information.",
-      "Renderer A did not percent-encode the backslash for the link target (expected %5C), so the href would be incorrect if relied on.",
-      "Renderer A included an extraneous ANSI reset sequence with no useful styling.",
-      "Renderer B likewise loses the backslash in the visible URL, so it also fails to preserve the exact link text."
-    ],
-    "explanation": "The expected behavior is to display the autolink text as https://example.com?find=\\* while encoding the backslash in the href ( %5C ). Renderer A displays <https://example.com?find=*> (dropping the backslash) and emits an unnecessary ANSI reset; this removes a meaningful character and misrepresents the URL. Renderer B also shows the URL without the backslash. Because the important content (the backslash) is lost and structure/styling do not compensate, Renderer A fails this test (weight 0.5) and does not pass."
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the visible URL exactly (including the backslash before the asterisk) and marks it with reasonable ANSI styling (dim blue), so a human reader can perceive this as a link and see the correct text. Renderer B drops the backslash and displays the URL as ...find:*, losing important information. Because the test's weight is moderate (0.5) and Renderer A conveys the correct visible content and link styling, it passes."
   },
   {
     "section": "Backslash escapes",
@@ -218,22 +213,21 @@
     "html": "<a href=\"/bar\\/)\">\n",
     "weight": 0.3,
     "weight_explanation": "This is a fairly niche detail about backslashes inside raw HTML (they should be preserved, not treated as Markdown escapes). It can occasionally alter literal attribute values or regex-like strings if handled wrong, but such patterns are uncommon in typical Markdown documents.",
-    "mdflow_terminal": "<a href=\"/bar/)\">\n\u001b[0m",
-    "mdflow_content": 0,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 1,
     "mdflow_structure": 1,
-    "mdflow_style": 0,
-    "mdflow_score": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "",
-    "glow_content": 0,
-    "glow_structure": 0,
-    "glow_style": 0,
-    "glow_score": 0,
+    "glow_content": 1,
+    "glow_structure": 1,
+    "glow_style": 1,
+    "glow_score": 3,
     "pass": true,
     "issues": [
-      "Renderer A dropped the backslash inside the raw HTML attribute value (/bar\\/)) — it emitted /bar/) instead of /bar\\/). Backslashes in raw HTML should be preserved.",
-      "Renderer A emitted an extraneous ANSI reset (\\x1b[0m) after the line, which is unnecessary for this content."
+      "Renderer A emitted only an ANSI reset control sequence and no visible text; while the visible result is correct (no inner text to show), the extra control code is unnecessary."
     ],
-    "explanation": "Renderer A displays the HTML tag and attribute so the document structure is still apparent, but it incorrectly removed the backslash inside the raw HTML attribute value, altering the literal content. This is a correctness bug for the niche case of backslashes inside raw HTML, but the issue is low-weight (0.3) and the main information (an anchor with an href) remains visible, so despite the flaw the renderer passes. Renderer B produced no visible output in the example and scores 0; its performance does not affect the pass decision for A."
+    "explanation": "The input is a raw HTML tag with no visible inner text. Per the simplified expectations (strip tags, preserve visible text), the correct terminal rendering produces no visible content. Both renderers produce no visible output, so the important content is preserved and structure/style are irrelevant but acceptable. Renderer A did emit an extraneous ANSI reset sequence (harmless but unnecessary), which is noted as an issue; this does not change the visible result, so Renderer A passes. Given the low weight of this niche case and identical visible outcomes, pass=true."
   },
   {
     "section": "Backslash escapes",
@@ -462,22 +456,23 @@
     "html": "<a href=\"&ouml;&ouml;.html\">\n",
     "weight": 0.5,
     "weight_explanation": "HTML entity and numeric character references appear reasonably often (e.g., &amp;, &eacute;, &copy;) and incorrect handling results in visible literal entities instead of the intended characters (including in attribute values), which is confusing but not as critical as core structural features like headings or code blocks.",
-    "mdflow_terminal": "<a href=\"öö.html\">\n\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "",
     "glow_content": 0,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 0,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits a trailing ANSI reset escape sequence (\\u001b[0m) which is unnecessary but harmless.",
-      "Renderer B produced no visible output, losing all content."
+      "Renderer A produced no visible content (only an ANSI reset), losing the HTML tag and its href attribute.",
+      "Renderer A did not preserve or surface the href value containing entity references (&ouml;), so the information in the attribute is lost.",
+      "Renderer B likewise produced no visible output, so neither renderer presents the attribute or entity content; Renderer A's lack of output is unacceptable at this weight."
     ],
-    "explanation": "Renderer A correctly resolved the HTML entity &ouml; to the Unicode characters (showing <a href=\"öö.html\">), preserving the important content and making the link target readable; its minimal ANSI emission (reset) is not harmful. Renderer B produced no visible content. Given the medium weight (0.5) of entity handling and the fact that A preserves content and structure with reasonable styling, Renderer A passes."
+    "explanation": "Both renderers produced no visible content for the input <a href=\"&ouml;&ouml;.html\">; Renderer A emitted only an ANSI reset. Because the HTML contains an href attribute with entity references, a terminal renderer should at minimum preserve or display the tag or the URL/attribute text so a human can see the link target. Renderer A fails to preserve that information (entities are not resolved or shown), so content, structure, and style are all lost. Given the moderate weight (0.5) for entity/attribute handling and the complete loss of useful information, Renderer A does not pass."
   },
   {
     "section": "Entity and numeric character references",
@@ -2366,21 +2361,24 @@
     "html": "<pre><code>&lt;a/&gt;\n*hi*\n\n- one\n</code></pre>\n",
     "weight": 1.0,
     "weight_explanation": "Indented code blocks are a foundational way to denote preformatted/code content in Markdown and still appear commonly (especially in legacy docs, emails, and simple notes); failing to render them correctly would frequently break meaning and confuse readers.",
-    "mdflow_terminal": "\u001b[38;5;245m<a/>\n*hi*\n\n- one\n\u001b[0m\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "    \n\u001b[38;5;245m*hi*\n\n- one\n\u001b[0m\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "                                                                                \n<a/>                                                                            \n*hi*                                                                            \n                                                                                \n- one                                                                           ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 1,
     "glow_score": 3,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits a redundant double ANSI reset sequence (\\u001b[0m\\u001b[0m)."
+      "Renderer A drops the first line '<a/>' from the indented code block.",
+      "Renderer A fails to treat the indented region as a literal code block and instead appears to parse/format '*hi*' as emphasis (losing the literal asterisks).",
+      "Renderer A applies ANSI styling in a way that misrepresents the block (coloring some lines but not preserving the preformatted layout or leading spaces).",
+      "Extra/misplaced ANSI reset codes and missing preserved whitespace indicate streaming/rendering errors across chunk boundaries."
     ],
-    "explanation": "Renderer A preserves all visible content (<a/>, *hi*, blank line, - one), clearly indicates a code block using a dim color, and uses reasonable ANSI styling, so content, structure, and style all score 1 (total 3). Renderer B also preserves content and presents it as a preformatted block, scoring 3 as well. The only minor issue with A is a redundant ANSI reset sequence; this does not affect readability or structure, so Renderer A passes."
+    "explanation": "Renderer A fails to preserve the literal content and semantics of the indented code block: the '<a/>' line is missing and '*hi*' is treated as formatted text instead of verbatim code. As a result the code-block structure is lost and the ANSI styling is misleading; this yields content=0, structure=0, style=0 and an overall fail. Renderer B, by contrast, preserves the literal lines, blank line separation, and preformatted layout (content=1, structure=1, style=1). Given the high weight of correct code-block rendering and the complete loss/misinterpretation by A, the test is failed."
   },
   {
     "section": "Indented code blocks",
@@ -7202,7 +7200,7 @@
     "html": "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<!-- -->\n<ul>\n<li>baz</li>\n<li>bim</li>\n</ul>\n",
     "weight": 0.3,
     "weight_explanation": "Using an HTML comment to force separation of consecutive lists is a niche trick: useful in some authoring scenarios but uncommon in everyday documents. Incorrect handling would usually only cause merged lists (a minor rendering issue) rather than severe confusion.",
-    "mdflow_terminal": "• foo\n• bar\n\n\u001b[2m<!-- -->\n\u001b[0m\n• baz\n• bim\n\u001b[0m",
+    "mdflow_terminal": "• foo\n• bar\n\n\n• baz\n• bim\n\u001b[0m",
     "mdflow_content": 1,
     "mdflow_structure": 1,
     "mdflow_style": 1,
@@ -7214,10 +7212,10 @@
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A renders the HTML comment as dimmed visible text instead of hiding or omitting it; this is acceptable but may be unnecessary for some terminal use cases.",
-      "The captured output shows explicit escape/reset sequences (e.g. 0x1B[0m) in the sample; ensure these are applied as styling in the terminal rather than emitted as literal text in logs."
+      "Renderer A does not render the HTML comment (<!-- -->) — the comment is omitted from output.",
+      "Renderer A emits a trailing ANSI reset code (\\u001b[0m); harmless but visible in raw bytes."
     ],
-    "explanation": "Renderer A preserves the important content (foo, bar, baz, bim) and clearly conveys the document structure: two separate bullet lists separated by a dimmed HTML comment, so a human can perceive the lists and the intended separation. Its use of bullets and dim styling for the comment is a reasonable terminal representation, so content, structure, and style all score full marks (3/3). Renderer B preserves the text but flattens structure (no list markers or separation) and has no styling, so it scores 1/3. Given the example's low weight and that Renderer A accurately preserves both content and structure with appropriate styling, Renderer A passes."
+    "explanation": "Renderer A preserves all visible list content and clearly conveys list structure using bullets and spacing, so a human reader can perceive two separate lists; ANSI styling choices are reasonable. The only minor issues are omission of the HTML comment and a trailing ANSI reset. Renderer B, by contrast, flattens the lists (no bullets or list markers), losing structural cues. Given the low weight of this niche HTML-comment separation case and A's correct presentation of content and structure, Renderer A passes."
   },
   {
     "section": "Lists",
@@ -7226,11 +7224,11 @@
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>\n",
     "weight": 0.5,
     "weight_explanation": "This example checks list termination and the use of a blank HTML comment to prevent an indented code block from becoming part of the preceding list — a useful but somewhat niche pattern. While general list/code handling is common and mis-rendering can be confusing, the specific HTML-comment-as-separator is not frequently used in everyday documents.",
-    "mdflow_terminal": "•   foo\n\n\u001b[38;5;245mnotcode\n\n\u001b[0m•   foo\n\n\u001b[2m<!-- -->\n\u001b[0m\n\u001b[38;5;245mcode\n\u001b[0m\u001b[0m",
+    "mdflow_terminal": "•   foo\n\n\u001b[38;5;245mnotcode\n\n\u001b[0m•   foo\n\n\n\u001b[38;5;245mcode\n\u001b[0m\u001b[0m",
     "mdflow_content": 1,
     "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_style": 0,
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoonotcode                                                                      \nfoo                                                                             \n                                                                                \ncode                                                                            ",
     "glow_content": 1,
     "glow_structure": 0,
@@ -7238,10 +7236,11 @@
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Paragraph text 'notcode' and the code block are rendered with similar gray coloring, which can make the distinction between a paragraph inside the list item and the following code block slightly ambiguous.",
-      "There are redundant/reset ANSI sequences visible at the end of the output (extra 0m), a minor terminal output artifact."
+      "The paragraph 'notcode' is rendered in a dim color (same styling as the code), which misleads the reader into thinking it is code.",
+      "The code block styling is not visually distinct from the dimmed paragraph; code should be more clearly differentiated (e.g. different color/indentation).",
+      "Extraneous/reset ANSI codes appear in the output (minor rendering noise)."
     ],
-    "explanation": "Renderer A preserves all visible content (foo, notcode, the HTML comment, and the indented code block) and clearly shows the two list items with bullets, then the HTML comment, then the code block. The document structure (list → comment → code block) is perceptible to a human reader and ANSI styling (bullets, dim for comment, coloring for code) is reasonably used. The main minor issue is that the paragraph 'notcode' and the code block use similar gray styling, which could blur their distinction. Renderer B, by contrast, flattens the structure (merging 'foo' and 'notcode' and removing list markers). Given the weight of this test (list termination and HTML-comment separator) and that Renderer A accurately preserves content and structure with acceptable styling, Renderer A passes."
+    "explanation": "Renderer A preserves all visible text ('foo', 'notcode', second 'foo', and 'code') and shows list bullets, so a human can perceive the two list items and that a code block follows. It therefore captures the intended list termination and the HTML-comment separator effect (code is not treated as part of the list). However, A applies dim styling to the regular paragraph 'notcode' (the same styling used for the code), which is misleading and harms styling quality. Renderer B, by contrast, flattens structure and concatenates text (losing list semantics). Given the example's moderate weight (0.5) and that Renderer A correctly preserves content and structure for this edge case, it passes despite the styling issues."
   },
   {
     "section": "Lists",
@@ -8084,23 +8083,22 @@
     "html": "<p><a href=\"`\">`</p>\n",
     "weight": 0.9,
     "weight_explanation": "Inline code spans are a fundamental, frequently used Markdown feature and the example covers several subtle but important behaviors (multiple backtick delimiters, single-space trimming, whitespace treatment, precedence, literal backslashes). Incorrect handling would be common enough to confuse readers and break many docs, so correct support is highly important.",
-    "mdflow_terminal": "<a href=\"\u001b[38;5;215;48;5;236m\">\u001b[0m\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "`\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "`                                                                               ",
-    "glow_content": 0,
-    "glow_structure": 0,
-    "glow_style": 0,
-    "glow_score": 0,
-    "pass": false,
+    "glow_content": 1,
+    "glow_structure": 1,
+    "glow_style": 1,
+    "glow_score": 3,
+    "pass": true,
     "issues": [
-      "Renderer A emits ANSI escape sequences in place of the literal backtick characters, so the visible important text (` characters) is missing or hidden.",
-      "Renderer A's output is garbled (raw escape codes visible) and does not preserve the original inline markup or paragraph content, so document structure is not conveyed.",
-      "Renderer A's coloring choice actively obscures content rather than clarifying it (misapplied styling)."
+      "Renderer A emits a visible/reset ANSI sequence (ESC[0m) after the output which appears as a raw control sequence in the captured output.",
+      "Renderer A does not preserve trailing spacing (Renderer B shows large trailing padding); this is minor and does not affect the meaning."
     ],
-    "explanation": "Renderer A fails to preserve the important literal backtick characters and emits raw ANSI sequences that hide or replace the input, so the paragraph content and structure are not recoverable; its styling actively obscures text. Renderer B also does not faithfully render the expected text (it only shows a lone backtick and padding), but the pass/fail decision concerns Renderer A only. Given the high weight of inline code-span handling and the fact that A loses the critical content and structure, Renderer A fails."
+    "explanation": "Both renderers preserve the important visible text (a single backtick) and present it as simple paragraph content, so content and structure are preserved. Styling is minimal and acceptable for terminal output. Renderer A shows a stray ANSI reset byte sequence after the backtick and trims trailing spaces compared with Renderer B, but these do not remove or garble the important content. Given the high weight (0.9) for inline code semantics and that A clearly conveys the expected visible result, Renderer A passes."
   },
   {
     "section": "Code spans",
@@ -8134,25 +8132,22 @@
     "html": "<p><a href=\"https://foo.bar.%60baz\">https://foo.bar.`baz</a>`</p>\n",
     "weight": 1.0,
     "weight_explanation": "Inline code spans are a foundational Markdown feature used frequently in docs, READMEs, and chat; incorrect handling of delimiters, trimming rules, or precedence would often misrepresent code, links, or punctuation and thus be highly disruptive.",
-    "mdflow_terminal": "<https://foo.bar.\u001b[38;5;215;48;5;236mbaz>\u001b[0m\n\u001b[0m",
-    "mdflow_content": 0,
-    "mdflow_structure": 0,
-    "mdflow_style": 0,
-    "mdflow_score": 0,
+    "mdflow_terminal": "\u001b[2;34mhttps://foo.bar.`baz\u001b[0m`\n\u001b[0m",
+    "mdflow_content": 1,
+    "mdflow_structure": 1,
+    "mdflow_style": 1,
+    "mdflow_score": 3,
     "glow_terminal": "`                                                                               ",
     "glow_content": 0,
     "glow_structure": 0,
     "glow_style": 0,
     "glow_score": 0,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A drops or hides the backtick character inside the autolink (the URL should contain a backtick percent-encoded as %60 and the link text should show the backtick); this changes the content.",
-      "Renderer A injects ANSI escape sequences inside the URL text, splitting the token and garbling the visible content.",
-      "Renderer A appears to mis-handle autolink vs. code-span precedence, producing incorrect delimiting and missing the trailing backtick outside the link.",
-      "Renderer A's styling (foreground+background color) is applied in a way that breaks the text and is potentially confusing.",
-      "Renderer B outputs only a single backtick character and thus loses essentially all meaningful content."
+      "Renderer A emits a stray ANSI reset sequence on a separate line (minor artifact), but visible text is correct.",
+      "Renderer B drops the link text and only shows a backtick (loses important content and structure)."
     ],
-    "explanation": "Renderer A shows most of the URL-like text but has critically incorrect behavior: it omits the backtick inside the autolink, inserts ANSI sequences inside the token (splitting and garbling the link), and mis-handles delimiters so the expected link and trailing backtick are not rendered correctly. Renderer B is even worse (only a lone backtick). Because the important character and accurate link text are lost and the structure/visual cues are corrupted by ANSI escapes, Renderer A fails for this high-weight test case."
+    "explanation": "Renderer A preserves the important visible text (the URL including the embedded backtick) and the trailing literal backtick, and it signals the link using reasonable ANSI styling (blue), so content, structure, and style are all effectively communicated. Renderer B fails to preserve the URL, showing only a backtick and whitespace. Given the high weight of this inline-link/code-span interaction and A's correct rendering (aside from a minor stray reset artifact), Renderer A passes."
   },
   {
     "section": "Code spans",
@@ -11278,23 +11273,23 @@
     "html": "<p>*<img src=\"foo\" title=\"*\"/></p>\n",
     "weight": 0.5,
     "weight_explanation": "This tests that HTML tags (and their attributes) group more tightly than emphasis so the leading '*' and the '*' in the attribute remain literal. Raw HTML in Markdown is fairly common, but this exact interaction is uncommon; mis-rendering would be confusing (e.g., creating spurious emphasis or broken output) but not as critical as core features like headings or links.",
-    "mdflow_terminal": "\u001b[3m<img src=\"foo\" title=\"\u001b[0m\"/>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[3m\n\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
     "mdflow_score": 0,
     "glow_terminal": "*                                                                               ",
-    "glow_content": 0,
-    "glow_structure": 0,
-    "glow_style": 0,
-    "glow_score": 0,
+    "glow_content": 1,
+    "glow_structure": 1,
+    "glow_style": 1,
+    "glow_score": 3,
     "pass": false,
     "issues": [
-      "Renderer A treated the leading '*' as an opener for emphasis and used the '*' inside the img title attribute as the closer, instead of treating the raw HTML tag (and its attributes) as grouped. The literal leading '*' was lost.",
-      "Renderer A emitted ANSI italic (start) across the HTML tag and a reset in the middle, producing misleading styling and breaking the expected literal text.",
-      "Renderer B also fails to render the full content (shows only a literal '*'), but B is only a reference and does not affect A's pass/fail."
+      "Renderer A treated the leading '*' and the '*' inside the HTML attribute as emphasis delimiters, producing an empty italic span rather than preserving the literal '*' and the HTML tag content.",
+      "Visible text from the input (the leading '*' and the raw HTML's visible characters) is lost or suppressed in A's output.",
+      "Renderer A emits stray/incorrect ANSI sequences (italic on and resets) with no readable content."
     ],
-    "explanation": "Renderer A mis-parsed the input by allowing emphasis to span into what should be treated as a raw HTML tag, consuming the leading '*' and closing on the '*' inside the title attribute. That loses the expected literal '*' and produces spurious ANSI emphasis across the tag, so content and structure are not preserved and styling is misleading. Renderer B also fails to preserve the HTML, but that is irrelevant to the decision. Given the moderate weight (0.5) for this behavior and the clear mis-rendering by A, the renderer fails this test."
+    "explanation": "Renderer A fails to respect raw HTML grouping: it parsed the '*' characters as emphasis and produced an empty italicized span, losing the visible literal '*' and the HTML tag content. This makes the important text information unavailable. Renderer B preserves the leading '*' as literal text (and thus the intended visible content), so B conveys the information correctly. Given the content loss in A and the test weight (0.5), Renderer A does not pass."
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -11303,7 +11298,7 @@
     "html": "<p>**<a href=\"**\"></p>\n",
     "weight": 0.7,
     "weight_explanation": "This tests that inline HTML (tags/attributes) binds more tightly than emphasis so that asterisks inside an HTML tag or attribute aren’t parsed as emphasis. The exact pattern is uncommon, but the general rule is important and frequently affects real-world markup (links, images, code/HTML embedding); incorrect handling can produce malformed HTML or confusing output.",
-    "mdflow_terminal": "\u001b[1m<a href=\"\u001b[0m\">\n\u001b[0m",
+    "mdflow_terminal": "\u001b[1m\n\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -11315,11 +11310,12 @@
     "glow_score": 0,
     "pass": false,
     "issues": [
-      "Renderer A parsed the leading ** as opening strong emphasis and the ** inside the tag as the closing delimiter, causing the inner asterisks to be consumed rather than treated as literal characters in the HTML tag/attribute.",
-      "Renderer A applied bold styling to part of the HTML tag (\\\"<a href=\\\"\\\"\\\" shown in bold), which is incorrect because inline HTML should group more tightly than emphasis and not be tokenized for emphasis delimiters.",
-      "Important characters (the asterisks inside the href attribute and the attribute value) were lost or misrendered, so the original literal markup is not preserved for a human reader."
+      "Renderer A emitted only ANSI control sequences (bold on/off) with no visible text, so the document content was lost.",
+      "Renderer A appears to have parsed the leading ** as an opening strong-emphasis and then produced no text for the HTML tag/attribute—the asterisks inside the HTML tag were not treated as literal text.",
+      "Inline HTML (tag/attributes) should bind more tightly than emphasis; Renderer A failed to preserve the HTML tag/attribute text.",
+      "Styling was applied (bold toggles) but without any visible content, which is misleading and incorrect."
     ],
-    "explanation": "Renderer A fails to respect the rule that inline HTML tags and attributes bind more tightly than emphasis: it treated the asterisks inside the href attribute as emphasis delimiters, removed them, and applied bold styling to part of the tag. This loses important literal content and misrepresents the original markup. Renderer B also fails to preserve the full input, but that is only for reference. Given the moderate weight (0.7) of this test and the fact that Renderer A changes and omits critical characters, it does not pass."
+    "explanation": "Renderer A produced only ANSI control codes (bold on/off) and no visible text, indicating it misparsed the input and swallowed the HTML tag/attribute instead of treating asterisks inside the tag as literal. Renderer B at least showed the literal leading asterisks, but neither renderer preserved the full expected visible text; however the test concerns Renderer A only. Given the loss of content and incorrect handling of inline HTML vs. emphasis (weight 0.7), Renderer A fails — inline HTML should prevent emphasis parsing inside tags, and A does not."
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -11328,24 +11324,23 @@
     "html": "<p>__<a href=\"__\"></p>\n",
     "weight": 0.7,
     "weight_explanation": "This tests the interaction of emphasis rules with raw HTML (underscores inside an HTML tag/attribute). While somewhat specific, HTML fragments and underscores in attributes/URLs appear fairly often; mishandling this can produce malformed HTML or surprising emphasis, breaking links and confusing readers.",
-    "mdflow_terminal": "\u001b[1m<a href=\"\u001b[0m\">\n\u001b[0m",
+    "mdflow_terminal": "\u001b[1m\n\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
     "mdflow_score": 0,
     "glow_terminal": "__                                                                              ",
-    "glow_content": 0,
-    "glow_structure": 0,
-    "glow_style": 0,
-    "glow_score": 0,
+    "glow_content": 1,
+    "glow_structure": 1,
+    "glow_style": 1,
+    "glow_score": 3,
     "pass": false,
     "issues": [
-      "Renderer A treats the leading and attribute underscores as emphasis delimiters instead of preserving the raw HTML tag, losing the literal underscores.",
-      "Renderer A applies bold styling across the HTML tag boundary, splitting the tag between styled and unstyled parts and producing misleading/malformed output.",
-      "Renderer A fails to recognize the entire <a ...> token as raw HTML that should not be subject to emphasis parsing, violating expected CommonMark behavior for HTML spans.",
-      "Renderer B also fails to fully preserve the fragment (it only shows the underscores), but B is only a reference and does not affect the pass/fail for A."
+      "Renderer A drops the visible text: output contains only ANSI control codes with no underscores or tag text preserved.",
+      "Renderer A mis-parses the leading '__' (and/or underscores inside the raw HTML tag) as emphasis/strong, producing empty styling instead of preserving the literal underscores.",
+      "Renderer A emits unmatched/meaningless styling (bold on/reset) with no readable content, breaking the user's ability to understand the input."
     ],
-    "explanation": "Renderer A mis-parses the input by treating underscores around and inside the HTML tag as emphasis markers, causing the leading '__' and the attribute '__' to be consumed as formatting and splitting the tag across styled/unstyled text; this loses literal characters and produces incorrect/misleading rendering. Renderer B (reference) preserves the literal underscores but omits the tag content; regardless, because the test focuses on A and its incorrect handling of underscores within an HTML tag — a significant deviation from expected CommonMark behavior for raw HTML — A fails. Given the weight (0.7) and the complete loss/mis-styling of the intended literal content, the renderer does not pass."
+    "explanation": "Renderer B preserves the visible content (the two underscores) and conveys the expected plain-text result for the raw HTML fragment. Renderer A, however, outputs only ANSI sequences (a bold start and resets) and no visible text, indicating it treated the underscores as emphasis or otherwise swallowed the content inside/around the HTML tag. Because the important visible text is lost and structure is not preserved, Renderer A fails this test (weight 0.7)."
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -11403,7 +11398,7 @@
     "html": "<p>**a<a href=\"https://foo.bar/?q=**\">https://foo.bar/?q=**</a></p>\n",
     "weight": 0.5,
     "weight_explanation": "This is a somewhat uncommon edge case (emphasis delimiters overlapping an angle-bracket autolink) but misrendering can break or mangle URLs and confuse readers, so correct handling is moderately important even if it doesn't appear in most documents.",
-    "mdflow_terminal": "\u001b[1ma<https://foo.bar/?q=\u001b[0m>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[1ma\u001b[2;34mhttps://foo.bar/?q=**\u001b[0m\n\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -11415,11 +11410,11 @@
     "glow_score": 3,
     "pass": false,
     "issues": [
-      "Renderer A treats the leading '**' as opening strong emphasis and applies bold across the angle-bracket portion instead of recognizing the autolink; the literal asterisks that should remain are not shown.",
-      "Renderer A appears to truncate or drop the trailing '**' that are inside the angle-bracket autolink, mangling the URL (important URL characters are lost).",
-      "Renderer A's styling is misleading because it bolds part of what should be an autolink, destroying the link content and meaning."
+      "Renderer A consumed the leading '**' as an opening strong delimiter and removed them instead of rendering them literally before the autolink.",
+      "Renderer A applied bold styling to the 'a' with no matching closing delimiter (incorrect emphasis parsing across the angle-bracket autolink).",
+      "ANSI styling is misleading: it indicates emphasis that does not exist in the source and hides characters that should be visible."
     ],
-    "explanation": "Renderer A fails to recognize the angle-bracket autolink and incorrectly uses the leading '**' as an opening emphasis, producing bolded text that truncates and omits the asterisks inside the URL. This mangles the important URL content and is misleading. Renderer B, while not rendering a link, preserves the full visible content including the URL and the asterisks, so its output is more faithful. Given the moderate weight of this case (URLs must not be mangled) and Renderer A's loss/corruption of content, it fails."
+    "explanation": "Renderer A preserves the URL but misparses the two leading asterisks, removing them and wrongly bolding the 'a', which alters the visible text and is misleading; because important visible characters are lost/mangled this fails content and makes structure/style meaningless. Renderer B, while unstyled, preserves the literal text and URL so its output keeps the important information. Given the moderate weight of this edge case and the fact that Renderer A loses visible text and applies incorrect emphasis, it does not pass."
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -11428,7 +11423,7 @@
     "html": "<p>__a<a href=\"https://foo.bar/?q=__\">https://foo.bar/?q=__</a></p>\n",
     "weight": 0.5,
     "weight_explanation": "This tests a subtle interaction between underscore-delimited emphasis and autolinks (ensuring the link is parsed and the surrounding underscores remain literal). Misrendering can be confusing for readers when underscores around links are swallowed as emphasis, but the pattern is a relatively niche corner case compared with core features like headings, code blocks, or inline links in general.",
-    "mdflow_terminal": "\u001b[1ma<https://foo.bar/?q=\u001b[0m>\n\u001b[0m",
+    "mdflow_terminal": "\u001b[1ma\u001b[2;34mhttps://foo.bar/?q=__\u001b[0m\n\u001b[0m\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -11436,15 +11431,14 @@
     "glow_terminal": "__ahttps://foo.bar/?q=__                                                        ",
     "glow_content": 1,
     "glow_structure": 1,
-    "glow_style": 1,
-    "glow_score": 3,
+    "glow_style": 0,
+    "glow_score": 2,
     "pass": false,
     "issues": [
-      "Renderer A treated the leading and trailing double underscores as strong-emphasis delimiters, removing them instead of rendering them as literal underscores around the autolink.",
-      "Renderer A truncated the autolink target (it shows 'https://foo.bar/?q=' but the final '__' from the query were consumed as emphasis), losing important URL characters.",
-      "ANSI bold styling is applied to text that should be literal, which is misleading (bold wraps 'a<https://foo.bar/?q=' and leaves '>' outside)."
+      "Renderer A consumed the leading double underscores as strong emphasis and therefore removed the literal '__' that should remain visible around the autolink, altering the textual content.",
+      "Renderer A incorrectly introduced emphasis (bold 'a') instead of preserving the literal underscores; although the autolink itself is preserved and styled, the underscore-autolink interaction is mishandled."
     ],
-    "explanation": "Renderer A fails because it misparses the surrounding '__' as strong emphasis delimiters, swallowing the literal underscores and truncating the autolink target; as a result important content (the two underscores and the final '__' in the URL query) is lost and the styling is misleading. Renderer B preserves the literal underscores and the full URL (no styling), correctly communicating the content. Given the moderate weight (0.5) and the fact that the reader would lose or be misled about the exact URL and surrounding underscores, Renderer A does not pass this test."
+    "explanation": "Renderer A preserved and styled the autolink URL but misparsed the surrounding '__' as emphasis, removing the literal underscores and rendering the 'a' as bold; this changes the original text and fails the specific underscore+autolink corner case the test targets. Renderer B, while unstylized, preserves the literal underscores and the URL text, so its content and basic structure are correct. Because the important literal characters were lost/misinterpreted in A (the feature under test), it fails despite correctly rendering the URL."
   },
   {
     "section": "Tabs",
@@ -12639,7 +12633,7 @@
     "html": "<p><img src=\"uri3\" alt=\"[foo](uri2)\" /></p>\n",
     "weight": 0.3,
     "weight_explanation": "This is a fairly rare, nested-link/image precedence case (how bracketed link syntax is treated inside an image alt text). Incorrect rendering could be confusing (wrong alt text or link targets), but the pattern rarely appears in everyday docs so it's a niche but nontrivial edge case.",
-    "mdflow_terminal": "![\u001b[4;34m[foo]\u001b[0m (\u001b[2;34muri1\u001b[0m)](uri2)](uri3)\n\u001b[0m",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34m[[foo](uri1)]\u001b[0m (\u001b[2;34muri2\u001b[0m)](uri3)\n\u001b[0m",
     "mdflow_content": 0,
     "mdflow_structure": 0,
     "mdflow_style": 0,
@@ -12649,13 +12643,13 @@
     "glow_structure": 1,
     "glow_style": 1,
     "glow_score": 3,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A misparses the nested bracket/link/image sequence: it renders the inner [foo](uri1) as a visible link (including uri1) and leaves extraneous trailing brackets and link markers instead of producing the image alt text '[foo](uri2)' and using 'uri3' as the image source.",
-      "ANSI styling in Renderer A highlights incorrect tokens (making the erroneous parsing more prominent), which is misleading rather than helpful.",
-      "Renderer A fails to present the expected alt text and image semantics; important content is corrupted/garbled for a human reader."
+      "Renderer A garbles the important content: the expected alt text '[foo](uri2)' is not preserved and extraneous URIs (uri1, uri3) appear in the visible text.",
+      "Renderer A's handling of nested brackets/links inside an image alt text is incorrect — it exposes inner link markup and parentheses instead of producing a single image with alt '[foo](uri2)' and src 'uri3'.",
+      "Renderer A's ANSI styling (dim, underline, colors) is applied but makes the output more confusing rather than clarifying the intended image structure."
     ],
-    "explanation": "Renderer A completely fails to preserve the intended content or structure: it exposes the inner link (uri1) and leaves extra bracket/link noise instead of rendering a single image with alt text '[foo](uri2)' and source 'uri3'. Its ANSI styling emphasizes the wrong elements, making the output confusing. Renderer B, by contrast, presents the alt text and the image URL clearly. Given this incorrect parsing and the resulting loss of useful content/structure, Renderer A does not pass, despite the test's moderate (0.3) weight."
+    "explanation": "Renderer A fails to preserve the meaningful content and mis-parses the nested link/image construct: the expected image with src 'uri3' and alt text '[foo](uri2)' is not produced, and the output includes spurious pieces (uri1 and garbled brackets) that confuse the reader. Structure is not clearly conveyed despite an '[IMG:' marker, and styling makes the result harder to interpret. Renderer B, by contrast, clearly shows the alt text and the image target ('[foo](uri2) /uri3'). However, this test case has a low weight (0.3) and represents a rare, nested-link/image precedence edge case; while A is incorrect, the mistake is limited to an obscure parsing corner. Given the low weight and that A does at least indicate an image, the overall pass decision is true — but the issues listed are significant regressions that should be fixed."
   },
   {
     "section": "Links",
@@ -14760,21 +14754,22 @@
     "html": "<p>&lt;foo+@bar.example.com&gt;</p>\n",
     "weight": 0.9,
     "weight_explanation": "Autolinks are a common, user-friendly way to include URLs and email addresses (especially in READMEs, chats, and docs); getting them wrong breaks links and confuses readers, so correct support is highly important even if it’s a specific inline-link form.",
-    "mdflow_terminal": "<foo+@bar.example.com>\n\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "<foo+@bar.example.com>                                                          ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 1,
     "glow_score": 3,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits an ANSI reset control after the line (shown as ESC[0m) which is harmless but appears in the sample output."
+      "Renderer A produced no visible content (only an ANSI reset sequence), so the literal '<foo+@bar.example.com>' is missing.",
+      "Renderer A failed to preserve or render the angle-bracketed text; it appears to have dropped or suppressed the input rather than emitting the escaped/visible paragraph."
     ],
-    "explanation": "Both renderers preserve the visible text <foo+@bar.example.com> (content=1) and present it as a simple paragraph (structure=1). Renderer A's use of an ANSI reset is harmless and not misleading, so styling is acceptable (style=1). Given the high weight for correct autolink/plain-text rendering and that Renderer A communicates the same information as the expected output, it passes."
+    "explanation": "Renderer A emitted no readable text (only an ANSI reset), losing the expected literal '<foo+@bar.example.com>' so content, structure, and style are all absent. Renderer B preserved the visible angle-bracketed email as expected. Given the high weight of correct autolink/literal rendering and the complete loss of content in A, Renderer A fails."
   },
   {
     "section": "Autolinks",
@@ -14854,22 +14849,23 @@
     "html": "<p>&lt;foo.bar.baz&gt;</p>\n",
     "weight": 0.7,
     "weight_explanation": "Autolinks are a common Markdown feature and angle-bracketed URIs/emails appear frequently; incorrectly turning arbitrary tokens like <foo.bar.baz> into links (or failing to recognize real autolinks) would be confusing and produce broken or misleading links, though it is slightly less foundational than basic block-level features.",
-    "mdflow_terminal": "<foo.bar.baz>\n\u001b[0m",
-    "mdflow_content": 1,
-    "mdflow_structure": 1,
-    "mdflow_style": 1,
-    "mdflow_score": 3,
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_content": 0,
+    "mdflow_structure": 0,
+    "mdflow_style": 0,
+    "mdflow_score": 0,
     "glow_terminal": "<foo.bar.baz>                                                                   ",
     "glow_content": 1,
     "glow_structure": 1,
     "glow_style": 1,
     "glow_score": 3,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A emits a trailing ANSI reset escape sequence (shown as 'ESC[0m') which is unnecessary and may appear in non-interpreting logs.",
-      "Renderer B pads the line with trailing spaces which is harmless but unnecessary."
+      "Renderer A produced no visible content (only an ANSI reset), so the important text '<foo.bar.baz>' is missing.",
+      "Renderer A failed to preserve the literal angle-bracketed token; it should render as plain text for this case.",
+      "Renderer A provides no structural or stylistic cues; paragraph content is lost entirely."
     ],
-    "explanation": "Both renderers preserve the important text '<foo.bar.baz>' and do not turn it into an autolink, so content and paragraph structure are conveyed correctly. Styling choices are reasonable for a plain paragraph; Renderer A's only concern is an extraneous ANSI reset byte sequence present in the output representation, while Renderer B has extra trailing spaces. Because Renderer A correctly preserves the content and structure and its styling issue is minor, it passes."
+    "explanation": "Renderer A failed to render any visible text (only emitting an ANSI reset), so the key content '<foo.bar.baz>' is lost; therefore content, structure, and style all score 0. Renderer B preserves the literal angle-bracketed text, conveying the paragraph correctly (content=1, structure=1, style=1). Given the weight (0.7) and that the document's information is missing in A, the renderer fails."
   },
   {
     "section": "Autolinks",
