@@ -140,11 +140,11 @@ Largest current clusters are listed in the status table below, which also shows 
   - Start with the simplest example in the cluster
 
 **3. Fix the example** — Per-example steps:
-  1. **Minimize** — `--minimize` reduces input while preserving the divergence signature
-  2. **Classify** — missing state, incorrect transition, or future-dependent
-  3. **Fix** — change one transition
-  4. **Verify** — `--baseline` checks for regressions
-  5. **Promote** — add as protected regression test via `assertProtectedSpecCases()`
+  1. **Minimize** (if not already minimal) — `--minimize` reduces input while preserving the divergence signature
+  2. **Classify** — examine the root cause (e.g. missing state, incorrect transition, value normalization, future-dependence)
+  3. **Fix** — adjust the parser (ideally one transition per fix)
+  4. **Verify** — run the fixed example in all 3 streaming modes (one-shot, line, arbitrary-rune); run `--baseline` against the previous inventory to check for regressions across all 655 examples
+  5. **Promote** (optional) — if the example is basic and representative, add it as a protected regression test via `assertProtectedSpecCases()`. Niche or edge-case fixes can remain covered by the smoke suite alone.
 
 ### Protected regression tests (`parser/commonmark_regression_test.go`)
 
