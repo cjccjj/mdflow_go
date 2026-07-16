@@ -43,7 +43,7 @@ func (p *Parser) equivIndent() (bool, string) {
 		case tokenizer.TabToken:
 			col = ((col + 4) / 4) * 4
 			if col >= 4 {
-				p.buf = p.buf[i+1:]
+				p.consume(i + 1)
 				return true, ""
 			}
 		case tokenizer.TextToken:
@@ -51,7 +51,7 @@ func (p *Parser) equivIndent() (bool, string) {
 				if r == ' ' {
 					col++
 					if col >= 4 {
-						p.buf = p.buf[i+1:]
+						p.consume(i + 1)
 						return true, tok.Value[j+1:]
 					}
 				} else {

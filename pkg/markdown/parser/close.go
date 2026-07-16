@@ -108,6 +108,7 @@ func (p *Parser) finalizeState(mode finalizeMode) []Event {
 		out = append(out, p.linkRefDefParser.flushLinkRefDef()...)
 	}
 
+	p.trace.finalize(p, mode, out)
 	return out
 }
 

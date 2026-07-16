@@ -1,115 +1,16 @@
 package markdown
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"unicode"
+
+	"github.com/cjccjj/mdflow/internal/commonmark"
 )
 
-// ---------------------------------------------------------------------------
-// Spec example parser
-// ---------------------------------------------------------------------------
-
 const specFile = "../../dev_docs/commonMark_spec.txt"
-
-// exampleFence is the opening/closing delimiter used by the CommonMark spec
-// for test examples.
-const exampleFence = "```````````````````````````````` example"
-const exampleClose = "````````````````````````````````"
-
-// SpecExample holds a single CommonMark spec test example.
-type SpecExample struct {
-	Number   int    // 1-based sequential number
-	Section  string // nearest heading above the example
-	Markdown string // input (before the "." separator)
-	HTML     string // expected HTML (for reference only)
-	Line     int    // line number in spec file where example starts
-}
-
-// parseSpecFile reads the CommonMark spec file and extracts all examples.
-func parseSpecFile(path string) ([]SpecExample, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var examples []SpecExample
-	var currentSection string
-	var inExample bool
-	var beforeDot bool // true = reading markdown, false = reading HTML
-	var mdBuf, htmlBuf strings.Builder
-	var exNum int
-	var exLine int
-
-	scanner := bufio.NewScanner(f)
-	// Some lines may be very long in the spec.
-	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024)
-
-	lineNo := 0
-	for scanner.Scan() {
-		lineNo++
-		line := scanner.Text()
-
-		// Track section headings — lines starting with # or ##.
-		if !inExample {
-			if strings.HasPrefix(line, "# ") || strings.HasPrefix(line, "## ") || strings.HasPrefix(line, "### ") {
-				heading := strings.TrimLeft(line, "# ")
-				heading = strings.TrimSpace(heading)
-				if heading != "" {
-					currentSection = heading
-				}
-			}
-		}
-
-		if !inExample {
-			if line == exampleFence {
-				inExample = true
-				beforeDot = true
-				mdBuf.Reset()
-				htmlBuf.Reset()
-				exNum++
-				exLine = lineNo
-			}
-			continue
-		}
-
-		// Inside an example block.
-		if line == "." && beforeDot {
-			beforeDot = false
-			continue
-		}
-
-		if line == exampleClose {
-			// Replace → with actual tab per spec convention.
-			md := strings.ReplaceAll(mdBuf.String(), "→", "\t")
-			html := strings.ReplaceAll(htmlBuf.String(), "→", "\t")
-			examples = append(examples, SpecExample{
-				Number:   exNum,
-				Section:  currentSection,
-				Markdown: md,
-				HTML:     html,
-				Line:     exLine,
-			})
-			inExample = false
-			continue
-		}
-
-		if beforeDot {
-			mdBuf.WriteString(line)
-			mdBuf.WriteByte('\n')
-		} else {
-			htmlBuf.WriteString(line)
-			htmlBuf.WriteByte('\n')
-		}
-	}
-
-	return examples, scanner.Err()
-}
 
 // ---------------------------------------------------------------------------
 // Section category classification
@@ -268,7 +169,7 @@ func extractVisibleWords(md string) []string {
 // ---------------------------------------------------------------------------
 
 func TestCommonMarkSpec(t *testing.T) {
-	examples, err := parseSpecFile(specFile)
+	examples, err := commonmark.Load(specFile)
 	if err != nil {
 		t.Fatalf("failed to parse spec file: %v", err)
 	}

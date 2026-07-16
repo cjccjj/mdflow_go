@@ -200,17 +200,79 @@ func (ep *emphasisParser) tryCloser(tt tokenizer.TokenType) ([]Event, bool) {
 	return events, true
 }
 
+// tryRepeatedStrongOpener handles a bounded, unambiguous delimiter run such
+// as ____foo____ or ******foo****** in one transition, plus an inner __strong__
+// run inside an already-open strong span. Processing those runs a pair at a
+// time lets the remaining opener pair look like a closer for the frame just
+// opened. Keeping this resolver local to balanced runs preserves the existing
+// fallback for unrelated delimiter sequences.
+//
+// Trigger: a 4–6 character top-level opener run, or a two-character inner
+// strong run, with a matching flanking run. Retained input: the current line
+// in the existing token buffer. Wait condition: an eligible run waits until a
+// closer, newline, or EOF resolves it. EOF fallback: ordinary emphasis logic
+// emits literals or drains frames as before. Tradeoff: longer/nested delimiter
+// runs remain intentionally bounded by maxEmphasisDepth.
+func (ep *emphasisParser) tryRepeatedStrongOpener(tt tokenizer.TokenType) ([]Event, bool) {
+	p := ep.p
+	count := p.countConsecutive(tt)
+	top := ep.top()
+	rootRepeated := ep.depth() == 0 && count >= 4 && count <= maxEmphasisDepth*2
+	nestedStrong := count == 2 && top != nil && top.state == BoldState && top.closerType == tt
+	if !rootRepeated && !nestedStrong {
+		return nil, false
+	}
+	if !ep.canOpen(tt, count) {
+		return nil, false
+	}
+	if !hasFlankingCloser(p.buf[count:], tt, count, true) {
+		if !p.eof && !hasNewlineIn(p.buf[count:]) {
+			return nil, true
+		}
+		return nil, false
+	}
+
+	p.consume(count)
+	p.lineStart = false
+	var events []Event
+	if nestedStrong {
+		ep.push(emphasisFrame{state: BoldState, closerType: tt, closerLen: 2})
+		return []Event{{Type: BoldStartEvent}}, true
+	}
+	if count%2 == 1 {
+		ep.push(emphasisFrame{state: ItalicState, closerType: tt, closerLen: 1})
+		events = append(events, Event{Type: ItalicStartEvent})
+	}
+	for pairs := count / 2; pairs > 0; pairs-- {
+		ep.push(emphasisFrame{state: BoldState, closerType: tt, closerLen: 2})
+		events = append(events, Event{Type: BoldStartEvent})
+	}
+	return events, true
+}
+
 func (ep *emphasisParser) tryStar() ([]Event, bool) {
 	p := ep.p
 	count := p.countConsecutive(tokenizer.StarToken)
 	if count == 0 {
 		return nil, false
 	}
+	if count == len(p.buf) && !p.eof {
+		top := ep.top()
+		if top == nil || top.closerType != tokenizer.StarToken || count < top.closerLen {
+			return nil, true
+		}
+	}
+	if events, handled := ep.tryCloser(tokenizer.StarToken); handled {
+		return events, true
+	}
+	if events, handled := ep.tryRepeatedStrongOpener(tokenizer.StarToken); handled {
+		return events, true
+	}
 
 	depth := ep.depth()
 
 	// count >= 3: combined opener (*** = italic + bold)
-	if count >= 3 && depth == 0 && !ep.hasState(BoldState) && !ep.hasState(ItalicState) &&
+	if count >= 3 && count%2 == 1 && depth == 0 && !ep.hasState(BoldState) && !ep.hasState(ItalicState) &&
 		p.isLeftFlankingRun(tokenizer.StarToken, count) &&
 		hasFlankingCloser(p.buf[3:], tokenizer.StarToken, 3, true) {
 		p.consume(3)
@@ -220,13 +282,8 @@ func (ep *emphasisParser) tryStar() ([]Event, bool) {
 		return []Event{{Type: ItalicStartEvent}, {Type: BoldStartEvent}}, true
 	}
 
-	// try closer for stars (after 3-star check)
-	if events, handled := ep.tryCloser(tokenizer.StarToken); handled {
-		return events, true
-	}
-
 	// count >= 2: bold opener
-	if count >= 2 && depth < maxEmphasisDepth && !ep.hasState(BoldState) {
+	if count >= 2 && depth < maxEmphasisDepth {
 		matched, waiting := p.checkConsecutive(tokenizer.StarToken, 2)
 		if waiting {
 			return nil, true
@@ -308,16 +365,25 @@ func (ep *emphasisParser) tryUnderscore() ([]Event, bool) {
 	if count == 0 {
 		return nil, false
 	}
+	if count == len(p.buf) && !p.eof {
+		top := ep.top()
+		if top == nil || top.closerType != tokenizer.UnderscoreToken || count < top.closerLen {
+			return nil, true
+		}
+	}
 
 	// for underscores, try closer first (before combined opener check)
 	if events, handled := ep.tryCloser(tokenizer.UnderscoreToken); handled {
+		return events, true
+	}
+	if events, handled := ep.tryRepeatedStrongOpener(tokenizer.UnderscoreToken); handled {
 		return events, true
 	}
 
 	depth := ep.depth()
 
 	// count >= 3: combined opener (___ = italic + bold)
-	if count >= 3 && depth == 0 && !ep.hasState(BoldState) && !ep.hasState(ItalicState) &&
+	if count >= 3 && count%2 == 1 && depth == 0 && !ep.hasState(BoldState) && !ep.hasState(ItalicState) &&
 		ep.canUnderscoreOpen(count) && hasFlankingCloser(p.buf[3:], tokenizer.UnderscoreToken, 3, true) {
 		p.consume(3)
 		ep.push(emphasisFrame{state: ItalicState, closerType: tokenizer.UnderscoreToken, closerLen: 1})
@@ -327,7 +393,7 @@ func (ep *emphasisParser) tryUnderscore() ([]Event, bool) {
 	}
 
 	// count >= 2: bold opener
-	if count >= 2 && depth < maxEmphasisDepth && !ep.hasState(BoldState) {
+	if count >= 2 && depth < maxEmphasisDepth {
 		matched, waiting := p.checkConsecutive(tokenizer.UnderscoreToken, 2)
 		if waiting {
 			return nil, true
@@ -447,6 +513,13 @@ func (ep *emphasisParser) tryBulletOrBold() []Event {
 		return nil
 	}
 	second := p.buf[1]
+	if second.Type == tokenizer.NewlineToken {
+		// Like '-', a '*' marker without content is still an empty list item.
+		// Keep the newline for normal line-boundary processing.
+		p.consume(1)
+		p.lineStart = false
+		return []Event{{Type: BulletItemEvent}}
+	}
 	if hasStructuralWhitespace(second) {
 		p.consume(2)
 		p.lineStart = false
@@ -472,7 +545,10 @@ func (ep *emphasisParser) tryBulletOrBold() []Event {
 	}
 	// Not followed by whitespace — delegate to emphasis logic.
 	starCount := p.countConsecutive(tokenizer.StarToken)
-	if starCount >= 3 && len(p.buf) > 2 && p.buf[1].Type == tokenizer.StarToken && p.buf[2].Type == tokenizer.StarToken &&
+	if events, handled := ep.tryRepeatedStrongOpener(tokenizer.StarToken); handled {
+		return events
+	}
+	if starCount >= 3 && starCount%2 == 1 && len(p.buf) > 2 && p.buf[1].Type == tokenizer.StarToken && p.buf[2].Type == tokenizer.StarToken &&
 		hasFlankingCloser(p.buf[3:], tokenizer.StarToken, 3, true) {
 		p.consume(3)
 		ep.push(emphasisFrame{state: ItalicState, closerType: tokenizer.StarToken, closerLen: 1})

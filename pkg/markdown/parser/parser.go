@@ -19,6 +19,7 @@ type Parser struct {
 	linkParser     *linkParser
 	emphasisParser *emphasisParser
 	tableParser    *tableParser
+	trace          *traceRecorder
 }
 
 func New() *Parser {
@@ -67,52 +68,70 @@ func (p *Parser) process() []Event {
 	for p.hasBufferedTokens() {
 		prevLen := p.bufferedLen()
 		prevState := p.state
+		p.trace.begin(p)
+		var iteration []Event
 
 		switch p.state {
 
 		case NormalState:
-			events = append(events, p.processNormal()...)
+			p.trace.branch("state.normal")
+			iteration = p.processNormal()
 
 		case HeaderState:
-			events = append(events, p.processHeader()...)
+			p.trace.branch("state.header")
+			iteration = p.processHeader()
 
 		case InlineCodeState:
-			events = append(events, p.processInlineCode()...)
+			p.trace.branch("state.inline_code")
+			iteration = p.processInlineCode()
 
 		case CodeBlockState:
-			events = append(events, p.processCodeBlock()...)
+			p.trace.branch("state.code_block")
+			iteration = p.processCodeBlock()
 
 		case IndentedCodeBlockState:
-			events = append(events, p.processIndentedCodeBlock()...)
+			p.trace.branch("state.indented_code_block")
+			iteration = p.processIndentedCodeBlock()
 
 		case BlockquoteState:
-			events = append(events, p.processBlockquote()...)
+			p.trace.branch("state.blockquote")
+			iteration = p.processBlockquote()
 
 		case TablePendingState:
-			events = append(events, p.tableParser.processTablePending()...)
+			p.trace.branch("state.table_pending")
+			iteration = p.tableParser.processTablePending()
 
 		case TableBodyState:
-			events = append(events, p.tableParser.processTableBody()...)
+			p.trace.branch("state.table_body")
+			iteration = p.tableParser.processTableBody()
 
 		case SetextPendingState:
-			events = append(events, p.processSetextPending()...)
+			p.trace.branch("state.setext_pending")
+			iteration = p.processSetextPending()
 
 		case LinkTextState:
-			events = append(events, p.linkParser.processLinkText()...)
+			p.trace.branch("state.link_text")
+			iteration = p.linkParser.processLinkText()
 
 		case LinkURLState:
-			events = append(events, p.linkParser.processLinkURL()...)
+			p.trace.branch("state.link_url")
+			iteration = p.linkParser.processLinkURL()
 
 		case HTMLBlockState:
-			events = append(events, p.processHTMLBlock()...)
+			p.trace.branch("state.html_block")
+			iteration = p.processHTMLBlock()
 
 		case LinkRefDefState:
-			events = append(events, p.linkRefDefParser.processLinkRefDef()...)
+			p.trace.branch("state.link_ref_definition")
+			iteration = p.linkRefDefParser.processLinkRefDef()
 		}
+		events = append(events, iteration...)
 
 		if p.bufferedLen() == prevLen && p.state == prevState {
+			p.trace.finish(p, iteration, "wait")
 			break
 		}
+		p.trace.finish(p, iteration, "progress")
 	}
 
 	return events
@@ -122,10 +141,19 @@ func (p *Parser) processNormal() []Event {
 	if len(p.buf) == 0 {
 		return nil
 	}
+	if p.lineStart && p.consumeOptionalLineStartIndent() {
+		p.trace.branch("line_start.optional_indent")
+		return nil
+	}
 
 	first := p.buf[0]
 
 	if events, handled := p.processEscapeOrEntity(first); handled {
+		if first.Type == tokenizer.BackslashToken {
+			p.trace.branch("normal.escape")
+		} else {
+			p.trace.branch("normal.entity")
+		}
 		return events
 	}
 
@@ -140,14 +168,17 @@ func (p *Parser) processNormal() []Event {
 	}
 
 	if events, handled := p.tryImage(); handled {
+		p.trace.branch("normal.image")
 		return events
 	}
 
 	if events, handled := p.tryAutolink(); handled {
+		p.trace.branch("normal.autolink")
 		return events
 	}
 
 	if events, handled := p.tryInlineHTML(); handled {
+		p.trace.branch("normal.inline_html")
 		return events
 	}
 
@@ -157,7 +188,44 @@ func (p *Parser) processNormal() []Event {
 		}
 	}
 
+	p.trace.branch("normal.text")
 	return p.emitTextOrSpecial()
+}
+
+// consumeOptionalLineStartIndent removes up to three leading spaces once the
+// next token makes their role clear. It waits for that token when a write ends
+// inside the indentation, keeping 1–3-space indentation chunk-independent.
+// Four or more spaces remain for the indented-code recognizer.
+func (p *Parser) consumeOptionalLineStartIndent() bool {
+	spaces := 0
+	for i, tok := range p.buf {
+		if tok.Type != tokenizer.TextToken {
+			if spaces == 0 || spaces > 3 {
+				return false
+			}
+			p.consume(i)
+			return true
+		}
+
+		leading := leadingSpaceCount(tok.Value)
+		spaces += leading
+		if spaces > 3 {
+			return false
+		}
+		if leading == len(tok.Value) {
+			continue
+		}
+		if spaces == 0 {
+			return false
+		}
+		p.consume(i)
+		p.buf[0].Value = tok.Value[leading:]
+		return true
+	}
+
+	// The input ends in one to three spaces. Wait for the next token unless
+	// EOF has made those spaces ordinary literal text.
+	return spaces > 0 && spaces <= 3 && !p.eof
 }
 
 func (p *Parser) processEscapeOrEntity(first tokenizer.Token) ([]Event, bool) {
@@ -172,27 +240,33 @@ func (p *Parser) processEscapeOrEntity(first tokenizer.Token) ([]Event, bool) {
 
 func (p *Parser) processLineStartBlock(first tokenizer.Token) ([]Event, bool) {
 	if events, handled := p.tryFencedCodeBlock(); handled {
+		p.trace.branch("line_start.fenced_code")
 		return events, true
 	}
 
 	if events, handled := p.tryThematicBreak(); handled {
+		p.trace.branch("line_start.thematic_break")
 		return events, true
 	}
 
 	if events, handled := p.tryATXHeading(); handled {
+		p.trace.branch("line_start.atx_heading")
 		return events, true
 	}
 
 	if first.Type == tokenizer.GreaterToken {
+		p.trace.branch("line_start.blockquote")
 		return p.tryBlockquote(), true
 	}
 
 	if first.Type == tokenizer.DashToken {
+		p.trace.branch("line_start.bullet_dash")
 		return p.tryBullet(), true
 	}
 
 	if first.Type == tokenizer.StarToken {
 		if events := p.emphasisParser.tryBulletOrBold(); events != nil {
+			p.trace.branch("line_start.bullet_or_emphasis_star")
 			return events, true
 		}
 		return nil, false
@@ -200,15 +274,18 @@ func (p *Parser) processLineStartBlock(first tokenizer.Token) ([]Event, bool) {
 
 	if first.Type == tokenizer.TextToken {
 		if events, handled := p.tryOrderedList(); handled {
+			p.trace.branch("line_start.ordered_list")
 			return events, true
 		}
 	}
 
 	if events, handled := p.tryHTMLBlock(); handled {
+		p.trace.branch("line_start.html_block")
 		return events, true
 	}
 
 	if events, handled := p.linkRefDefParser.tryLinkRefDef(); handled {
+		p.trace.branch("line_start.link_ref_definition")
 		return events, true
 	}
 
@@ -217,24 +294,30 @@ func (p *Parser) processLineStartBlock(first tokenizer.Token) ([]Event, bool) {
 
 func (p *Parser) processInlineStart(first tokenizer.Token) ([]Event, bool) {
 	if first.Type == tokenizer.BacktickToken {
+		p.trace.branch("inline.backtick")
 		return p.processBacktickStart()
 	}
 
 	if first.Type == tokenizer.LeftBracketToken && p.prevChar != '!' {
+		p.trace.branch("inline.link")
 		p.consume(1)
+		p.lineStart = false
 		p.linkParser.startLinkText()
 		return nil, true
 	}
 
 	if first.Type == tokenizer.TildeToken {
+		p.trace.branch("inline.tilde")
 		return p.emphasisParser.tryTilde()
 	}
 
 	if first.Type == tokenizer.StarToken {
+		p.trace.branch("inline.star")
 		return p.emphasisParser.tryStar()
 	}
 
 	if first.Type == tokenizer.UnderscoreToken {
+		p.trace.branch("inline.underscore")
 		return p.emphasisParser.tryUnderscore()
 	}
 
@@ -301,14 +384,17 @@ func (p *Parser) processBacktickStart() ([]Event, bool) {
 
 func (p *Parser) processDeferredLineStart(first tokenizer.Token) ([]Event, bool) {
 	if first.Type == tokenizer.PipeToken {
+		p.trace.branch("deferred.table")
 		return p.tableParser.tryTableHeader(), true
 	}
 
 	if events, handled := p.tryIndentedCodeOrList(); handled {
+		p.trace.branch("deferred.indented_code")
 		return events, true
 	}
 
 	if events, handled := p.trySetextCandidate(); handled {
+		p.trace.branch("deferred.setext")
 		return events, true
 	}
 
@@ -435,6 +521,7 @@ func (p *Parser) tryImage() ([]Event, bool) {
 	}
 	p.consume(1)
 	p.consume(1)
+	p.lineStart = false
 	p.linkParser.startImageText()
 	return events, true
 }

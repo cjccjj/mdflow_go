@@ -57,6 +57,13 @@ func (p *Parser) tryBullet() []Event {
 		return nil
 	}
 	second := p.buf[1]
+	if second.Type == tokenizer.NewlineToken {
+		// A marker alone on its line is a valid empty list item. Leave the
+		// newline buffered so normal line handling preserves the boundary.
+		p.consume(1)
+		p.lineStart = false
+		return []Event{{Type: BulletItemEvent}}
+	}
 	if hasStructuralWhitespace(second) {
 		p.consume(2)
 		p.lineStart = false

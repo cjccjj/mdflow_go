@@ -32,36 +32,53 @@ r.Write([]byte("**bold** and *italic*"))
 r.Close()
 ```
 
-## Supported
+## Capability contract
 
-`#`–`######` headings, setext headings (`===`/`---`), `**bold**`, `*italic*`, `__bold__`, `_italic_`, `~~strikethrough~~`, `` `inline code` ``, fenced/indented code blocks, `-`/`*` bullets, `1.` ordered lists, `---`/`***`/`___` horizontal rules, `> blockquotes`, `\| tables \|`, inline links `[text](url)`, reference links `[text][label]`, backslash escapes.
+mdflow supports the terminal-oriented subset below. “Supported” means it has
+exact parser-event contract coverage and streaming-boundary tests; it does not
+mean byte-for-byte CommonMark HTML conformance.
 
-## Partially supported
+| Capability | Status | Notes |
+|---|---|---|
+| ATX and setext headings | Supported | `#`–`######`, `===`, and `---` |
+| Emphasis | Supported subset | `*`, `_`, `**`, `__`, `~~`; common nesting and balanced repeated strong runs are covered |
+| Inline and block code | Supported subset | Inline spans plus fenced and indented blocks; rare whitespace rules remain partial |
+| Flat lists | Supported subset | `-`, `*`, ordered markers, and empty items; nested/continuation list structure is deferred |
+| Blockquotes and thematic breaks | Supported subset | Common one-line and streaming forms |
+| Links, images, and autolinks | Supported subset | Inline links/images and URI/email autolinks; reference links are not globally resolved |
+| Escapes and entities | Supported subset | Common backslash escapes and HTML entity decoding |
+| HTML | Terminal-specific | Tags are stripped and visible text is retained; raw HTML semantics are intentionally not preserved |
+| GFM tables and strikethrough | Supported subset | Tables render with terminal redraw support |
 
-HTML blocks (`<pre>`, `<script>`, `<style>`, `<!-- -->`, `<? ?>`, `<!DOCTYPE>`, `<![CDATA[` — printed dimmed as raw). Link reference definitions (`[label]: url` — shown dimmed). Some HTML block types and multi-line definitions deferred.
+Deferred: nested lists and list continuations, global reference-link
+resolution, the full CommonMark delimiter algorithm, task lists, bare URL
+linkification, syntax highlighting, and full raw-HTML fidelity. See
+[Streaming_Limitations.md](dev_docs/Streaming_Limitations.md) for the
+streaming rationale and concrete boundary cases.
 
-## Not supported (printed as-is)
+## CommonMark compatibility diagnostics
 
-`![images](url)`, `<div>` / `<table>` / other generic HTML blocks, GFM task lists, autolinks.
+The full CommonMark source fixture is smoke-tested by `make test`. A separate,
+opt-in diagnostic compares only event semantics that mdflow can represent; it
+does not compare ANSI output to expected HTML.
 
-## Roadmap
+```bash
+# Inspect one fixture with its first semantic divergence and parser trace.
+go run -tags diagnose ./cmd/mdflow-diagnose -example 391
 
-*Done:*
-- CommonMark 2.1–2.4 (characters, tabs, insecure chars, backslash escapes)
-- CommonMark 4.1–4.5, 4.8–4.9 (thematic breaks, ATX headings, setext headings, indented/fenced code blocks, paragraphs, blank lines)
-- CommonMark 5.1–5.2 (block quotes, list items with ordered lists)
-- CommonMark 6.1–6.3, 6.7 (code spans, emphasis with `_`, inline links, hard line breaks)
-- GFM: tables, strikethrough
+# Regenerate the compact full-fixture inventory.
+go run -tags diagnose ./cmd/mdflow-diagnose \
+  -write-inventory test/commonmark_baseline.json
 
-*Planned:*
-- Terminal width wrapping, syntax highlighting in code blocks
+# Compare a new run with a saved inventory.
+go run -tags diagnose ./cmd/mdflow-diagnose \
+  -baseline test/commonmark_baseline.json
+```
 
-*Deferred / not practical for streaming:*
-- HTML blocks types 6-7 (4.6), raw HTML inline (6.6), nested lists (5.3), full emphasis algorithm (6.2), autolinks (6.5), images (6.4)
-
-## Compliance
-
-mdflow aims to cover CommonMark 0.31.2 and commonly-used GFM extensions. Coverage: ~78% of spec sections supported or partially supported. Streaming architecture means some features (shortcut reference links, nested structures) are deliberately omitted or simplified.
+The diagnostic trace is build-tagged and internal-only; it does not change the
+public renderer or parser APIs. The committed inventory ranks compatibility
+work and reports deltas, but only mdflow-owned core and promoted regression
+cases are mandatory gates.
 
 ## API
 

@@ -162,13 +162,13 @@ func hasLineStartTextPattern(v string) bool {
 		return true
 	}
 	if v[0] == ' ' {
-		for _, c := range v {
-			if c >= '0' && c <= '9' {
-				return true
-			}
-			if c != ' ' {
-				break
-			}
+		// A line indented by up to three spaces still needs the deferred
+		// line-start pass: it may be a list marker, heading, or ordinary
+		// paragraph whose indentation CommonMark ignores. Without this stop,
+		// emitTextOrSpecial can consume it in the same chunk as a preceding
+		// blank line and make parsing chunk-dependent.
+		if leadingSpaceCount(v) <= 3 {
+			return true
 		}
 	}
 	if _, ok := orderedListPrefix(v); ok {
