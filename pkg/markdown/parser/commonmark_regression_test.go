@@ -103,6 +103,42 @@ func TestProtectedDelimiterRunVariants(t *testing.T) {
 	}
 }
 
+func TestProtectedATXHeadings(t *testing.T) {
+	assertProtectedSpecCases(t, []int{63})
+}
+
+func TestProtectedThematicBreaksAndParagraphs(t *testing.T) {
+	assertProtectedSpecCases(t, []int{43, 221})
+}
+
+func TestProtectedBlockQuotes(t *testing.T) {
+	assertProtectedSpecCases(t, []int{236})
+}
+
+func TestProtectedListNesting(t *testing.T) {
+	assertProtectedSpecCases(t, []int{297})
+}
+
+func TestProtectedEmphasisBasic(t *testing.T) {
+	assertProtectedSpecCases(t, []int{352, 359})
+}
+
+func TestProtectedLinks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{485})
+}
+
+func TestProtectedSoftLineBreaks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{651})
+}
+
+func TestProtectedAutolinks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{606, 599})
+}
+
+func TestProtectedTextualContent(t *testing.T) {
+	assertProtectedSpecCases(t, []int{653})
+}
+
 func TestProtectedEmptyListItemVariants(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -128,6 +164,46 @@ func TestProtectedEmptyListItemVariants(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProtectedTabs(t *testing.T) {
+	assertProtectedSpecCases(t, []int{1})
+}
+
+func TestProtectedBackslashEscapes(t *testing.T) {
+	assertProtectedSpecCases(t, []int{13})
+}
+
+func TestProtectedEntityReferences(t *testing.T) {
+	assertProtectedSpecCases(t, []int{29})
+}
+
+func TestProtectedSetextHeadings(t *testing.T) {
+	assertProtectedSpecCases(t, []int{94})
+}
+
+func TestProtectedIndentedCodeBlocks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{114})
+}
+
+func TestProtectedFencedCodeBlocks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{126})
+}
+
+func TestProtectedLinkReferenceDefinitions(t *testing.T) {
+	assertProtectedSpecCases(t, []int{211})
+}
+
+func TestProtectedCodeSpans(t *testing.T) {
+	assertProtectedSpecCases(t, []int{341})
+}
+
+func TestProtectedImages(t *testing.T) {
+	assertProtectedSpecCases(t, []int{592})
+}
+
+func TestProtectedHardLineBreaks(t *testing.T) {
+	assertProtectedSpecCases(t, []int{647})
 }
 
 func parseWithPositions(input string, positions []int) []Event {

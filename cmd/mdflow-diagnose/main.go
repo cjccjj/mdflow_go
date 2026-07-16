@@ -21,7 +21,7 @@ import (
 	"github.com/cjccjj/mdflow/pkg/markdown/tokenizer"
 )
 
-const inventoryVersion = 1
+const inventoryVersion = 2
 
 type options struct {
 	specPath       string
@@ -451,7 +451,23 @@ func signature(trace []parser.TraceTransition, cause int, diff *commonmark.Diffe
 	if diff.Actual != nil {
 		actual = diff.Actual.String()
 	}
+	expected = signatureOperationKind(expected)
+	actual = signatureOperationKind(actual)
 	return strings.Join([]string{branch, state, expected, actual, outcome}, " | ")
+}
+
+func signatureOperationKind(operation string) string {
+	kind := strings.SplitN(operation, "(", 2)[0]
+	switch kind {
+	case "em_start", "em_end", "strong_start", "strong_end", "strike_start", "strike_end":
+		return "emphasis_marker"
+	case "link", "image":
+		return "resource_link"
+	case "code_block_start", "code_block_end", "code_lang":
+		return "code_block"
+	default:
+		return kind
+	}
 }
 
 func writeSingleReport(report caseReport, asJSON bool) error {

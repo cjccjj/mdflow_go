@@ -1,4 +1,4 @@
-# Refactor Plan: CommonMark-Compatible Streaming Transducer
+# Refactor Plan: CommonMark-Compatible Streaming Transducer - DONE
 
 ## 1. Goal and constraints
 

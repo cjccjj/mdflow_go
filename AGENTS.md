@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
 
 ## Project
 
@@ -13,19 +13,20 @@ make build              # build binary → ./mdflow
 make test               # go test ./...
 make lint               # golangci-lint run
 make fmt                # gofmt -w .
-make build-all          # cross-compile linux/amd64 + linux/arm64
 ```
 
-Run a single test or package:
 ```bash
-go test ./pkg/markdown/... -run TestName -v
-go test ./pkg/markdown/render/... -v
+go test ./pkg/markdown/... -run TestName -v    # run a specific test
 ```
 
-The spec conformance test reads `dev_docs/commonMark_spec.txt`. Run it with:
+**Diagnostic tool** (build tag `diagnose`):
 ```bash
-go test ./pkg/markdown/... -run TestSpec -v
+go run -tags diagnose ./cmd/mdflow-diagnose/             # full spec inventory
+go run -tags diagnose ./cmd/mdflow-diagnose/ --example=4 # single example
+go run -tags diagnose ./cmd/mdflow-diagnose/ --json      # machine-readable output
 ```
+
+---
 
 ## Architecture
 
@@ -41,152 +42,252 @@ Converts raw bytes into typed tokens (`TextToken`, `StarToken`, `BacktickToken`,
 
 ### 2. Parser (`pkg/markdown/parser/`)
 
-State-machine parser that consumes tokens from a buffer and emits canonical `event.Event` values. `parser.Event`, `parser.EventType`, and event constants are aliases retained for source compatibility. The parser can pause mid-stream: if the buffer doesn't contain enough tokens to decide, it waits for more input.
+State-machine parser that consumes tokens from a buffer and emits canonical `event.Event` values. Can pause mid-stream: if the buffer doesn't contain enough tokens to decide, it waits for more input.
 
 **13 parser states** (`state.go`): `NormalState`, `HeaderState`, `InlineCodeState`, `CodeBlockState`, `IndentedCodeBlockState`, `BlockquoteState`, `TablePendingState`, `TableBodyState`, `SetextPendingState`, `LinkTextState`, `LinkURLState`, `HTMLBlockState`, `LinkRefDefState`.
 
 `BoldState`/`ItalicState`/`StrikethroughState` are used only as emphasis stack frame labels, not as parser states — emphasis is handled within `NormalState` by `emphasisParser`.
 
-**Sub-parser architecture** — the `Parser` struct delegates feature-specific work to 7 focused sub-parsers. Each owns its state, holds a `*Parser` back-pointer for shared buffer/line-context access, and exposes a `reset()` method:
+**Sub-parser architecture** — the `Parser` struct delegates feature-specific work to 7 focused sub-parsers:
 
-| Sub-parser | File | Owns | Key methods |
-|---|---|---|---|
-| `linkParser` | `link_parser.go` | `linkBuf`, `linkURLBuf`, `linkDepth`, `urlParenDepth`, `urlAngleBracket`, `urlDone`, `urlHadNewline`, `linkTitleBuf`, `linkBracketConsumed`, `isImage` | `processLinkText()`, `processLinkURL()`, `flushLinkAsText()`, `emitLinkEvent()`, `collectTitle()`, `startImageText()` |
-| `emphasisParser` | `emphasis.go` | `emphStack []emphasisFrame` | `tryStar()`, `tryUnderscore()`, `tryTilde()`, `tryCloser()`, `tryBulletOrBold()`, `drain()` |
-| `tableParser` | `tables.go` | `tableHeaderBuf`, `tableColWidths`, `tableColAligns` | `tryTableHeader()`, `processTablePending()`, `processTableBody()`, `readTableCells()` |
-| `blockParser` | `block_parser.go` | `headerLvl`, `fenceLen`, `fenceChar`, `codeBlockFirst`, `codeBlockIndent`, `blockquoteHadBlank` | (state only; block methods still on `*Parser` in `blocks.go`) |
-| `setextParser` | `setext_parser.go` | `setextWaiting`, `setextBuf` | `flushSetext()` |
-| `htmlBlockParser` | `html_block_parser.go` | `htmlBlockType`, `htmlIndent` | (state only) |
-| `linkRefDefParser` | `link_ref_def_parser.go` | `lrdWaiting`, `lrdBuf` | `tryLinkRefDef()`, `processLinkRefDef()`, `flushLinkRefDef()` |
-
-**Shared state on Parser** (cross-cutting, not feature-specific):
-
-| Embedded type | Fields |
-|---|---|
-| `tokenBuffer` | `buf []Token`, `eof bool` |
-| `lineContext` | `lineStart bool`, `prevChar byte`, `contentIndent int` |
-
-**Source file map:**
-
-| File | Responsibility |
-|  |--- |--- |
-| `parser.go` | Core: `Parser` struct, `New()`/`Reset()`/`Parse()`, `process()` dispatch loop, `processNormal()` with ordered dispatch stages, `emitTextOrSpecial()`, `processBacktickStart()`, `handleIndentedList()`, `tryImage()`, `tryAutolink()` with URI/email validation |
-| `blocks.go` | Block-level methods (still on `*Parser`, accessing sub-parser state): ATX/setext headings, fenced/indented code blocks, blockquotes, thematic breaks, lists, HTML blocks with tag stripping (`stripHTMLOpening`/`stripHTMLClosing`/`findUnquotedGreater`). ~1246 lines. |
-| `inlines.go` | `processInlineCode()` — inline code span processing. Link and emphasis methods moved to sub-parsers; dead Bold/Italic/Strikethrough handlers removed. ~150 lines (was ~665). |
-| `inline_html.go` | `tryInlineHTML()` — inline HTML tag detection and stripping (open/close tags, comments, PIs, declarations, CDATA). Stateless scan following the `tryAutolink` pattern. Helper functions: `classifyHTMLStart`, `findHTMLTagEnd`, `findOpenTagEnd`/`findCommentEnd`/`findPIEnd`/`findDeclEnd`/`findCDATAEnd`, `bufferLooksLikeAutolink` (to avoid swallowing `<URI>` autolinks). ~336 lines. |
-| `emphasis.go` | `emphasisParser` type, stack ops (`push`/`pop`/`top`/`drain`), flanking predicates (`canUnderscoreOpen`/`canUnderscoreClose`), `tryStar()`/`tryUnderscore()`/`tryTilde()`/`tryCloser()`, `tryBulletOrBold()` |
-| `tables.go` | `tableParser` type, GFM table parsing: `readTableCells()`, `parseSeparatorAligns()`, `normalizeTableCells()` |
-| `link_parser.go` | `linkParser` type, inline links `[text](url)`, reference links `[text][label]`, images `![alt](url)` |
-| `link_ref_def_parser.go` | `linkRefDefParser` type, `parseLinkRefDefLine()`, `findUnescapedBracket()` |
-| `setext_parser.go` | `setextParser` type, `flushSetext()` |
-| `html_block_parser.go` | `htmlBlockParser` type — `htmlBlockType`, `htmlIndent` (state only; block methods on `*Parser` in `blocks.go`) |
-| `block_parser.go` | `blockParser` type (state only) |
-| `close.go` | `CloseStates()`, `Flush()`, `safeFlush()`, `finalizeState()` — per-state switch delegates to sub-parsers. HTMLBlockState calls `reset()` with no end event. |
-| `escapes.go` | Backslash escapes, hard line breaks, `hasMatchingCloser()`/`hasFlankingCloser()` helpers |
-| `entities.go` | HTML entity decoding, `resolveEntities()` |
-| `recognizers.go` | Shared line-start recognizers and parser predicates; `processNormal()` keeps precedence explicit rather than using a recognizer abstraction |
-| `token_stream.go` | Bounded token cursor (`tokenBuffer`) and append/prepend/consume mechanics |
-| `line_context.go` | Line-boundary context (`lineStart`, `prevChar`, `contentIndent`) |
-| `helpers.go` | `orderedListPrefix()`, `tabRemainingEquiv()`, indent ops, flanking checks (`isLeftFlankingRun`/`isRightFlankingRun`), whitespace helpers |
-| `events.go` | Compatibility aliases for `event.Type`, `event.Event`, and all event constants |
-| `../event/event.go` | Canonical parser/renderer semantic-event contract; includes `ImageEvent`, `ImageRefEvent`, autolinks, and retained HTML-block event types |
-| `state.go` | `State` enum |
-
-**The process loop** (`parser.go:process()`): iterates while tokens are available, dispatching to the current state's handler (which may delegate to a sub-parser). Breaks if no progress was made (state unchanged + buffer not consumed), waiting for more input.
+| Sub-parser | File | Owns |
+|---|---|---|
+| `linkParser` | `link_parser.go` | Link/image text/URL/title buffers, bracket depth |
+| `emphasisParser` | `emphasis.go` | `emphStack []emphasisFrame` for bold/italic/strikethrough |
+| `tableParser` | `tables.go` | Table header, column widths, alignments |
+| `blockParser` | `block_parser.go` | Heading level, fence info, code block indent |
+| `setextParser` | `setext_parser.go` | Setext heading lookahead buffer |
+| `htmlBlockParser` | `html_block_parser.go` | HTML block type and indent |
+| `linkRefDefParser` | `link_ref_def_parser.go` | Link reference definition buffer |
 
 **The dispatch order** (`parser.go:processNormal()`):
 1. `processEscapeOrEntity()` — backslash escapes and `&` entities
 2. `processLineStartBlock()` — thematic breaks, ATX headings, blockquotes, bullets, ordered lists, fenced code, HTML blocks, link ref defs *(line-start only)*
-3. `processInlineStart()` — backtick (inline code / fenced code block), `[` (link), `~`/`*`/`_` (emphasis) *(always)*
-4. `tryImage()` — `![` detection, delegates to `linkParser.startImageText()` *(always)*
-5. `tryAutolink()` — `<URI>` and `<email>` autolink detection with URI/email validation *(always)*
-6. `tryInlineHTML()` — `<tag>` inline HTML detection and stripping: open/close tags, self-closing, comments, PIs, declarations, CDATA. Handles `>` inside quoted attributes. Delegates contains `@` or `:` in tag-name position to `tryAutolink` *(always)*
+3. `processInlineStart()` — backtick, `[`, `~`/`*`/`_` *(always)*
+4. `tryImage()` — `![` detection *(always)*
+5. `tryAutolink()` — `<URI>` and `<email>` *(always)*
+6. `tryInlineHTML()` — `<tag>` inline HTML detection *(always)*
 7. `processDeferredLineStart()` — tables, indented code, setext candidates *(line-start only)*
-8. `emitTextOrSpecial()` — fallback: emit plain text, checking `bufferHasPattern()` at each step for early break
+8. `emitTextOrSpecial()` — fallback: emit plain text
 
 ### 3. Writer (`pkg/markdown/render/`)
 
-Converts canonical `event.Event` values to ANSI terminal output via `AnsiWriter`.
-
-| File | Responsibility |
-|---|---|
-| `writer.go` | `Handle(event.Event)` routes semantic events to ANSI output. Manages emphasis SGR composition and accepts an injected `InlineRenderer` for table cells; HTML blocks are plain text (tags stripped by parser). |
-| `ansi.go` | `AnsiWriter` — thin wrapper over `io.Writer` with `WriteStyled(text, Style)` |
-| `styles.go` | `Theme` struct (27 `Style` fields) and `DefaultTheme` with ANSI escape codes |
-| `table.go` | Full table rendering with live redraw: uses `\033[nA` cursor-up codes to repaint tables when column widths change as more rows arrive. Cell Markdown is rendered through `Writer`'s injected `InlineRenderer`; repaints are capped at 50/table. |
-| `tty.go` | `IsTerminal(w)` and `TerminalWidth(w)` — terminal detection via `golang.org/x/term` |
-| `util.go` | `VisibleLen` (ANSI-aware string width), deprecated compatibility `RenderInline`, and `WrapContent` (width-aware line wrapping preserving ANSI codes) |
-
-### Pipeline (`pkg/markdown/pipeline.go`)
-
-The `Pipeline` struct composes parser and renderer services:
-- `streamChunker` owns newline splitting and incomplete UTF-8 sequences at write boundaries
-- Each emitted chunk flows through Tokenize → Parse → shared event-emission helper → Handle
-- It supplies a parser-backed `InlineRenderer` to table rendering, so production `render` code depends only on `event` and injected services
-- `Flush()` drains buffered parser state without closing open constructs
-- `Close()` drains UTF-8 buffer, flushes parser, then calls `CloseStates()` to emit end events for any open constructs
+Converts `event.Event` values to ANSI terminal output. Key files: `writer.go` (event→ANSI routing), `table.go` (live table redraw with cursor-up codes), `styles.go` (27 `Style` fields in `Theme`).
 
 ### Public API (`pkg/markdown/renderer.go`)
 
 ```go
 r := markdown.NewRenderer(os.Stdout)
-r := markdown.NewRenderer(os.Stdout, markdown.WithTheme(customTheme))
 r.Write(data)   // parse & render chunk (any byte boundary)
 r.Flush()       // drain buffered tokens (keeps parser state)
 r.Reset()       // reset for a new document
 r.Close()       // flush + close open styles + reset
 ```
 
+---
+
+## CommonMark compatibility workflow
+
+This is the core development workflow for improving CommonMark compatibility. It replaces example-by-example patching with cluster-based fixes and regression protection.
+
+### Diagnostic tool (`cmd/mdflow-diagnose/`, build tag `diagnose`)
+
+The diagnostic tool runs projection-based comparison on all 655 CommonMark spec examples and reports the result for each:
+
+- **match** — parser `[]Operation` stream equals HTML-projected `[]Operation` stream
+- **mismatch** — first divergence found via `FirstDifference()`
+- **noncomparable** — raw HTML, nested lists, reference links, GFM tables (intentionally excluded)
+
+```bash
+# Full spec inventory
+go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line
+
+# Single example drill-down with trace
+go run -tags diagnose ./cmd/mdflow-diagnose/ --example=4 --chunks=line
+
+# JSON output for scripting
+go run -tags diagnose ./cmd/mdflow-diagnose/ --json
+```
+
+### Semantic projection (`internal/commonmark/`)
+
+Both CommonMark's expected HTML and the parser's event stream are projected into a canonical `[]Operation` stream:
+
+- `ExpectedProjection(markdown, html)` — parses CommonMark HTML tags (`<em>`, `<strong>`, `<a>`, `<pre><code>`, etc.) into `[]Operation`
+- `ActualProjection(parserEvents)` — maps `event.Event` → `[]Operation`
+- `FirstDifference(expected, actual)` — returns first mismatch index and both operations, or nil if equal
+
+Operation kinds: `text`, `newline`, `em_start`/`end`, `strong_start`/`end`, `strike_start`/`end`, `code_start`/`end`, `code_block_start`/`end`, `code_lang`, `heading_start`/`end`, `blockquote_start`/`end`, `list_item`, `thematic_break`, `link`, `image`.
+
+### Clustering
+
+Mismatches are grouped by normalized **transition signature**: `branch | pre_state | expected_kind | actual_kind | outcome`. Operation value is excluded from the signature to group related bugs together.
+
+Largest current clusters are listed in the status table below, which also shows match/mismatch/noncomparable counts and protected regression test coverage per CommonMark section.
+
+### Fix workflow
+
+For each cluster:
+
+1. **Drill into the first example**: `--example=N --chunks=line` shows the first divergence and surrounding trace transitions.
+2. **Minimize the reproducer**: `--example=N --chunks=line --minimize` reduces input while preserving the same divergence signature.
+3. **Classify the divergence**:
+   - **Missing state** — input had the information but parser didn't preserve it → add/correct state
+   - **Incorrect transition** — state had enough info but chose wrong path → fix local transition
+   - **Future-dependent** — correct action depends on unseen input → record streaming tradeoff in `dev_docs/Streaming_Limitations.md`
+4. **Fix** — change the parser (one transition per fix ideally).
+5. **Verify**: run `--baseline` against the previous inventory to check for regressions.
+6. **Promote** — add the fixed examples as protected regression tests in `parser/commonmark_regression_test.go` using `assertProtectedSpecCases()`.
+
+### Protected regression tests (`parser/commonmark_regression_test.go`)
+
+Examples that are confirmed matches are promoted to permanent protected tests. Each runs in **3 streaming modes** (one-shot, line-boundary splits, per-rune splits) and verifies exact `[]Operation` equivalence via `FirstDifference()`. A future change that regresses a protected example must be corrected, expanded, or accepted as an explicit tradeoff.
+
+---
+
 ## Testing
 
-- `pkg/markdown/golden_test.go` — 39 golden cases comparing one-shot vs line-chunked vs arbitrary-split rendering; verifies streaming yields same output as whole-document rendering
-- `pkg/markdown/commonmark_spec_test.go` — parses 652 CommonMark spec examples from `dev_docs/commonMark_spec.txt`; verifies no-crash and text preservation
-- `pkg/markdown/parser/parser_test.go` — unit tests for parser states, token→event transformation, separator alignment
-- `pkg/markdown/parser/characterization_test.go` — streaming boundary tests for flush/close behavior across chunks
-- `pkg/markdown/parser/link_parser_test.go` — 41 tests: inline links, reference links, balanced brackets, streaming, titles, images, edge cases
-- `pkg/markdown/parser/inline_html_test.go` — 30 tests: open/close tags, self-closing, comments, PIs, declarations, CDATA, `>` in quoted attrs, streaming, EOF handling, autolink non-interference, edge cases
-- `pkg/markdown/html_block_test.go` — 12 tests: single-line and multi-line `<pre>`/`<script>`/`<style>`, comments, PIs, declarations, CDATA, tag stripping verification, layout preservation
-- `pkg/markdown/parser/autolink_parser_test.go` — 24 tests: URI autolinks, email autolinks, validation, streaming, edge cases
-- `pkg/markdown/parser/emphasis_parser_test.go` — 24 tests: bold/italic/strikethrough, nesting, flanking, intraword, multiple-of-3, streaming, close drain
-- `pkg/markdown/parser/table_parser_test.go` — 11 tests: table detection, alignments, multiple rows, streaming, flush, edge cases
-- `pkg/markdown/render/*_test.go` — unit tests for writer, styles, ANSI output, table rendering, and injected table-cell inline rendering
-- `pkg/markdown/stream_chunker_test.go` — UTF-8 boundary preservation plus chunker drain/reset lifecycle tests
-- `pkg/markdown/robustness_test.go` — edge-case, streaming, large input, and custom theme tests
+### Three-layer test strategy
 
-## Key design constraints
+| Layer | Test | Scope | Validates |
+|---|---|---|---|
+| **Smoke** | `TestCommonMarkSpec` | All 655 examples | No panic + text preservation |
+| **Protected** | `TestProtected*` | 29 promoted examples | Full `[]Operation` equivalence across 3 streaming modes |
+| **Debug** | `TestTraceRecorder` (`-tags diagnose`) | 4 synthetic inputs | Trace recorder doesn't change parser output |
 
-- **Never buffers the full document** — `streamChunker` and the parser retain only bounded input required to resolve current constructs. Some features (shortcut reference links, nested structures) are deliberately limited or omitted because they require lookahead or full-document context.
-- **Parser states can pause** — if a state handler doesn't consume tokens and doesn't change state, the loop breaks and waits for more input. This is how streaming works across chunk boundaries.
-- **Canonical event contract** — production parser/renderer communication uses `event.Event`. Keep `parser.Event` aliases intact for downstream source compatibility.
-- **EOF-awareness** — the parser has an `eof` flag on the token buffer. States use it to decide "no more data coming, resolve with what we have."
-- **Recovery on panic** — `Parse()` recovers from panics via `safeFlush()`, emitting remaining buffered tokens as text and resetting state, so a bug in one chunk doesn't break the entire stream.
-- **HTML handling** — HTML tags (both block and inline) are stripped by the parser, emitting only visible text. Inline HTML is detected in the `processNormal()` dispatch and stripped in a stateless scan; block HTML is handled in `HTMLBlockState` with opening/closing tag stripping. `HTMLBlockStartEvent`/`HTMLBlockEndEvent` are retained in the event enum but no longer emitted or rendered. Autolink URIs and emails are preserved and rendered normally.
-- **Tables repaint in place** — in a live terminal, tables redraw as column widths grow. The writer tracks how many lines it emitted and uses ANSI cursor-up codes to overwrite. Repaints are capped at 50 per table session.
+### Diagnostic inventory (build tag `diagnose`)
+
+Run full projection comparison on all 655 examples to get current match/mismatch/noncomparable counts, clustered by transition signature:
+```bash
+go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line
+```
+
+Compare with a baseline to detect regressions:
+```bash
+go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line --write-inventory=/tmp/before.json
+# ... make changes ...
+go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line --baseline=/tmp/before.json
+```
+
+### Unit tests
+
+- `pkg/markdown/golden_test.go` — 39 golden cases comparing one-shot vs line-chunked vs arbitrary-split rendering
+- `pkg/markdown/parser/parser_test.go` — parser state and token→event tests
+- `pkg/markdown/parser/link_parser_test.go` — 41 link/image tests
+- `pkg/markdown/parser/emphasis_parser_test.go` — 24 emphasis tests
+- `pkg/markdown/parser/inline_html_test.go` — 30 inline HTML tests
+- `pkg/markdown/parser/table_parser_test.go` — 11 table tests
+- `pkg/markdown/parser/autolink_parser_test.go` — 24 autolink tests
+- `pkg/markdown/html_block_test.go` — 12 HTML block tests
+- `pkg/markdown/parser/characterization_test.go` — streaming boundary tests
+- `internal/commonmark/semantic_test.go` — projection parser unit tests
+
+---
 
 ## Adding new features
 
-Follow the sub-parser pattern established by the refactor. See `dev_docs/Adding_Features.md` for detailed guidance. In brief:
+### Workflow
 
-1. **New inline construct** (e.g., `==highlight==`): create a `highlightParser` with its own state fields, a `*Parser` back-pointer, a `reset()` method, and `tryHighlight()` entry point. Register it in `processInlineStart()`. Add start/end values in `event`. Handle them in `Writer.Handle()`. Keep parser aliases only for compatibility. Add a `finalizeState` case in `close.go`.
+1. **Implement** — follow the sub-parser pattern (see below).
+2. **Test** — add unit tests for the sub-parser; add golden test cases.
+3. **Diagnose** — run the diagnostic tool to check which CommonMark spec examples become matches.
+4. **Cluster** — identify which mismatches share the same transition signature.
+5. **Fix** — adjust one transition at a time; check regression against baseline.
+6. **Promote** — add matching spec examples as protected regression tests.
 
-2. **New block construct**: create a `blockParser` sub-type (or add a new sub-parser). Register in `processLineStartBlock()` or `processDeferredLineStart()`. Add a parser state if the construct spans multiple lines. Handle start/end `event` values in the writer.
+### Adding feature code
 
-3. **New emphasis-like construct**: extend `emphasisParser` — add a new frame state, a new opener function following the `tryStar`/`tryUnderscore`/`tryTilde` pattern, register in `processInlineStart()`, handle in `enterEmphasis`/`exitEmphasis` for ANSI composition.
+**New inline construct** (e.g., `==highlight==`):
+- Create sub-parser with state fields, `*Parser` back-pointer, `reset()`
+- Register in `processInlineStart()` 
+- Add start/end `event` values
+- Handle in `Writer.Handle()`
+- Add `finalizeState` case in `close.go`
 
-4. **Always**: add tests in the sub-parser's test file, wire `Reset()` to call the sub-parser's `reset()`, update `finalizeState` in `close.go`, and ensure streaming across chunk boundaries works (test with `Parse()` called in multiple chunks).
+**New block construct**:
+- Create sub-parser, register in `processLineStartBlock()` or `processDeferredLineStart()`
+- Add parser `State` if spans multiple lines
+
+**New emphasis-like construct**:
+- Extend `emphasisParser` — add frame state, opener function following `tryStar` pattern
+- Register in `processInlineStart()`
+
+**Always**: wire `Reset()` to call sub-parser `reset()`, update `finalizeState`, test streaming across chunk boundaries.
+
+---
+
+## Key design constraints
+
+- **Never buffers the full document** — only bounded input required for current constructs. Shortcut reference links, nested structures are limited/omitted.
+- **Parser states can pause** — loop breaks when no progress; waits for more input.
+- **Canonical event contract** — production communication uses `event.Event`. Keep `parser.Event` aliases for source compatibility.
+- **EOF-awareness** — parser uses `eof` flag to resolve ambiguous sequences.
+- **Recovery on panic** — `Parse()` recovers via `safeFlush()`, emitting remaining buffered tokens as text.
+- **HTML stripped** — both block and inline HTML tags are stripped by parser; only visible text emitted.
+- **Tables repaint in place** — uses ANSI cursor-up codes for live redraw, capped at 50 per table session.
 
 ## Role of CommonMark spec
 
-CommonMark is a reference and robustness benchmark, not a strict compliance target.
+`dev_docs/commonMark_spec.txt` contains the spec with 655 embedded examples. CommonMark is a reference and robustness benchmark, not a strict compliance target — mdflow is a streaming state machine that cannot buffer the full document.
 
-`dev_docs/commonMark_spec.txt` contains the spec and examples. It is long and sectioned, so consult only the relevant parts for the feature being worked on.
+- **Output differs** — CommonMark defines HTML; mdflow renders ANSI terminal output
+- **Architecture differs** — CommonMark assumes full-document parsing; mdflow streams
+- **Streaming comes first** — when strict CommonMark conflicts with incremental rendering, prefer predictable streaming behavior
+- **Diagnostic, not compliance** — the semantic projection comparison identifies mismatches, but some are unavoidable under immediate output; those are recorded as streaming tradeoffs
 
-Key points:
+---
 
-1. **Output differs** — CommonMark defines HTML output; mdflow renders ANSI terminal output, so expected results are not directly comparable.
+## Current status
 
-2. **Architecture differs** — CommonMark assumes full-document parsing; mdflow is a streaming state machine that cannot buffer the whole document.
+*Dynamic — update after each diagnostic inventory run.*
 
-3. **Streaming comes first** — When strict CommonMark behavior conflicts with incremental rendering, prefer predictable streaming behavior.
+| Section | Protected | Match | Mismatch | Noncomp | Total |
+|---|---|---|---|---|---|
+| ATX headings | #63 | 17 | 1 | 0 | 18 |
+| Autolinks | #599, #606 | 8 | 2 | 9 | 19 |
+| Backslash escapes | #13 | 8 | 1 | 4 | 13 |
+| Block quotes | #236 | 12 | 3 | 10 | 25 |
+| Code spans | #341 | 11 | 7 | 4 | 22 |
+| Emphasis | #352, #359, #391, #427, #467, #468, #470 | 89 | 36 | 7 | 132 |
+| Entity references | #29 | 8 | 7 | 2 | 17 |
+| Fenced code blocks | #126 | 20 | 8 | 1 | 29 |
+| Hard line breaks | #647 | 6 | 7 | 2 | 15 |
+| Images | #592 | 5 | 2 | 15 | 22 |
+| Indented code blocks | #114 | 7 | 3 | 2 | 12 |
+| Link reference defs | #211 | 4 | 5 | 18 | 27 |
+| Links | #485 | 23 | 18 | 49 | 90 |
+| List items / Lists | #282, #283, #297 | 18 | 23 | 33 | 74 |
+| Paragraphs | #221 | 7 | 1 | 0 | 8 |
+| Setext headings | #94 | 23 | 3 | 1 | 27 |
+| Soft line breaks | #651 | 1 | 1 | 0 | 2 |
+| Tabs | #1 | 6 | 1 | 4 | 11 |
+| Textual content | #653 | 3 | 0 | 0 | 3 |
+| Thematic breaks | #43 | 17 | 2 | 0 | 19 |
+| Other (HTML, raw HTML) | — | 2 | 3 | 62 | 67 |
+| **TOTAL** | **29** | **295** | **134** | **226** | **655** |
 
-4. **Tests are for robustness** — `commonmark_spec_test.go` uses the spec examples to check no-crash behavior and text preservation, not full CommonMark conformance.
+**Protected:** 29 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (36 mismatches), links (18), lists (23), setext headings (3).
+
+### Largest mismatch clusters (43 total)
+
+Mismatches grouped by transition signature (`branch | pre_state | expected_kind | actual_kind | outcome`). Operation value excluded to group related bugs.
+
+| Count | Signature | Description | Example |
+|---|---|---|---|
+| 25 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
+| 10 | `line_start.bullet_dash \| normal \| newline \| text` | List paragraph boundaries (dash not recognized as bullet) | #4 |
+| 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #491 |
+| 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #228 |
+| 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #344 |
+| 5 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
+| 5 | `line_start.bullet_or_emphasis_star \| normal \| text \| emphasis_marker` | Star at line start confused between bullet/emphasis | #356 |
+| 5 | `finalize.close \| normal \| emphasis_marker \| text` | Emphasis unclosed on finalize | #407 |
+| 5 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #419 |
+| 4 | `finalize.close \| normal \| resource_link \| text` | Link broken on finalize (entity in URL, extra content) | #22 |
+| 4 | `deferred.indented_code \| normal \| text \| code_block` | Indented code where none expected | #49 |
+| 4 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
+| 3 | `state.code_block \| code_block \| text \| text` | Code block content diffs (encoding/whitespace) | #131 |
+| 3 | `line_start.bullet_dash \| normal \| text \| text` | Dash not recognized as list at line start | #259 |
+| 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #339 |
+| 3 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #378 |
+| 3 | `inline.underscore \| normal \| text \| text` | Underscore not recognized as emphasis | #400 |
