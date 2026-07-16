@@ -253,41 +253,38 @@ Current work is CommonMark spec compatibility fixes (see Fix workflow above). Ne
 | Fenced code blocks | #126 | 20 | 8 | 1 | 29 |
 | Hard line breaks | #647 | 7 | 6 | 2 | 15 |
 | Images | #592 | 5 | 2 | 15 | 22 |
-| Indented code blocks | #114 | 7 | 3 | 2 | 12 |
+| Indented code blocks | #114 | 8 | 2 | 2 | 12 |
 | Link reference defs | #211 | 4 | 5 | 18 | 27 |
 | Links | #485 | 23 | 18 | 49 | 90 |
-| List items / Lists | #282, #283, #297 | 18 | 23 | 33 | 74 |
+| List items / Lists | #282, #283, #297 | 31 | 10 | 33 | 74 |
 | Paragraphs | #221 | 7 | 1 | 0 | 8 |
 | Setext headings | #94 | 23 | 3 | 1 | 27 |
 | Soft line breaks | #651 | 1 | 1 | 0 | 2 |
-| Tabs | #1 | 6 | 1 | 4 | 11 |
+| Tabs | #1 | 7 | 0 | 4 | 11 |
 | Textual content | #653 | 3 | 0 | 0 | 3 |
 | Thematic breaks | #43 | 17 | 2 | 0 | 19 |
 | Other (HTML, raw HTML) | — | 2 | 3 | 62 | 67 |
-| **TOTAL** | **31** | **299** | **130** | **226** | **655** |
+| **TOTAL** | **31** | **314** | **115** | **226** | **655** |
 
-**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (33 mismatches), links (18), lists (23), setext headings (3).
+**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (33 mismatches), links (18), setext headings (3).
 
-### Largest mismatch clusters (43 total)
+### Largest mismatch clusters (41 total)
 
 Mismatches grouped by transition signature (`branch | pre_state | expected_kind | actual_kind | outcome`). Operation value excluded to group related bugs.
 
 | Count | Signature | Description | Example |
 |---|---|---|---|
 | 24 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
-| 10 | `line_start.bullet_dash \| normal \| newline \| text` | List paragraph boundaries (dash not recognized as bullet) | #4 |
 | 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #491 |
 | 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #228 |
 | 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #344 |
-| 5 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
+| 6 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
+| 5 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
 | 5 | `line_start.bullet_or_emphasis_star \| normal \| text \| emphasis_marker` | Star at line start confused between bullet/emphasis | #356 |
-| 2 | `finalize.close \| normal \| emphasis_marker \| text` | Emphasis unclosed on finalize | #425 |
-| 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #440 |
 | 4 | `finalize.close \| normal \| resource_link \| text` | Link broken on finalize (entity in URL, extra content) | #22 |
 | 4 | `deferred.indented_code \| normal \| text \| code_block` | Indented code where none expected | #49 |
-| 5 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
-| 3 | `state.code_block \| code_block \| text \| text` | Code block content diffs (encoding/whitespace) | #131 |
-| 3 | `line_start.bullet_dash \| normal \| text \| text` | Dash not recognized as list at line start | #259 |
-| 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #339 |
 | 4 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #378 |
+| 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #440 |
+| 3 | `state.code_block \| code_block \| text \| text` | Code block content diffs (encoding/whitespace) | #131 |
+| 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #339 |
 | 3 | `inline.underscore \| normal \| text \| text` | Underscore not recognized as emphasis | #400 |

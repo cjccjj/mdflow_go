@@ -474,7 +474,7 @@ func (p *htmlProjectionParser) textBlockOpen() bool {
 		return false
 	}
 	switch p.blocks[len(p.blocks)-1] {
-	case "p", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "li":
+	case "p", "h1", "h2", "h3", "h4", "h5", "h6", "pre":
 		return true
 	default:
 		return false

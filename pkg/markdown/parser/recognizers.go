@@ -38,6 +38,7 @@ func (p *Parser) tryOrderedList() ([]Event, bool) {
 	p.lineStart = false
 	events := []Event{{Type: BulletItemEvent, Value: prefix}}
 	rest := fullValue[len(prefix):]
+	p.listContentIndent = p.lineStartIndent + len(prefix)
 	if strings.HasPrefix(rest, "    ") {
 		p.enterState(IndentedCodeBlockState)
 		codeContent := rest[4:]
@@ -59,10 +60,49 @@ func (p *Parser) tryIndentedCodeOrList() ([]Event, bool) {
 	if !satisfied {
 		return nil, false
 	}
+
+	// If we're inside a list item (listContentIndent > 0), check whether the
+	// indentation is a continuation of the list rather than a code block.
+	// CommonMark: a continuation line needs at least listContentIndent spaces;
+	// if the indent beyond that is 4+, it's an indented code block.
+	if p.listContentIndent > 0 {
+		// Compute the total indent column from leading whitespace only.
+		col := 0
+		for _, tok := range p.buf[:consumeCount] {
+			if tok.Type == tokenizer.TabToken {
+				col = ((col + 4) / 4) * 4
+			} else if tok.Type == tokenizer.TextToken {
+				for _, r := range tok.Value {
+					if r != ' ' {
+						break
+					}
+					col++
+				}
+			}
+		}
+		if col >= p.listContentIndent && col < p.listContentIndent+4 {
+			// List continuation: strip the indent and emit the content.
+			p.consume(consumeCount)
+			p.lineStart = false
+			p.lineStartIndent = 0
+			if remaining != "" {
+				// remaining still has (col - 4) leading spaces from the
+				// peekEquivIndent threshold. Strip the full list indent.
+				extra := col - 4
+				if extra > 0 && len(remaining) >= extra {
+					remaining = remaining[extra:]
+				}
+				return []Event{{Type: TextEvent, Value: remaining}}, true
+			}
+			return nil, true
+		}
+	}
+
 	if isListStartAfterIndent(p.buf[consumeCount:], remaining) {
 		p.consume(consumeCount)
 		p.enterState(IndentedCodeBlockState)
 		p.lineStart = false
+		p.listContentIndent = 0
 		events := []Event{{Type: CodeBlockStartEvent}}
 		if remaining != "" {
 			events = append(events, Event{Type: TextEvent, Value: remaining})
@@ -72,6 +112,7 @@ func (p *Parser) tryIndentedCodeOrList() ([]Event, bool) {
 	p.consume(consumeCount)
 	p.enterState(IndentedCodeBlockState)
 	p.lineStart = false
+	p.listContentIndent = 0
 	events := []Event{{Type: CodeBlockStartEvent}}
 	if remaining != "" {
 		events = append(events, Event{Type: TextEvent, Value: remaining})

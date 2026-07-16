@@ -16,10 +16,11 @@ type Parser struct {
 	setextParser     *setextParser
 	htmlBlockParser  *htmlBlockParser
 
-	linkParser     *linkParser
-	emphasisParser *emphasisParser
-	tableParser    *tableParser
-	trace          *traceRecorder
+	linkParser         *linkParser
+	emphasisParser     *emphasisParser
+	tableParser        *tableParser
+	trace              *traceRecorder
+	listContentIndent  int // column where list item content starts (0 = not in list)
 }
 
 func New() *Parser {
@@ -45,6 +46,7 @@ func (p *Parser) Reset() {
 	p.linkRefDefParser.reset()
 	p.setextParser.reset()
 	p.htmlBlockParser.reset()
+	p.listContentIndent = 0
 }
 
 func (p *Parser) Parse(tokens []tokenizer.Token) (events []Event) {
@@ -204,6 +206,7 @@ func (p *Parser) consumeOptionalLineStartIndent() bool {
 				return false
 			}
 			p.consume(i)
+			p.lineStartIndent = spaces
 			return true
 		}
 
@@ -219,10 +222,12 @@ func (p *Parser) consumeOptionalLineStartIndent() bool {
 			return false
 		}
 		p.consume(i)
+		p.lineStartIndent = spaces
 		p.buf[0].Value = tok.Value[leading:]
 		return true
 	}
 
+	p.lineStartIndent = spaces
 	// The input ends in one to three spaces. Wait for the next token unless
 	// EOF has made those spaces ordinary literal text.
 	return spaces > 0 && spaces <= 3 && !p.eof

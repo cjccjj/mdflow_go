@@ -544,19 +544,26 @@ func (ep *emphasisParser) tryBulletOrBold() []Event {
 		events := []Event{{Type: BulletItemEvent}}
 		if second.Type == tokenizer.TabToken {
 			p.contentIndent = tabRemainingEquiv(1)
+			p.listContentIndent = p.lineStartIndent + 1 + p.contentIndent
 		} else if second.Type == tokenizer.TextToken {
-			trimmed := trimLeadingSpace(second.Value)
-			if hasFourLeadingSpaces(trimmed) {
+			content := strings.TrimLeft(second.Value, " ")
+			stripped := len(second.Value) - len(content)
+			if stripped > 4 {
+				stripped = 4
+			}
+			content = second.Value[stripped:]
+			p.listContentIndent = p.lineStartIndent + 1 + stripped
+			if strings.HasPrefix(content, "    ") {
 				p.state = IndentedCodeBlockState
-				codeContent := trimmed[4:]
+				codeContent := content[4:]
 				events = append(events, Event{Type: CodeBlockStartEvent})
 				if codeContent != "" {
 					events = append(events, Event{Type: TextEvent, Value: codeContent})
 				}
 				return events
 			}
-			if trimmed != "" {
-				events = append(events, Event{Type: TextEvent, Value: trimmed})
+			if content != "" {
+				events = append(events, Event{Type: TextEvent, Value: content})
 			}
 		}
 		return events

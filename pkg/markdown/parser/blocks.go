@@ -70,19 +70,27 @@ func (p *Parser) tryBullet() []Event {
 		events := []Event{{Type: BulletItemEvent}}
 		if second.Type == tokenizer.TabToken {
 			p.contentIndent = tabRemainingEquiv(1)
+			p.listContentIndent = p.lineStartIndent + 1 + p.contentIndent
 		} else {
-			trimmed := strings.TrimPrefix(second.Value, " ")
-			if strings.HasPrefix(trimmed, "    ") {
+			// Strip up to 4 leading spaces (CommonMark list item indent).
+			content := strings.TrimLeft(second.Value, " ")
+			stripped := len(second.Value) - len(content)
+			if stripped > 4 {
+				stripped = 4
+			}
+			content = second.Value[stripped:]
+			p.listContentIndent = p.lineStartIndent + 1 + stripped
+			if strings.HasPrefix(content, "    ") {
 				p.state = IndentedCodeBlockState
-				codeContent := trimmed[4:]
+				codeContent := content[4:]
 				events = append(events, Event{Type: CodeBlockStartEvent})
 				if codeContent != "" {
 					events = append(events, Event{Type: TextEvent, Value: codeContent})
 				}
 				return events
 			}
-			if trimmed != "" {
-				events = append(events, Event{Type: TextEvent, Value: trimmed})
+			if content != "" {
+				events = append(events, Event{Type: TextEvent, Value: content})
 			}
 		}
 		return events
