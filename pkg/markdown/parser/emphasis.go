@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"strings"
+
 	"github.com/cjccjj/mdflow/pkg/markdown/tokenizer"
 )
 
@@ -152,6 +154,16 @@ func (ep *emphasisParser) tryCloser(tt tokenizer.TokenType) ([]Event, bool) {
 	}
 
 	count := p.countConsecutive(tt)
+	// A run closing consecutive nested strong frames may be split across
+	// streaming chunks. Wait for its first non-delimiter token so an unmatched
+	// suffix is resolved as part of that same run. A lone closer remains eager
+	// to preserve the renderer's ordinary bold streaming behavior.
+	if count == len(p.buf) && !p.eof && len(ep.emphStack) > 1 {
+		below := ep.emphStack[len(ep.emphStack)-2]
+		if below.closerType == tt && below.closerLen == top.closerLen {
+			return nil, true
+		}
+	}
 	if tt == tokenizer.UnderscoreToken {
 		if !ep.canUnderscoreClose(count) {
 			return nil, false
@@ -195,6 +207,10 @@ func (ep *emphasisParser) tryCloser(tt tokenizer.TokenType) ([]Event, bool) {
 		events = append(events, emphasisEndEvent(frame2))
 		remaining -= nextTop.closerLen
 		nextTop = ep.top()
+	}
+	if remaining > 0 && ep.depth() == 0 && tt == tokenizer.StarToken {
+		p.consume(remaining)
+		events = append(events, Event{Type: TextEvent, Value: strings.Repeat("*", remaining)})
 	}
 
 	return events, true
@@ -333,7 +349,9 @@ func (ep *emphasisParser) tryStar() ([]Event, bool) {
 			return []Event{{Type: TextEvent, Value: "*"}}, true
 		}
 		if !hasFlankingCloser(p.buf[1:], tokenizer.StarToken, 1, true) {
-			if hasMatchingCloser(p.buf[1:], tokenizer.StarToken, 1, true) || hasNewlineIn(p.buf[1:]) {
+			// A newline alone does not make an opener literal: emphasis may close
+			// on the next paragraph-continuation line.
+			if hasMatchingCloser(p.buf[1:], tokenizer.StarToken, 1, true) {
 				p.consume(1)
 				p.lineStart = false
 				return []Event{{Type: TextEvent, Value: "*"}}, true

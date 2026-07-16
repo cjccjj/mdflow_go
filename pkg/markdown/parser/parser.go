@@ -393,9 +393,14 @@ func (p *Parser) processDeferredLineStart(first tokenizer.Token) ([]Event, bool)
 		return events, true
 	}
 
-	if events, handled := p.trySetextCandidate(); handled {
-		p.trace.branch("deferred.setext")
-		return events, true
+	// An active emphasis span may continue onto this line. Deferring the line
+	// as a setext candidate would parse it in an isolated temporary parser and
+	// lose the opener from the preceding line.
+	if p.emphasisParser.depth() == 0 {
+		if events, handled := p.trySetextCandidate(); handled {
+			p.trace.branch("deferred.setext")
+			return events, true
+		}
 	}
 
 	return nil, false

@@ -86,9 +86,11 @@ r.Close()       // flush + close open styles + reset
 
 ---
 
-## CommonMark compatibility workflow
+## Example-driven CommonMark compatibility workflow
 
-This is the core development workflow for improving CommonMark compatibility. It replaces example-by-example patching with cluster-based fixes and regression protection.
+Development is example-driven because: Markdown has no formal grammar, the CommonMark spec itself is defined by 655 examples rather than rules, and mdflow operates as a streaming state machine with no AST — unlike the C reference implementation. So example-based projection comparison is the only tractable correctness check.
+
+This workflow replaces ad-hoc patching with cluster-based fixes and regression protection.
 
 ### Diagnostic tool (`cmd/mdflow-diagnose/`, build tag `diagnose`)
 
@@ -125,19 +127,24 @@ Mismatches are grouped by normalized **transition signature**: `branch | pre_sta
 
 Largest current clusters are listed in the status table below, which also shows match/mismatch/noncomparable counts and protected regression test coverage per CommonMark section.
 
-### Fix workflow
+### Fixing a mismatch
 
-For each cluster:
+**1. Analyze the landscape** — Use the Current status section overview (per-section table + cluster table) to identify high-value targets. Prioritize:
+  - Sections with the most mismatches (emphasis 36, links 18, lists 23)
+  - Clusters with structural parsing errors, not value normalization (e.g. emphasis-boundary 10, dash-as-bullet 10, star/bullet confusion 5)
+  - Clusters where a single fix addresses many examples
 
-1. **Drill into the first example**: `--example=N --chunks=line` shows the first divergence and surrounding trace transitions.
-2. **Minimize the reproducer**: `--example=N --chunks=line --minimize` reduces input while preserving the same divergence signature.
-3. **Classify the divergence**:
-   - **Missing state** — input had the information but parser didn't preserve it → add/correct state
-   - **Incorrect transition** — state had enough info but chose wrong path → fix local transition
-   - **Future-dependent** — correct action depends on unseen input → record streaming tradeoff in `dev_docs/Streaming_Limitations.md`
-4. **Fix** — change the parser (one transition per fix ideally).
-5. **Verify**: run `--baseline` against the previous inventory to check for regressions.
-6. **Promote** — add the fixed examples as protected regression tests in `parser/commonmark_regression_test.go` using `assertProtectedSpecCases()`.
+**2. Select and triage** — Pick examples from the target cluster and review each manually:
+  - `--example=N --chunks=line --trace` shows the divergence and surrounding state
+  - Decide: **fix** (parser bug, clean transition fix), **defer** (needs deeper refactoring, keep in cluster), or **skip** (streaming limitation, record in `dev_docs/Streaming_Limitations.md`)
+  - Start with the simplest example in the cluster
+
+**3. Fix the example** — Per-example steps:
+  1. **Minimize** — `--minimize` reduces input while preserving the divergence signature
+  2. **Classify** — missing state, incorrect transition, or future-dependent
+  3. **Fix** — change one transition
+  4. **Verify** — `--baseline` checks for regressions
+  5. **Promote** — add as protected regression test via `assertProtectedSpecCases()`
 
 ### Protected regression tests (`parser/commonmark_regression_test.go`)
 
@@ -184,18 +191,11 @@ go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line --baseline=/tmp/befor
 
 ---
 
-## Adding new features
+## Adding parser features
 
-### Workflow
+Current work is CommonMark spec compatibility fixes (see Fix workflow above). New Markdown constructs (e.g., GFM tables, strikethrough, task lists) will come later. When that time comes, follow the sub-parser patterns below and run the diagnostic pipeline as usual.
 
-1. **Implement** — follow the sub-parser pattern (see below).
-2. **Test** — add unit tests for the sub-parser; add golden test cases.
-3. **Diagnose** — run the diagnostic tool to check which CommonMark spec examples become matches.
-4. **Cluster** — identify which mismatches share the same transition signature.
-5. **Fix** — adjust one transition at a time; check regression against baseline.
-6. **Promote** — add matching spec examples as protected regression tests.
-
-### Adding feature code
+### Wiring a new construct
 
 **New inline construct** (e.g., `==highlight==`):
 - Create sub-parser with state fields, `*Parser` back-pointer, `reset()`
@@ -248,10 +248,10 @@ go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line --baseline=/tmp/befor
 | Backslash escapes | #13 | 8 | 1 | 4 | 13 |
 | Block quotes | #236 | 12 | 3 | 10 | 25 |
 | Code spans | #341 | 11 | 7 | 4 | 22 |
-| Emphasis | #352, #359, #391, #427, #467, #468, #470 | 89 | 36 | 7 | 132 |
+| Emphasis | #352, #359, #391, #407, #419, #427, #467, #468, #470 | 92 | 33 | 7 | 132 |
 | Entity references | #29 | 8 | 7 | 2 | 17 |
 | Fenced code blocks | #126 | 20 | 8 | 1 | 29 |
-| Hard line breaks | #647 | 6 | 7 | 2 | 15 |
+| Hard line breaks | #647 | 7 | 6 | 2 | 15 |
 | Images | #592 | 5 | 2 | 15 | 22 |
 | Indented code blocks | #114 | 7 | 3 | 2 | 12 |
 | Link reference defs | #211 | 4 | 5 | 18 | 27 |
@@ -264,9 +264,9 @@ go run -tags diagnose ./cmd/mdflow-diagnose/ --chunks=line --baseline=/tmp/befor
 | Textual content | #653 | 3 | 0 | 0 | 3 |
 | Thematic breaks | #43 | 17 | 2 | 0 | 19 |
 | Other (HTML, raw HTML) | — | 2 | 3 | 62 | 67 |
-| **TOTAL** | **29** | **295** | **134** | **226** | **655** |
+| **TOTAL** | **31** | **299** | **130** | **226** | **655** |
 
-**Protected:** 29 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (36 mismatches), links (18), lists (23), setext headings (3).
+**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (33 mismatches), links (18), lists (23), setext headings (3).
 
 ### Largest mismatch clusters (43 total)
 
@@ -274,20 +274,20 @@ Mismatches grouped by transition signature (`branch | pre_state | expected_kind 
 
 | Count | Signature | Description | Example |
 |---|---|---|---|
-| 25 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
+| 24 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
 | 10 | `line_start.bullet_dash \| normal \| newline \| text` | List paragraph boundaries (dash not recognized as bullet) | #4 |
 | 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #491 |
 | 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #228 |
 | 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #344 |
 | 5 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
 | 5 | `line_start.bullet_or_emphasis_star \| normal \| text \| emphasis_marker` | Star at line start confused between bullet/emphasis | #356 |
-| 5 | `finalize.close \| normal \| emphasis_marker \| text` | Emphasis unclosed on finalize | #407 |
-| 5 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #419 |
+| 2 | `finalize.close \| normal \| emphasis_marker \| text` | Emphasis unclosed on finalize | #425 |
+| 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #440 |
 | 4 | `finalize.close \| normal \| resource_link \| text` | Link broken on finalize (entity in URL, extra content) | #22 |
 | 4 | `deferred.indented_code \| normal \| text \| code_block` | Indented code where none expected | #49 |
-| 4 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
+| 5 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
 | 3 | `state.code_block \| code_block \| text \| text` | Code block content diffs (encoding/whitespace) | #131 |
 | 3 | `line_start.bullet_dash \| normal \| text \| text` | Dash not recognized as list at line start | #259 |
 | 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #339 |
-| 3 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #378 |
+| 4 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #378 |
 | 3 | `inline.underscore \| normal \| text \| text` | Underscore not recognized as emphasis | #400 |

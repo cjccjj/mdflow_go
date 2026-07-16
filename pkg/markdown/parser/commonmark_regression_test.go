@@ -16,6 +16,10 @@ func TestProtectedCommonMarkDelimiterRunCases(t *testing.T) {
 	assertProtectedSpecCases(t, []int{391, 427, 467, 468, 470})
 }
 
+func TestProtectedCommonMarkStreamingEmphasisCases(t *testing.T) {
+	assertProtectedSpecCases(t, []int{407, 419})
+}
+
 func TestProtectedCommonMarkEmptyListItemCases(t *testing.T) {
 	assertProtectedSpecCases(t, []int{282, 283})
 }
