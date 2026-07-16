@@ -1,0 +1,3 @@
+{
+  "notes": "Setext headings use `===` (H1) or `---` (H2) underlines. Same level\ndistinction considerations as ATX headings \u2014 ANSI has no font sizes,\nso a renderer may use `#` prefixes, color, or bold to indicate level.\nThe underline characters should not appear in output."
+}

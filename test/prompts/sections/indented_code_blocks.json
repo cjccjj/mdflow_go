@@ -1,0 +1,3 @@
+{
+  "notes": "Indented code blocks (4+ spaces) should be visually distinct from body\ntext, similar to fenced code blocks. Content is literal \u2014 no inline\nparsing."
+}

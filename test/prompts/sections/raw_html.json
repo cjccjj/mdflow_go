@@ -1,0 +1,4 @@
+{
+  "notes": "Raw HTML is not native Markdown \u2014 it is normally rendered by a\nbrowser. ANSI rendering should prioritize clean recognition and\ncontent preservation. Applying similar structure and style is good\nbut not required."
+}
+

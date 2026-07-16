@@ -1,0 +1,3 @@
+{
+  "notes": "HTML blocks are not native Markdown \u2014 they are normally rendered by a\nbrowser. ANSI rendering should prioritize clean recognition of the\nHTML block and content preservation. Applying similar structure and\nstyle is good but not required."
+}

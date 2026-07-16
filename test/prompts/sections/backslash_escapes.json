@@ -1,0 +1,3 @@
+{
+  "notes": "Backslash escapes let punctuation be literal instead of triggering\nMarkdown syntax. The escape itself should not appear in output."
+}

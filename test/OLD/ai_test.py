@@ -288,7 +288,7 @@ def evaluate(client: OpenAI, section: str, markdown: str, html: str,
     prompt = build_eval_prompt(ctx, markdown, html, weight, weight_explanation,
                                 mdflow_out, glow_out)
     response = client.chat.completions.create(
-        model="gpt-5-mini",
+        model="gpt-5.6-terra",
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"},
     )
@@ -329,7 +329,7 @@ def cmd_run(filters: dict):
     sections = sorted(set(e["section"] for e in entries))
     label = ", ".join(sections) if len(sections) <= 3 else f"{len(sections)} sections"
     print(f"Run   {len(entries)} examples  ({label})")
-    print(f"Model gpt-5-mini")
+    print(f"Model gpt-5_6-terra")
     print()
 
     client = OpenAI(api_key=api_key)

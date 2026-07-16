@@ -1,0 +1,4 @@
+{
+  "notes": "ANSI cannot do stackable styles like HTML. An ANSI renderer has to\nchoose a single style when emphasis levels are nested. If emphasis\nand strong emphasis are visually distinct from body text and from\nnearby styles, that is considered good. For deep nested multi-layer\nstacked styles, less distinctive styling is still fine."
+}
+

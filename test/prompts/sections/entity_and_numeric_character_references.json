@@ -1,0 +1,4 @@
+{
+  "notes": "Entity references (`&amp;`) and numeric references (`&#65;`, `&#x41;`)\nshould resolve to the corresponding Unicode character in output.\nThey are not recognized inside code blocks or code spans."
+
+}

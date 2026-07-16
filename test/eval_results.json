@@ -1,0 +1,1248 @@
+[
+  {
+    "section": "Tabs",
+    "example": 1,
+    "markdown": "\tfoo\tbaz\t\tbim\n",
+    "html": "<pre><code>foo\tbaz\t\tbim\n</code></pre>\n",
+    "weight": 0.2,
+    "weight_explanation": "Literal tab-based indentation is valid Markdown and can create code blocks, but tabs are relatively uncommon in modern Markdown authoring compared with fenced code blocks or spaces.",
+    "mdflow_terminal": "\u001b[38;5;245mfoo\tbaz\t\tbim\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo\tbaz\t\tbim                                                                       ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the code content and literal tabs, isolates it on its own line, and uses a subdued code-like color that helps identify it as preformatted content. Renderer B preserves the content and separates it with blank space, but provides no visual code styling and includes substantial padding that is not especially helpful.",
+    "evaluated_at": "2026-07-17T07:33:57"
+  },
+  {
+    "section": "Tabs",
+    "example": 2,
+    "markdown": "  \tfoo\tbaz\t\tbim\n",
+    "html": "<pre><code>foo\tbaz\t\tbim\n</code></pre>\n",
+    "weight": 0.3,
+    "weight_explanation": "Indented code blocks using literal tabs are valid Markdown but are much less common in practice than fenced code blocks. Tabs within code content occur occasionally, especially in legacy or Makefile-like snippets.",
+    "mdflow_terminal": "\u001b[38;5;245mfoo\tbaz\t\tbim\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo\tbaz\t\tbim                                                                       ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B adds substantial surrounding horizontal whitespace, which is visually noisy and can make the code line harder to scan."
+    ],
+    "explanation": "Renderer A preserves the tabs and code text exactly while using a subdued code-style color, making the single-line code block readable and appropriately distinguished. Renderer B preserves the content and its whitespace-based code presentation, but the excessive padding is distracting and provides less clear styling."
+  },
+  {
+    "section": "Tabs",
+    "example": 3,
+    "markdown": "    a\ta\n    ὐ\ta\n",
+    "html": "<pre><code>a\ta\nὐ\ta\n</code></pre>\n",
+    "weight": 0.3,
+    "weight_explanation": "Indented code blocks are reasonably common, but examples specifically exercising literal tabs in both indentation and code content are relatively niche.",
+    "mdflow_terminal": "\u001b[38;5;245ma\ta\nὐ\ta\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \na\ta                                                                              \nὐ\ta                                                                              ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B adds a very large amount of horizontal padding, making the code block unnecessarily wide and less convenient to read or copy."
+    ],
+    "explanation": "Renderer A preserves both lines and their literal tab-separated content, with a restrained dim code style that clearly presents the block. Renderer B preserves the content and line structure, but its excessive padding harms terminal readability."
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 12,
+    "markdown": "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~\n",
+    "html": "<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Backslash escapes are useful when writing punctuation-heavy Markdown, code-adjacent prose, or literal syntax, but they are not a daily pattern in most documents.",
+    "mdflow_terminal": "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "!\\\"#\\$\\%\\&\\'()*+\\,-.\\/\\:\\;<\\=>\\?\\@[\\]\\^_`{|}\\~                                  ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B leaves many Markdown escape backslashes visible, even though they should be consumed."
+    ],
+    "explanation": "Renderer A cleanly displays every intended punctuation character, including the literal backslash, with no distracting Markdown syntax remaining. The trailing ANSI reset is harmless. Renderer B is still readable, but its visible escape characters make the output look like unprocessed Markdown rather than finished text."
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 25,
+    "markdown": "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;\n",
+    "html": "<p>  &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Entity references occur occasionally, especially in imported HTML-flavored Markdown or technical text, but named and numeric entities are not a daily foundational Markdown pattern.",
+    "mdflow_terminal": " &©ÆĎ\n¾ℋⅆ\n∲≧̸\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "  & © Æ Ď                                                                       \n¾ ℋ ⅆ                                                                           \n∲ ≧̸                                                                             ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [
+      "Renderer A removes the separating ordinary spaces between decoded entities, causing characters such as \"&©ÆĎ\" and \"¾ℋⅆ\" to run together.",
+      "Renderer A's cramped output reduces readability compared with the source and expected rendering."
+    ],
+    "explanation": "Renderer A correctly resolves the entities and preserves the line breaks, but lost inter-entity spacing materially hurts readability. Renderer B resolves every entity and preserves the spacing and paragraph layout; no additional ANSI styling is necessary for this simple text-only paragraph."
+  },
+  {
+    "section": "Precedence",
+    "example": 42,
+    "markdown": "- `one\n- two`\n",
+    "html": "<ul>\n<li>`one</li>\n<li>two`</li>\n</ul>\n",
+    "weight": 0.2,
+    "weight_explanation": "This is an obscure edge case involving unmatched backticks across list-item boundaries. It is unlikely in normal Markdown documents.",
+    "mdflow_terminal": "• `one\n• two`\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \n`one                                                                            \ntwo`                                                                            ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B omits list markers, making the list structure unclear."
+    ],
+    "explanation": "Renderer A preserves both literal backticks and clearly represents the two list items with bullet prefixes. Renderer B preserves the text but presents it as two plain lines, losing the intended list structure."
+  },
+  {
+    "section": "Thematic breaks",
+    "example": 43,
+    "markdown": "***\n---\n___\n",
+    "html": "<hr />\n<hr />\n<hr />\n",
+    "weight": 0.5,
+    "weight_explanation": "Thematic breaks appear occasionally in READMEs, documentation, and generated content, but are not a daily foundational construct.",
+    "mdflow_terminal": "\u001b[2m────────────────\u001b[0m\n\n\u001b[2m────────────────\u001b[0m\n\n\u001b[2m────────────────\u001b[0m\n\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B produces no visible output for the thematic breaks."
+    ],
+    "explanation": "Renderer A clearly renders all three thematic breaks as dim horizontal separator lines, with spacing that keeps them distinct and readable. Renderer B loses the content and structure entirely."
+  },
+  {
+    "section": "ATX headings",
+    "example": 62,
+    "markdown": "# foo\n## foo\n### foo\n#### foo\n##### foo\n###### foo\n",
+    "html": "<h1>foo</h1>\n<h2>foo</h2>\n<h3>foo</h3>\n<h4>foo</h4>\n<h5>foo</h5>\n<h6>foo</h6>\n",
+    "weight": 0.8,
+    "weight_explanation": "Headings are a common, foundational Markdown feature in READMEs, documentation, notes, and AI-generated content. Distinguishing heading levels is important for scanning document structure.",
+    "mdflow_terminal": "\u001b[1;48;5;63;38;5;228mfoo\u001b[0m\n\u001b[1;34m## foo\u001b[0m\n\u001b[1;33m### foo\u001b[0m\n\u001b[1;36m#### foo\u001b[0m\n\u001b[1;35m##### foo\u001b[0m\n\u001b[1;32m###### foo\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo                                                                             \nfoo                                                                             \nfoo                                                                             \nfoo                                                                             \nfoo                                                                             \nfoo",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish any heading level from another or from ordinary body text."
+    ],
+    "explanation": "Renderer A clearly separates every heading level: the top-level heading is strongly highlighted, while levels 2–6 retain their # prefixes and use distinct bold colors. This is readable, conveys hierarchy, and avoids unwanted closing markers. Renderer B preserves the text and line separation but flattens all six headings into identical plain text, losing heading-level structure."
+  },
+  {
+    "section": "Setext headings",
+    "example": 80,
+    "markdown": "Foo *bar*\n=========\n\nFoo *bar*\n---------\n",
+    "html": "<h1>Foo <em>bar</em></h1>\n<h2>Foo <em>bar</em></h2>\n",
+    "weight": 0.5,
+    "weight_explanation": "Setext headings appear occasionally in prose-oriented Markdown and older documents, though ATX headings are more common in READMEs and AI-generated content.",
+    "mdflow_terminal": "\u001b[1;48;5;63;38;5;228mFoo \u001b[3mbar\u001b[0m\u001b[0m\n\n\u001b[1;34m## Foo \u001b[3mbar\u001b[0m\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "Foo bar                                                                         \nFoo bar",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually indicate that either line is a heading, does not distinguish H1 from H2, and drops emphasis styling."
+    ],
+    "explanation": "Renderer A clearly presents both headings as distinct blocks, differentiates the H1 and H2 through strong ANSI styling and an H2 prefix, and preserves italic emphasis. Renderer B preserves the words and line separation but flattens both heading levels into identical plain text."
+  },
+  {
+    "section": "Indented code blocks",
+    "example": 107,
+    "markdown": "    a simple\n      indented code block\n",
+    "html": "<pre><code>a simple\n  indented code block\n</code></pre>\n",
+    "weight": 0.5,
+    "weight_explanation": "Indented code blocks are a standard Markdown feature, but fenced code blocks are more common in modern READMEs, documentation, and chat output.",
+    "mdflow_terminal": "\u001b[38;5;245ma simple\n  indented code block\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \na simple                                                                        \n  indented code block                                                           ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the code block from ordinary body text beyond its preserved indentation."
+    ],
+    "explanation": "Renderer A preserves the literal code content and internal indentation, and uses a muted ANSI color to clearly identify it as code. Renderer B preserves the content and line structure, so it remains readable, but its lack of code-specific styling makes the block less immediately distinguishable."
+  },
+  {
+    "section": "Fenced code blocks",
+    "example": 119,
+    "markdown": "```\n<\n >\n```\n",
+    "html": "<pre><code>&lt;\n &gt;\n</code></pre>\n",
+    "weight": 0.8,
+    "weight_explanation": "Fenced code blocks are common in READMEs, documentation, technical chat, and AI-generated answers. They are an important everyday Markdown feature.",
+    "mdflow_terminal": "\u001b[38;5;245m\n<\n >\n\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \n<                                                                               \n >                                                                              ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the code block from ordinary body text.",
+      "Renderer B adds excessive trailing whitespace/padding, which is distracting in a terminal."
+    ],
+    "explanation": "Renderer A preserves the literal angle brackets and leading space, while using a muted color and separation to clearly identify the content as code. Renderer B preserves the text but provides no meaningful code-block styling and its full-width padding harms readability."
+  },
+  {
+    "section": "HTML blocks",
+    "example": 148,
+    "markdown": "<table><tr><td>\n<pre>\n**Hello**,\n\n_world_.\n</pre>\n</td></tr></table>\n",
+    "html": "<table><tr><td>\n<pre>\n**Hello**,\n<p><em>world</em>.\n</pre></p>\n</td></tr></table>\n",
+    "weight": 0.2,
+    "weight_explanation": "Raw HTML blocks containing table and preformatted markup are uncommon in typical Markdown documents and are largely spec-edge-case territory.",
+    "mdflow_terminal": "\n**Hello**,\n\n_world_.\n\n\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "**Hello**,                                                                      \nworld.                                                                          \n                                                                                ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer A leaves Markdown delimiter characters visible inside the HTML/pre content, though this is readable and arguably appropriate for preformatted text.",
+      "Renderer B removes the visible emphasis delimiters but provides no terminal styling or indication that the content originated in a preformatted HTML block.",
+      "Neither renderer conveys the surrounding table structure, although preserving table layout is not especially important for this small example."
+    ],
+    "explanation": "Both renderers preserve the meaningful text with clear line separation. Renderer A cleanly strips the HTML wrappers and retains the preformatted-looking source content, while Renderer B produces cleaner plain text but loses the literal/preformatted character of the original. Neither adds styling that materially improves the result, so both are clear but basic."
+  },
+  {
+    "section": "Link reference definitions",
+    "example": 192,
+    "markdown": "[foo]: /url \"title\"\n\n[foo]\n",
+    "html": "<p><a href=\"/url\" title=\"title\">foo</a></p>\n",
+    "weight": 0.8,
+    "weight_explanation": "Reference-style links are common in README files, documentation, and generated Markdown, though inline links are somewhat more frequent.",
+    "mdflow_terminal": "\u001b[2m[Link Def: foo → /url]\u001b[0m\n[foo]\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "                                                                                \nfoo /url                                                                        ",
+    "glow_score": 2,
+    "pass": false,
+    "issues": [
+      "Renderer A does not resolve the reference link: it shows the definition as metadata and leaves the usage as literal \"[foo]\".",
+      "The dim link-definition line is visually de-emphasized despite containing the only visible URL."
+    ],
+    "explanation": "Renderer A preserves the label and URL, so the content is recoverable, but it presents a resolved link as an unresolved reference and makes the relationship unclear. Renderer B clearly presents both the visible link text and its destination, though without styling or an explicit link separator."
+  },
+  {
+    "section": "Paragraphs",
+    "example": 219,
+    "markdown": "aaa\n\nbbb\n",
+    "html": "<p>aaa</p>\n<p>bbb</p>\n",
+    "weight": 0.9,
+    "weight_explanation": "Separate paragraphs are a foundational Markdown pattern and occur in nearly every kind of prose document.",
+    "mdflow_terminal": "aaa\n\nbbb\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "aaa                                                                             \n                                                                                \nbbb                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the two paragraphs and the blank-line separation clearly conveys their structure. Renderer A's final ANSI reset is harmless in a terminal, while Renderer B's line padding is visually unnecessary but does not impair readability."
+  },
+  {
+    "section": "Blank lines",
+    "example": 227,
+    "markdown": "  \n\naaa\n  \n\n# aaa\n\n  \n",
+    "html": "<p>aaa</p>\n<h1>aaa</h1>\n",
+    "weight": 1.0,
+    "weight_explanation": "Headings and ordinary paragraphs are ubiquitous Markdown patterns in READMEs, documentation, chat, and AI-generated content.",
+    "mdflow_terminal": "\n\naaa\n\n\n\u001b[1;48;5;63;38;5;228maaa\u001b[0m\n\n\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "aaa                                                                             \n                                                                                \naaa",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the heading from the paragraph beyond block spacing."
+    ],
+    "explanation": "Renderer A clearly preserves the paragraph and heading as separate blocks, and the bold colored heading styling makes the hierarchy immediately apparent. Renderer B preserves both text blocks with readable spacing, but the heading has no visual treatment distinct from ordinary text."
+  },
+  {
+    "section": "Block quotes",
+    "example": 228,
+    "markdown": "> # Foo\n> bar\n> baz\n",
+    "html": "<blockquote>\n<h1>Foo</h1>\n<p>bar\nbaz</p>\n</blockquote>\n",
+    "weight": 0.7,
+    "weight_explanation": "Block quotes are common in documentation, discussions, email-style replies, and AI-generated content. Block quotes containing other block elements such as headings are less frequent but still practical.",
+    "mdflow_terminal": "\u001b[2m│ \u001b[0m# Foo\n\u001b[2m│ \u001b[0mbar\n\u001b[2m│ \u001b[0mbaz\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "                                                                                \nFoo                                                                             \nbar                                                                             \nbaz                                                                             ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer A leaves the heading marker literal rather than giving the heading additional visual treatment.",
+      "Renderer B does not visually distinguish the block quote from ordinary body text and removes the visible heading marker."
+    ],
+    "explanation": "Renderer A clearly marks every quoted line with a dim vertical bar and preserves the heading syntax, making the quote boundary and internal structure understandable. Renderer B preserves the words and line breaks, but the quotation context is lost and \"Foo\" is not visually identifiable as a heading."
+  },
+  {
+    "section": "List items",
+    "example": 253,
+    "markdown": "A paragraph\nwith two lines.\n\n    indented code\n\n> A block quote.\n",
+    "html": "<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n",
+    "weight": 0.7,
+    "weight_explanation": "Paragraphs, indented code blocks, and block quotes are common Markdown constructs in documentation, READMEs, and technical discussions.",
+    "mdflow_terminal": "A paragraph\nwith two lines.\n\n\u001b[38;5;245mindented code\n\n\u001b[0m\u001b[2m│ \u001b[0mA block quote.\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "A paragraph                                                                     \nwith two lines.                                                                 \n                                                                                \nindented code                                                                   \n                                                                                \nA block quote.                                                                  ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the indented code block from ordinary paragraph text.",
+      "Renderer B drops the block quote structure entirely."
+    ],
+    "explanation": "Renderer A preserves all content and clearly separates the paragraph, dim-styled code block, and quote with a vertical quote marker; its ANSI styling supports the structure well. Renderer B preserves text and spacing, but code formatting is indistinguishable and the quote has no marker or other structural cue."
+  },
+  {
+    "section": "Lists",
+    "example": 301,
+    "markdown": "- foo\n- bar\n+ baz\n",
+    "html": "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<ul>\n<li>baz</li>\n</ul>\n",
+    "weight": 0.5,
+    "weight_explanation": "Unordered lists are common, but the specific rule that changing bullet marker starts a separate adjacent list is a less frequent authoring detail.",
+    "mdflow_terminal": "• foo\n• bar\n+ baz\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \n                                                                                \nbaz                                                                             ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B removes all list markers, making the lines resemble plain text rather than list items."
+    ],
+    "explanation": "Renderer A preserves the items and clearly distinguishes the two lists through consistent markers within each list: bullets for the first list and plus signs for the second. Renderer B preserves the words and separates the groups with whitespace, but loses the visible list structure."
+  },
+  {
+    "section": "Inlines",
+    "example": 327,
+    "markdown": "`hi`lo`\n",
+    "html": "<p><code>hi</code>lo`</p>\n",
+    "weight": 0.5,
+    "weight_explanation": "Inline code spans are common in technical writing, but this specific unmatched-backtick boundary case is relatively uncommon.",
+    "mdflow_terminal": "\u001b[38;5;215;48;5;236mhi\u001b[0mlo`\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "hilo`                                                                           ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the inline code span from surrounding text."
+    ],
+    "explanation": "Renderer A preserves all text, correctly leaves the final unmatched backtick literal, and uses a clear code-style background/color treatment for `hi`. Renderer B preserves the characters but flattens the code span into ordinary text, losing the inline-code structure."
+  },
+  {
+    "section": "Code spans",
+    "example": 328,
+    "markdown": "`foo`\n",
+    "html": "<p><code>foo</code></p>\n",
+    "weight": 0.8,
+    "weight_explanation": "Inline code spans are common in technical documentation, READMEs, issue discussions, and AI-generated instructions. They are important for distinguishing commands, identifiers, filenames, and literals from prose.",
+    "mdflow_terminal": "\u001b[38;5;215;48;5;236mfoo\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish inline code from ordinary body text."
+    ],
+    "explanation": "Renderer A clearly preserves the code content and uses a contrasting foreground/background style that makes the inline code visually distinct, which is appropriate and readable. Renderer B preserves the content but renders it as plain text; with only a standalone code span there is no structural ambiguity, but it lacks the expected code distinction."
+  },
+  {
+    "section": "Emphasis and strong emphasis",
+    "example": 350,
+    "markdown": "*foo bar*\n",
+    "html": "<p><em>foo bar</em></p>\n",
+    "weight": 0.9,
+    "weight_explanation": "Emphasis is a very common Markdown feature in prose, documentation, READMEs, and AI-generated text.",
+    "mdflow_terminal": "\u001b[3mfoo bar\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo bar                                                                         ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A clearly presents the text as italic emphasis and keeps it separated as its own paragraph. Renderer B preserves the content and paragraph layout, but does not visually distinguish emphasis from ordinary text."
+  },
+  {
+    "section": "Links",
+    "example": 482,
+    "markdown": "[link](/uri \"title\")\n",
+    "html": "<p><a href=\"/uri\" title=\"title\">link</a></p>\n",
+    "weight": 0.8,
+    "weight_explanation": "Inline links are common in READMEs, documentation, chat, and AI-generated Markdown. Preserving both label and destination is important in a terminal.",
+    "mdflow_terminal": "\u001b[4;34mlink\u001b[0m (\u001b[2;34m/uri\u001b[0m \"title\")\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "link /uri                                                                       ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the link label from its destination and omits the optional title."
+    ],
+    "explanation": "Renderer A clearly presents the link text with link-like blue underlining and preserves the URL intact; the title is also retained as supplemental information. Renderer B preserves the essential label and URL in a readable form, but its plain presentation provides less structural and visual clarity."
+  },
+  {
+    "section": "Images",
+    "example": 572,
+    "markdown": "![foo](/url \"title\")\n",
+    "html": "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>\n",
+    "weight": 0.5,
+    "weight_explanation": "Inline images occur regularly in READMEs and documentation, though they are less foundational than prose, headings, links, or emphasis. Image titles are comparatively uncommon.",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo\u001b[0m (\u001b[2;34m/url\u001b[0m \"title\")\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo /url                                                                        ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B omits the image title, which is supportive metadata but may occasionally be useful.",
+      "Renderer A's literal [IMG:] marker is slightly mechanical, but it clearly communicates that the content is an image."
+    ],
+    "explanation": "Renderer A preserves the image identity, alt text, source URL, and title, while using dim/color/underline styling to distinguish their roles; this is clear and useful in a terminal. Renderer B preserves the important alt text and URL in a readable form, but provides less structural distinction and drops the title."
+  },
+  {
+    "section": "Autolinks",
+    "example": 594,
+    "markdown": "<http://foo.bar.baz>\n",
+    "html": "<p><a href=\"http://foo.bar.baz\">http://foo.bar.baz</a></p>\n",
+    "weight": 0.7,
+    "weight_explanation": "URL autolinks are common in READMEs, documentation, chat, and AI-generated content, though less universal than ordinary prose or headings.",
+    "mdflow_terminal": "\u001b[2;34mhttp://foo.bar.baz\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "http://foo.bar.baz                                                              ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the complete URL clearly on its own line. Renderer A's dim blue styling usefully signals link-like content without reducing readability; Renderer B is clear but unstyled."
+  },
+  {
+    "section": "Raw HTML",
+    "example": 613,
+    "markdown": "<a><bab><c2c>\n",
+    "html": "<p><a><bab><c2c></p>\n",
+    "weight": 0.1,
+    "weight_explanation": "Raw HTML-only input is uncommon in typical Markdown documents, especially when it contains no human-visible text.",
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "The HTML tags contain no visible textual content, and browsers would render this as visually empty. Renderer A's reset sequence and Renderer B's empty output are both effectively blank to a human reader, without misleading structure or lost readable content."
+  },
+  {
+    "section": "Hard line breaks",
+    "example": 633,
+    "markdown": "foo  \nbaz\n",
+    "html": "<p>foo<br />\nbaz</p>\n",
+    "weight": 0.5,
+    "weight_explanation": "Hard line breaks are used occasionally in prose, addresses, poetry, and compact formatted text, but are less common than paragraphs or headings.",
+    "mdflow_terminal": "foo  \nbaz\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo                                                                             \nbaz                                                                             ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the intended hard line break as two separate terminal lines. Renderer A retains trailing spaces from the Markdown source, but they do not impair readability; Renderer B's line padding is unnecessary but does not obscure the content."
+  },
+  {
+    "section": "Soft line breaks",
+    "example": 648,
+    "markdown": "foo\nbaz\n",
+    "html": "<p>foo\nbaz</p>\n",
+    "weight": 0.7,
+    "weight_explanation": "Soft line breaks occur commonly in hand-written Markdown, wrapped prose, READMEs, and generated text. Their exact rendering is less central than headings or lists, but preserving readable paragraph flow matters.",
+    "mdflow_terminal": "foo\nbaz\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo                                                                             \nbaz                                                                             ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the paragraph text clearly across two lines. Renderer A's trailing ANSI reset is harmless, and Renderer B's padding is visually inert in a normal terminal; neither harms readability or misrepresents structure."
+  },
+  {
+    "section": "Textual content",
+    "example": 650,
+    "markdown": "hello $.;'there\n",
+    "html": "<p>hello $.;'there</p>\n",
+    "weight": 0.9,
+    "weight_explanation": "Plain paragraph text is ubiquitous and foundational to nearly all Markdown documents.",
+    "mdflow_terminal": "hello $.;'there\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "hello $.;'there                                                                 ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the paragraph text clearly. This input has no meaningful internal structure or styling to convey; Renderer A's trailing ANSI reset is harmless, and Renderer B's padding is visually inconsequential."
+  },
+  {
+    "section": "ATX headings",
+    "example": 65,
+    "markdown": "\\## foo\n",
+    "html": "<p>## foo</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "A line beginning with two literal hash characters is an uncommon but plausible paragraph pattern, often seen in code-like notes or escaped heading text.",
+    "mdflow_terminal": "## foo\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "## foo                                                                          ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the literal \"## foo\" as paragraph content on its own line. Neither incorrectly treats it as a heading, and the reset ANSI sequence in Renderer A is not meaningfully harmful."
+  },
+  {
+    "section": "Setext headings",
+    "example": 83,
+    "markdown": "Foo\n-------------------------\n\nFoo\n=\n",
+    "html": "<h2>Foo</h2>\n<h1>Foo</h1>\n",
+    "weight": 0.4,
+    "weight_explanation": "Setext headings are a standard Markdown feature but are less common in everyday READMEs, documentation, and AI-generated Markdown than ATX (#) headings.",
+    "mdflow_terminal": "\u001b[1;34m## Foo\u001b[0m\n\n\u001b[1;48;5;63;38;5;228mFoo\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "Foo                                                                             \nFoo",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B preserves the heading text but does not visually identify either line as a heading or distinguish H1 from H2.",
+      "Renderer A's H1 background styling is somewhat strong, though it remains legible and clearly distinguishes the level."
+    ],
+    "explanation": "Renderer A removes the Setext underline syntax, clearly presents both headings, and makes the H2 and H1 visually distinct through prefixes and ANSI styling. Renderer B shows the text on separate lines, but the output looks like ordinary plain text and loses both heading semantics and level distinction."
+  },
+  {
+    "section": "HTML blocks",
+    "example": 149,
+    "markdown": "<table>\n  <tr>\n    <td>\n           hi\n    </td>\n  </tr>\n</table>\n\nokay.\n",
+    "html": "<table>\n  <tr>\n    <td>\n           hi\n    </td>\n  </tr>\n</table>\n<p>okay.</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Raw HTML table blocks occur occasionally in Markdown documents, but they are not a common pattern in typical READMEs, chat, or AI-generated text.",
+    "mdflow_terminal": "\n\n    <td>\n\u001b[38;5;245m       hi\n</td>\n\u001b[0m\n\n\nokay.\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "hi                                                                              \nokay.                                                                           ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer A exposes a partial raw HTML fragment (<td> and </td>) while dropping the surrounding table structure.",
+      "Renderer A's dim styling and uneven indentation make the fragment look like malformed or residual markup.",
+      "Renderer B removes table semantics, though this is minimally harmful for a single-cell table."
+    ],
+    "explanation": "Renderer A preserves the cell content and following paragraph, but the partial tags are visually confusing and do not communicate a coherent table. Renderer B cleanly presents the meaningful content on separate lines; while it loses the table structure, a one-cell table remains readable and the paragraph boundary is clear."
+  },
+  {
+    "section": "List items",
+    "example": 255,
+    "markdown": "- one\n\n two\n",
+    "html": "<ul>\n<li>one</li>\n</ul>\n<p>two</p>\n",
+    "weight": 0.8,
+    "weight_explanation": "Unordered lists are a common, foundational Markdown feature. The specific list-to-paragraph boundary shown here is less frequent, but clear list rendering remains important.",
+    "mdflow_terminal": "• one\n\ntwo\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \none                                                                             \n                                                                                \ntwo                                                                             ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B removes the list marker, making the first line visually indistinguishable from an ordinary paragraph."
+    ],
+    "explanation": "Renderer A clearly presents “one” as a bulleted list item and “two” as a separate paragraph after a blank line. Renderer B preserves all text and separation, but without a bullet or other distinction it does not clearly convey that the first line was a list item."
+  },
+  {
+    "section": "Emphasis and strong emphasis",
+    "example": 354,
+    "markdown": "*$*alpha.\n\n*£*bravo.\n\n*€*charlie.\n",
+    "html": "<p>*$*alpha.</p>\n<p>*£*bravo.</p>\n<p>*€*charlie.</p>\n",
+    "weight": 0.2,
+    "weight_explanation": "This tests edge-case emphasis delimiter behavior around currency and punctuation characters. Such literal asterisk cases are uncommon in everyday Markdown.",
+    "mdflow_terminal": "\u001b[3m$*alpha.\n\n\u001b[0m\u001b[3m£\u001b[0mbravo.\n\n\u001b[3m€\u001b[0mcharlie.\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "*$*alpha.                                                                       \n                                                                                \n*£*bravo.                                                                       \n                                                                                \n*€*charlie.                                                                     ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [
+      "Renderer A incorrectly treats literal asterisks as emphasis delimiters.",
+      "Renderer A removes or obscures literal asterisks and applies misleading italics."
+    ],
+    "explanation": "Renderer A keeps the words and paragraph breaks readable, but it misparses the intended literal text: the visible asterisks are missing or unevenly retained, and italic styling falsely suggests emphasis. Renderer B preserves all literal characters and the separate paragraphs cleanly; no additional styling is needed for this plain-text content."
+  },
+  {
+    "section": "Emphasis and strong emphasis",
+    "example": 397,
+    "markdown": "__foo bar __\n",
+    "html": "<p>__foo bar __</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Literal unmatched emphasis delimiters occur occasionally, usually from typos or prose containing underscores, but are not a core formatting pattern.",
+    "mdflow_terminal": "__foo bar __\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "__foo bar __                                                                    ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the literal underscores and text exactly as intended by CommonMark. The reset ANSI sequence in Renderer A does not materially hinder readability."
+  },
+  {
+    "section": "Links",
+    "example": 486,
+    "markdown": "[link](<>)\n",
+    "html": "<p><a href=\"\">link</a></p>\n",
+    "weight": 0.2,
+    "weight_explanation": "Links are common, but an explicitly empty link destination using `<>` is an uncommon edge case in real documents.",
+    "mdflow_terminal": "\u001b[4;34mlink\u001b[0m (\u001b[2;34m\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "link                                                                            ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B does not indicate that `link` is a hyperlink or that its destination is explicitly empty."
+    ],
+    "explanation": "Renderer A clearly presents the label as a link through blue underlined styling and shows an empty parenthesized destination, preserving both the link structure and its empty functional value. Renderer B preserves the visible text but renders it like ordinary plain text, losing the fact that it was a link."
+  },
+  {
+    "section": "Tabs",
+    "example": 4,
+    "markdown": "  - foo\n\n\tbar\n",
+    "html": "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>\n",
+    "weight": 0.3,
+    "weight_explanation": "Tabbed indentation for multi-paragraph list items is valid Markdown but relatively uncommon in everyday documents. It matters mainly in more carefully formatted lists.",
+    "mdflow_terminal": "• foo\n\nbar\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "                                                                                \nfoobar                                                                          ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer A does not visibly associate \"bar\" with the bullet item; it looks like an unindented paragraph outside the list.",
+      "Renderer B collapses the separate words and paragraphs into \"foobar\", losing both separation and list structure.",
+      "Renderer A emits a visible ANSI reset sequence in the captured output."
+    ],
+    "explanation": "Renderer A preserves all text and the initial list bullet, but the second paragraph's membership in the list item is unclear. Renderer B materially merges content and removes the list and paragraph structure, making the result misleading.",
+    "evaluated_at": "2026-07-17T05:10:12"
+  },
+  {
+    "section": "Tabs",
+    "example": 5,
+    "markdown": "- foo\n\n\t\tbar\n",
+    "html": "<ul>\n<li>\n<p>foo</p>\n<pre><code>  bar\n</code></pre>\n</li>\n</ul>\n",
+    "weight": 0.2,
+    "weight_explanation": "A tab-indented code block nested within a list item is valid Markdown but relatively uncommon in everyday documents. Most users use fenced code blocks or simpler list layouts.",
+    "mdflow_terminal": "• foo\n\n\tbar\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "                                                                                \nfoo                                                                             \n  bar                                                                           \n                                                                                ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer A does not give the code block any styling beyond indentation.",
+      "Renderer B omits the list bullet, so the list semantics are not explicit."
+    ],
+    "explanation": "Renderer A preserves the bullet, paragraph separation, and indented code content, making the nesting readable despite minimal code styling. Renderer B also preserves the text and visually separates the indented code, but its lack of a list marker makes the original list structure less apparent.",
+    "evaluated_at": "2026-07-17T05:10:14"
+  },
+  {
+    "section": "Tabs",
+    "example": 6,
+    "markdown": ">\t\tfoo\n",
+    "html": "<blockquote>\n<pre><code>  foo\n</code></pre>\n</blockquote>\n",
+    "weight": 0.2,
+    "weight_explanation": "A tab-indented code block inside a block quote is a relatively uncommon edge case, mainly encountered in legacy or carefully formatted Markdown.",
+    "mdflow_terminal": "\u001b[2m│ \u001b[0m\tfoo\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "                                                                                \n                                                                                \n  foo                                                                           ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer A does not make the nested code block especially distinct beyond indentation.",
+      "Renderer B does not visibly convey the block quote structure."
+    ],
+    "explanation": "Renderer A preserves the text and clearly signals a quote with a dim vertical bar; the remaining tab indentation reasonably suggests nested preformatted content. Renderer B preserves the indented text but omits any visible quote marker, flattening an important part of the structure.",
+    "evaluated_at": "2026-07-17T05:10:12"
+  },
+  {
+    "section": "Tabs",
+    "example": 7,
+    "markdown": "-\t\tfoo\n",
+    "html": "<ul>\n<li>\n<pre><code>  foo\n</code></pre>\n</li>\n</ul>\n",
+    "weight": 0.2,
+    "weight_explanation": "A tab-indented code block nested inside a list item is an uncommon edge case. Most Markdown authors use fenced code blocks or spaces instead.",
+    "mdflow_terminal": "• \tfoo\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "                                                                                \n                                                                                \n  foo                                                                           \n                                                                                ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer A presents the code-block content as ordinary list-item text rather than visually distinguishing it as code.",
+      "Renderer B preserves the apparent indentation of the code but drops the surrounding list-item structure.",
+      "Neither renderer clearly communicates both the list and nested code-block relationship."
+    ],
+    "explanation": "Renderer A preserves the text and shows a bullet, but the tabbed code block is not distinguishable from normal list text. Renderer B makes the indented text readable as code-like content, but omits the list marker, so its enclosing structure is lost.",
+    "evaluated_at": "2026-07-17T05:04:42"
+  },
+  {
+    "section": "Tabs",
+    "example": 8,
+    "markdown": "    foo\n\tbar\n",
+    "html": "<pre><code>foo\nbar\n</code></pre>\n",
+    "weight": 0.5,
+    "weight_explanation": "Indented code blocks, including tab-based indentation, appear occasionally in Markdown, though fenced code blocks are more common in modern READMEs and chat output.",
+    "mdflow_terminal": "\u001b[38;5;245mfoo\nbar\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B's full-width trailing padding is visually noisy and does not clearly distinguish the code block beyond its separate lines."
+    ],
+    "explanation": "Renderer A preserves both code lines and uses a subdued gray style that clearly marks the content as a code block without hurting readability. Renderer B preserves the content and line structure, but its large padded area is less polished and provides weaker code-block affordance.",
+    "evaluated_at": "2026-07-17T05:04:47"
+  },
+  {
+    "section": "Tabs",
+    "example": 9,
+    "markdown": " - foo\n   - bar\n\t - baz\n",
+    "html": "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n",
+    "weight": 0.6,
+    "weight_explanation": "Nested lists are common in READMEs, notes, and AI-generated documentation, though tab-based indentation specifically is less common than space indentation.",
+    "mdflow_terminal": "• foo\n• bar\n\u001b[38;5;245m - baz\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \nbaz                                                                             \n                                                                                \n                                                                                ",
+    "glow_score": 1,
+    "pass": false,
+    "issues": [
+      "Renderer A does not clearly convey that \"bar\" is nested under \"foo\"; both use the same bullet alignment.",
+      "Renderer A's final \"baz\" line has only weak, inconsistent indentation and changes from a bullet glyph to a dim hyphen.",
+      "Renderer B removes all list markers and indentation, flattening the hierarchy entirely."
+    ],
+    "explanation": "Both renderers preserve the words and keep them on separate lines, so the content remains readable. However, neither clearly communicates the three-level nested-list structure. Renderer A retains some list-like markers but presents nesting inconsistently, while Renderer B is completely flat.",
+    "evaluated_at": "2026-07-17T05:04:53"
+  },
+  {
+    "section": "Tabs",
+    "example": 10,
+    "markdown": "#\tFoo\n",
+    "html": "<h1>Foo</h1>\n",
+    "weight": 0.2,
+    "weight_explanation": "A tab after a heading marker is valid indentation/whitespace handling, but this exact form is uncommon in everyday Markdown.",
+    "mdflow_terminal": "\u001b[1;48;5;63;38;5;228mFoo\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "Foo",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the heading from ordinary text."
+    ],
+    "explanation": "Renderer A preserves the heading text and clearly presents it as a heading using bold, contrasting ANSI styling. Renderer B preserves the content cleanly on its own line, which remains readable, but provides no heading-specific visual treatment.",
+    "evaluated_at": "2026-07-17T05:04:57"
+  },
+  {
+    "section": "Tabs",
+    "example": 11,
+    "markdown": "*\t*\t*\t\n",
+    "html": "<hr />\n",
+    "weight": 0.5,
+    "weight_explanation": "Horizontal rules are a moderately common document-separation feature, though far less ubiquitous than paragraphs, headings, or emphasis.",
+    "mdflow_terminal": "\u001b[2m────────────────\u001b[0m\n\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B omits the horizontal rule entirely."
+    ],
+    "explanation": "Renderer A clearly conveys a section break with a dim horizontal line, which is appropriate and readable in a terminal. Renderer B produces no visible output, losing the block structure.",
+    "evaluated_at": "2026-07-17T05:05:00"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 14,
+    "markdown": "\\*not emphasized*\n\\<br/> not a tag\n\\[not a link](/foo)\n\\`not code`\n1\\. not a list\n\\* not a list\n\\# not a heading\n\\[foo]: /url \"not a reference\"\n\\&ouml; not a character entity\n",
+    "html": "<p>*not emphasized*\n&lt;br/&gt; not a tag\n[not a link](/foo)\n`not code`\n1. not a list\n* not a list\n# not a heading\n[foo]: /url &quot;not a reference&quot;\n&amp;ouml; not a character entity</p>\n",
+    "weight": 0.6,
+    "weight_explanation": "Backslash escaping is a common Markdown mechanism when writing literal punctuation, especially in technical documentation, but it is less frequent than headings, paragraphs, lists, and emphasis.",
+    "mdflow_terminal": "*not emphasized*\n<br/> not a tag\n[not a link](/foo)\n`not code`\n1. not a list\n* not a list\n# not a heading\n[foo]: /url \"not a reference\"\n&ouml; not a character entity\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "*not emphasized*                                                                \n<br/> not a tag                                                                 \n[not a link](/foo)                                                              \n`not code`                                                                      \n1. not a list                                                                   \n* not a list                                                                    \n# not a heading                                                                 \n[foo]: /url \"not a reference\"                                                   \n\\ö not a character entity                                                       ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B incorrectly turns the escaped ampersand sequence \\&ouml; into \\ö, altering the literal source text."
+    ],
+    "explanation": "Renderer A cleanly removes the escape backslashes and preserves all intended literal punctuation and entity-like text. The output is a readable paragraph with appropriate line separation; the visible HTML-like strings are intentionally literal. Renderer B is otherwise readable, but its conversion of the escaped entity-like sequence changes content and is misleading.",
+    "evaluated_at": "2026-07-17T05:11:21"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 15,
+    "markdown": "\\\\*emphasis*\n",
+    "html": "<p>\\<em>emphasis</em></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Backslash escapes are useful for technical writing and literal Markdown punctuation, but this particular double-backslash/adjacent-emphasis interaction is relatively uncommon.",
+    "mdflow_terminal": "\\\u001b[3memphasis\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "\\emphasis                                                                       ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the emphasized word."
+    ],
+    "explanation": "Renderer A correctly preserves the literal backslash and renders “emphasis” in italics, matching the intended readable structure. Renderer B preserves the visible text and backslash, but loses the emphasis styling; for this single short paragraph it remains clear and readable.",
+    "evaluated_at": "2026-07-17T05:11:21"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 13,
+    "markdown": "\\\t\\A\\a\\ \\3\\φ\\«\n",
+    "html": "<p>\\\t\\A\\a\\ \\3\\φ\\«</p>\n",
+    "weight": 0.2,
+    "weight_explanation": "Backslash escaping is common enough, but this specific case—backslashes before non-escapable characters—is uncommon spec-edge behavior.",
+    "mdflow_terminal": "\\\t\\A\\a\\ \\3\\φ\\«\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "\\\t\\A\\a\\ \\3\\φ\\«                                                                   ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the literal backslashes and following characters exactly as required. The input is a single plain paragraph with no additional structure to convey; Renderer A's trailing ANSI reset is harmless.",
+    "evaluated_at": "2026-07-17T05:11:22"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 18,
+    "markdown": "    \\[\\]\n",
+    "html": "<pre><code>\\[\\]\n</code></pre>\n",
+    "weight": 0.5,
+    "weight_explanation": "Indented code blocks are reasonably common, especially in technical documentation, though this particular literal-backslash case is less frequent.",
+    "mdflow_terminal": "\u001b[38;5;245m\\[\\]\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \n[]                                                                              ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B drops the literal backslashes, changing the code content."
+    ],
+    "explanation": "Renderer A preserves the exact code content, including both backslashes, and uses subdued code styling that clearly distinguishes it. Renderer B renders only `[]`, losing meaningful literal characters from the code block.",
+    "evaluated_at": "2026-07-17T05:11:26"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 16,
+    "markdown": "foo\\\nbar\n",
+    "html": "<p>foo<br />\nbar</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Explicit backslash hard line breaks are occasionally used for addresses, poetry, and deliberate line formatting, but are less common than ordinary paragraphs and emphasis.",
+    "mdflow_terminal": "foo\nbar\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "foo                                                                             \nbar                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the content and present the intended hard line break as two separate terminal lines. Renderer A's trailing ANSI reset is harmless, and Renderer B's trailing spaces do not materially affect normal terminal readability.",
+    "evaluated_at": "2026-07-17T05:11:26"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 17,
+    "markdown": "`` \\[\\` ``\n",
+    "html": "<p><code>\\[\\`</code></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Backslash escapes are useful in technical Markdown, but this particular interaction involving escaped punctuation inside a code span is relatively uncommon in everyday documents.",
+    "mdflow_terminal": "\u001b[38;5;215;48;5;236m\\[\\`\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "\\[\\`                                                                            ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the literal code content exactly and clearly presents it as inline code using a distinct background/color treatment. Renderer B preserves the content and is readable, but provides no visual indication that it is code.",
+    "evaluated_at": "2026-07-17T05:11:27"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 19,
+    "markdown": "~~~\n\\[\\]\n~~~\n",
+    "html": "<pre><code>\\[\\]\n</code></pre>\n",
+    "weight": 0.5,
+    "weight_explanation": "Fenced code blocks are common, while this specific case of backslashes before bracket punctuation inside a code block is less frequent. Preserving literal characters in code remains important.",
+    "mdflow_terminal": "\u001b[38;5;245m\n\\[\\]\n\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \n[]                                                                              ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B incorrectly removes the literal backslashes from the code-block content."
+    ],
+    "explanation": "Renderer A preserves the exact literal code content, including both backslashes, and uses muted ANSI styling to distinguish the code block. Renderer B displays readable brackets but alters the source content, which is a substantive failure for code.",
+    "evaluated_at": "2026-07-17T05:11:30"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 21,
+    "markdown": "<a href=\"/bar\\/)\">\n",
+    "html": "<a href=\"/bar\\/)\">\n",
+    "weight": 0.1,
+    "weight_explanation": "A backslash escape inside a raw HTML attribute is highly niche CommonMark behavior and is rarely encountered in ordinary Markdown documents.",
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "The input is an opening HTML anchor tag with no visible text content. Suppressing it produces the same human-visible result as rendering the raw HTML, so both outputs are acceptable; Renderer A's reset ANSI sequence is harmless but provides no benefit.",
+    "evaluated_at": "2026-07-17T05:11:33"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 22,
+    "markdown": "[foo](/bar\\* \"ti\\*tle\")\n",
+    "html": "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Links are common, but backslash escapes within link destinations and titles are an infrequent edge case in everyday Markdown.",
+    "mdflow_terminal": "[foo](/bar*\u001b[0m",
+    "mdflow_score": 0,
+    "glow_terminal": "foo /bar%5C%2A                                                                  ",
+    "glow_score": 0,
+    "pass": false,
+    "issues": [
+      "Renderer A drops the link title and leaves an incomplete literal Markdown link.",
+      "Renderer A emits a visible ANSI reset sequence context without providing useful styling.",
+      "Renderer B drops the link title.",
+      "Renderer B preserves the backslash as percent-encoded %5C rather than interpreting the escape, producing the wrong destination."
+    ],
+    "explanation": "Renderer A leaves malformed link syntax and loses title content, making the result incomplete. Renderer B is more readable at a glance, but it omits the title and changes the URL by encoding the escape backslash, so content is altered.",
+    "evaluated_at": "2026-07-17T05:11:35"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 24,
+    "markdown": "``` foo\\+bar\nfoo\n```\n",
+    "html": "<pre><code class=\"language-foo+bar\">foo\n</code></pre>\n",
+    "weight": 0.2,
+    "weight_explanation": "Escaped punctuation in fenced-code info strings is an uncommon edge case. Fenced code blocks themselves are common, but this specific language-label escaping behavior is rarely encountered.",
+    "mdflow_terminal": "\u001b[38;5;245m\u001b[3;38;5;221mfoo+bar\u001b[0m\nfoo\n\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B omits the fenced code block's info-string label (`foo+bar`), reducing useful context such as a language identifier."
+    ],
+    "explanation": "Renderer A preserves the code content and correctly renders the escaped info string as `foo+bar` without the backslash; its dim/italic colored label clearly distinguishes metadata from code. Renderer B preserves the code text cleanly, but drops the info string, so it remains readable and structurally recognizable as code but loses relevant context.",
+    "evaluated_at": "2026-07-17T05:11:38"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 23,
+    "markdown": "[foo]\n\n[foo]: /bar\\* \"ti\\*tle\"\n",
+    "html": "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Backslash escapes are a standard Markdown mechanism, but escaped punctuation specifically inside reference-link destinations and titles is relatively uncommon in everyday documents.",
+    "mdflow_terminal": "[foo]\n\n\u001b[2m[Link Def: foo → /bar\\*]\u001b[0m\u001b[0m",
+    "mdflow_score": 0,
+    "glow_terminal": "foo /bar%5C%2A                                                                  ",
+    "glow_score": 0,
+    "pass": false,
+    "issues": [
+      "Renderer A does not resolve the reference link: it prints `[foo]` literally.",
+      "Renderer A exposes the link-definition syntax and preserves the escape backslash in `/bar\\*`.",
+      "Renderer A omits the link title `ti*tle`.",
+      "Renderer B does not show the title and renders the destination incorrectly as `/bar%5C%2A` rather than `/bar*`."
+    ],
+    "explanation": "Both renderers preserve some recognizable text, but neither presents the intended link correctly. A leaks source syntax and loses the title; B changes the URL semantics through percent-encoding the literal escape sequence and also loses the title.",
+    "evaluated_at": "2026-07-17T05:11:39"
+  },
+  {
+    "section": "Backslash escapes",
+    "example": 20,
+    "markdown": "<https://example.com?find=\\*>\n",
+    "html": "<p><a href=\"https://example.com?find=%5C*\">https://example.com?find=\\*</a></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Backslash escaping is useful but relatively infrequent compared with ordinary links and emphasis. Escapes within autolinks are a particularly niche edge case.",
+    "mdflow_terminal": "\u001b[2;34mhttps://example.com?find=\\*\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "https://example.com?find=*                                                      ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B removes the literal backslash from the displayed URL, changing the link text and URL meaning relative to the expected output."
+    ],
+    "explanation": "Renderer A preserves the literal backslash as required by the expected autolink output and uses restrained blue link styling that makes the URL easy to identify. Renderer B is readable, but it alters the URL by dropping a meaningful character.",
+    "evaluated_at": "2026-07-17T05:11:41"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 26,
+    "markdown": "&#35; &#1234; &#992; &#0;\n",
+    "html": "<p># Ӓ Ϡ �</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Entity and numeric character references appear occasionally, especially in generated or escaped content, but are not a daily Markdown pattern for most users.",
+    "mdflow_terminal": "#ӒϠ�\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "# Ӓ Ϡ �                                                                         ",
+    "glow_score": 3,
+    "pass": false,
+    "issues": [
+      "Renderer A drops the spaces between the resolved entity characters, merging distinct inline items into \"#ӒϠ�\".",
+      "Renderer A emits an unnecessary ANSI reset sequence."
+    ],
+    "explanation": "Renderer A resolves the references correctly but loses meaningful whitespace, making the output less readable and altering the intended inline presentation. Renderer B preserves all resolved characters and their spacing; for this simple paragraph, its plain presentation is clear and appropriate.",
+    "evaluated_at": "2026-07-17T05:16:48"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 27,
+    "markdown": "&#X22; &#XD06; &#xcab;\n",
+    "html": "<p>&quot; ആ ಫ</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Character references occur occasionally, especially for escaping special characters, though numeric and hexadecimal forms are less common in everyday Markdown.",
+    "mdflow_terminal": "\"ആಫ\n\u001b[0m",
+    "mdflow_score": 0,
+    "glow_terminal": "\" ആ ಫ                                                                           ",
+    "glow_score": 2,
+    "pass": false,
+    "issues": [
+      "Renderer A drops the spaces between the decoded characters, changing the text from three separated characters into a run-together string.",
+      "Renderer A includes a trailing ANSI reset sequence, though this is harmless compared with the lost spacing."
+    ],
+    "explanation": "Renderer A correctly decodes the entities but loses meaningful whitespace, so the output content is altered and less readable. Renderer B decodes all references and preserves the separating spaces; the simple paragraph presentation is clear even without additional styling.",
+    "evaluated_at": "2026-07-17T05:16:48"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 28,
+    "markdown": "&nbsp &x; &#; &#x;\n&#87654321;\n&#abcdef0;\n&ThisIsNotDefined; &hi?;\n",
+    "html": "<p>&amp;nbsp &amp;x; &amp;#; &amp;#x;\n&amp;#87654321;\n&amp;#abcdef0;\n&amp;ThisIsNotDefined; &amp;hi?;</p>\n",
+    "weight": 0.2,
+    "weight_explanation": "Malformed and invalid entity references are uncommon in normal Markdown authoring. Correct literal handling is useful for fidelity, but this is largely edge-case behavior.",
+    "mdflow_terminal": "&nbsp &x; &#; &#x;\n&#87654321;\n&#abcdef0;\n&ThisIsNotDefined; &hi?;\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "  &x; &#; �                                                                     \n�                                                                               \n&#abcdef0;                                                                      \n&ThisIsNotDefined; &hi?;                                                        ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B incorrectly converts `&nbsp` without a semicolon into a non-breaking space.",
+      "Renderer B replaces the literal invalid reference `&#;` with a replacement character.",
+      "Renderer B replaces the invalid numeric reference `&#87654321;` with a replacement character."
+    ],
+    "explanation": "Renderer A preserves all literal text exactly as intended for invalid entity-like sequences, making the paragraph fully readable; its trailing ANSI reset is harmless. Renderer B alters multiple input sequences into whitespace or replacement characters, losing literal content and making the output semantically incorrect.",
+    "evaluated_at": "2026-07-17T05:16:49"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 30,
+    "markdown": "&MadeUpEntity;\n",
+    "html": "<p>&amp;MadeUpEntity;</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Unknown or invalid entity-like strings are infrequent, though they can occur in copied text or technical content. Preserving them literally is the important behavior.",
+    "mdflow_terminal": "&MadeUpEntity;\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "&MadeUpEntity;                                                                  ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the literal text \"&MadeUpEntity;\" accurately and present it as a standalone paragraph. Neither adds styling, but there is no meaningful structure beyond the paragraph itself; Renderer A's reset escape is harmless.",
+    "evaluated_at": "2026-07-17T05:16:51"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 29,
+    "markdown": "&copy\n",
+    "html": "<p>&amp;copy</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Entity references occur occasionally, especially for escaping special characters, but malformed references without a semicolon are a relatively niche edge case.",
+    "mdflow_terminal": "&copy\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "©                                                                               ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B incorrectly resolves the incomplete entity reference `&copy` to `©`; without a semicolon it should remain literal."
+    ],
+    "explanation": "Renderer A preserves the literal input exactly as readable plain text, which is appropriate for this single-line input. Renderer B changes the content by decoding an entity reference that CommonMark does not recognize in this form.",
+    "evaluated_at": "2026-07-17T05:16:52"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 32,
+    "markdown": "[foo](/f&ouml;&ouml; \"f&ouml;&ouml;\")\n",
+    "html": "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Entity references occur occasionally in copied HTML-derived Markdown and internationalized links, but they are not a common daily Markdown pattern.",
+    "mdflow_terminal": "[foo](/f&ouml;&ouml;\u001b[0m",
+    "mdflow_score": 0,
+    "glow_terminal": "foo /f&ouml;&ouml;                                                              ",
+    "glow_score": 1,
+    "pass": false,
+    "issues": [
+      "Renderer A leaves the link as broken-looking Markdown syntax.",
+      "Renderer A does not resolve the entity references.",
+      "Renderer A drops the link title and closing syntax.",
+      "Renderer B does not resolve the entity references.",
+      "Renderer B exposes the destination but drops the title."
+    ],
+    "explanation": "Renderer A partially loses content and presents an unfinished, misleading link construct. Renderer B preserves the visible label and destination in a readable flat form, but fails entity decoding and omits the title, so its link structure and metadata are incomplete.",
+    "evaluated_at": "2026-07-17T05:16:56"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 31,
+    "markdown": "<a href=\"&ouml;&ouml;.html\">\n",
+    "html": "<a href=\"&ouml;&ouml;.html\">\n",
+    "weight": 0.2,
+    "weight_explanation": "Entity references inside raw HTML attribute values are an infrequent Markdown edge case. Raw HTML itself appears occasionally, but an empty anchor containing encoded entities in its href is niche.",
+    "mdflow_terminal": "\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "The input is an empty raw HTML anchor, so it has no visible terminal text to display. Both renderers appear visually blank, which is readable and not misleading for the rendered result; however, the encoded href target cannot be inspected or verified from the terminal output.",
+    "evaluated_at": "2026-07-17T05:16:57"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 33,
+    "markdown": "[foo]\n\n[foo]: /f&ouml;&ouml; \"f&ouml;&ouml;\"\n",
+    "html": "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Entity decoding is a standard Markdown behavior, but entity references in reference-link destinations and titles are relatively uncommon in everyday Markdown.",
+    "mdflow_terminal": "[foo]\n\n\u001b[2m[Link Def: foo → /f&ouml;&ouml;]\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "foo /f&ouml;&ouml;                                                              ",
+    "glow_score": 1,
+    "pass": false,
+    "issues": [
+      "Neither renderer resolves &ouml; to ö.",
+      "Renderer A leaves the reference use as literal [foo], so the usable link relationship is not conveyed.",
+      "Renderer A's link-definition display omits the title.",
+      "Renderer B flattens the link into label plus raw destination and also omits the title."
+    ],
+    "explanation": "Renderer A is readable and its dim link-definition line provides some structural context, but it exposes raw entity syntax and does not connect the reference to the definition. Renderer B is also readable, but presents the link as flat text and raw URL. Both miss the expected decoded Unicode text and discard title information.",
+    "evaluated_at": "2026-07-17T05:17:01"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 35,
+    "markdown": "`f&ouml;&ouml;`\n",
+    "html": "<p><code>f&amp;ouml;&amp;ouml;</code></p>\n",
+    "weight": 0.2,
+    "weight_explanation": "Entity references inside code spans are a niche edge case. Code spans are common, but literal HTML entity text within them is relatively infrequent.",
+    "mdflow_terminal": "\u001b[38;5;215;48;5;236mf&ouml;&ouml;\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "föö                                                                             ",
+    "glow_score": 0,
+    "pass": true,
+    "issues": [
+      "Renderer B incorrectly resolves entity references inside the code span, changing the literal code content from `f&ouml;&ouml;` to `föö`.",
+      "Renderer B does not visually indicate that the content is inline code."
+    ],
+    "explanation": "Renderer A preserves the literal entity text as required inside a code span and uses clear code-oriented ANSI styling. Renderer B alters the code content by decoding entities and loses the inline-code presentation.",
+    "evaluated_at": "2026-07-17T05:17:03"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 34,
+    "markdown": "``` f&ouml;&ouml;\nfoo\n```\n",
+    "html": "<pre><code class=\"language-föö\">foo\n</code></pre>\n",
+    "weight": 0.1,
+    "weight_explanation": "Entity decoding specifically within fenced-code info strings is an obscure edge case. Fenced code blocks themselves are common, but encoded language identifiers are very rare.",
+    "mdflow_terminal": "\u001b[38;5;245m\u001b[3;38;5;221mföö\u001b[0m\nfoo\n\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nfoo                                                                             ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer B omits the decoded fenced-code language label, \"föö\".",
+      "Renderer B provides little visible indication that \"foo\" is code rather than an ordinary paragraph."
+    ],
+    "explanation": "Renderer A correctly decodes the entity in the info string to \"föö\", presents it as a distinct language label, and keeps the code content on its own line. Renderer B preserves the code text but drops the language metadata and does not clearly communicate code-block structure.",
+    "evaluated_at": "2026-07-17T05:17:03"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 36,
+    "markdown": "    f&ouml;f&ouml;\n",
+    "html": "<pre><code>f&amp;ouml;f&amp;ouml;\n</code></pre>\n",
+    "weight": 0.3,
+    "weight_explanation": "Literal entity text inside code spans or blocks is a relatively niche edge case, though code blocks themselves are common. Correctly avoiding entity decoding matters when documenting source or markup.",
+    "mdflow_terminal": "\u001b[38;5;245mf&ouml;f&ouml;\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "                                                                                \nf&ouml;f&ouml;                                                                  ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Renderer A preserves the literal entity text exactly and uses subdued ANSI styling to clearly suggest code formatting. Renderer B also preserves the text and keeps it on its own line, but provides no visual code distinction beyond surrounding whitespace.",
+    "evaluated_at": "2026-07-17T05:17:06"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 37,
+    "markdown": "&#42;foo&#42;\n*foo*\n",
+    "html": "<p>*foo*\n<em>foo</em></p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Entity and numeric character references occur occasionally, especially in generated Markdown or when literal punctuation must be preserved, but they are not a daily authoring pattern for most users.",
+    "mdflow_terminal": "*foo*\n\u001b[3mfoo\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "*foo*                                                                           \nfoo                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [
+      "Renderer B does not visually distinguish the emphasis in the second line."
+    ],
+    "explanation": "Renderer A correctly resolves the numeric entities into literal asterisks, preserving `*foo*` as plain text, and renders the actual Markdown emphasis on the next line in italics. Renderer B preserves the content and line structure, but its unstyled emphasized text is visually indistinguishable from ordinary text.",
+    "evaluated_at": "2026-07-17T05:17:07"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 40,
+    "markdown": "&#9;foo\n",
+    "html": "<p>\tfoo</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Numeric character references are occasionally encountered, especially in generated Markdown or copied HTML-adjacent content, but are not a common authoring pattern.",
+    "mdflow_terminal": "\tfoo\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "\tfoo                                                                             ",
+    "glow_score": 2,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers correctly resolve &#9; to a tab and preserve the visible text \"foo\". The output is readable and accurately represents the paragraph; no additional styling is needed for this simple input.",
+    "evaluated_at": "2026-07-17T05:17:10"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 38,
+    "markdown": "&#42; foo\n\n* foo\n",
+    "html": "<p>* foo</p>\n<ul>\n<li>foo</li>\n</ul>\n",
+    "weight": 0.3,
+    "weight_explanation": "Named and numeric entity references occur occasionally, especially in generated or escaped Markdown, but are not a daily foundational pattern for most documents.",
+    "mdflow_terminal": "*foo\n\n• foo\n\u001b[0m",
+    "mdflow_score": 2,
+    "glow_terminal": "* foo                                                                           \n                                                                                \nfoo                                                                             ",
+    "glow_score": 1,
+    "pass": true,
+    "issues": [
+      "Renderer A drops the space after the literal resolved asterisk, showing \"*foo\" instead of \"* foo\".",
+      "Renderer B does not visibly mark the second line as a list item."
+    ],
+    "explanation": "Renderer A correctly resolves the numeric entity to a literal asterisk and clearly distinguishes the following list with a bullet. The missing space is a minor text-formatting defect but the result remains understandable. Renderer B preserves the text and separation, but its unmarked \"foo\" does not clearly communicate that it is a list item.",
+    "evaluated_at": "2026-07-17T05:17:11"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 39,
+    "markdown": "foo&#10;&#10;bar\n",
+    "html": "<p>foo\n\nbar</p>\n",
+    "weight": 0.3,
+    "weight_explanation": "Entity and numeric character references occur occasionally, mainly in generated or escaped text, but are not a common everyday Markdown pattern.",
+    "mdflow_terminal": "foo\n\nbar\n\u001b[0m",
+    "mdflow_score": 3,
+    "glow_terminal": "foo                                                                             \n                                                                                \nbar                                                                             ",
+    "glow_score": 3,
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers correctly resolve the numeric newline references, producing \"foo\", a blank line, and \"bar\". Renderer A's trailing ANSI reset is harmless, and Renderer B's line padding does not impair readability.",
+    "evaluated_at": "2026-07-17T05:17:11"
+  },
+  {
+    "section": "Entity and numeric character references",
+    "example": 41,
+    "markdown": "[a](url &quot;tit&quot;)\n",
+    "html": "<p>[a](url &quot;tit&quot;)</p>\n",
+    "weight": 0.4,
+    "weight_explanation": "Entity and numeric character references occur occasionally, especially in copied HTML-adjacent Markdown, but are not a primary daily Markdown pattern.",
+    "mdflow_terminal": "[a](url\"tit\")\n\u001b[0m",
+    "mdflow_score": 1,
+    "glow_terminal": "[a](url \"tit\")                                                                  ",
+    "glow_score": 2,
+    "pass": false,
+    "issues": [
+      "Renderer A drops the space between `url` and the decoded quote, changing `[a](url \"tit\")` into `[a](url\"tit\")`."
+    ],
+    "explanation": "Both renderers preserve the text as a readable plain paragraph and decode the entity. Renderer B preserves the source-visible spacing and is clear for this structureless single-line input. Renderer A's missing space materially alters the displayed literal Markdown, though it remains readable.",
+    "evaluated_at": "2026-07-17T05:17:17"
+  }
+]

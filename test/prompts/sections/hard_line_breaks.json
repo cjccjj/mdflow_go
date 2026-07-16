@@ -1,0 +1,4 @@
+{
+  "notes": "Hard line breaks (two spaces or backslash at line end) create a line\nbreak within the same block. In terminal output, this should appear\nas a new line."
+}
+

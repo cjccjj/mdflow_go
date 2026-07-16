@@ -1,0 +1,3 @@
+{
+  "notes": "Block structure (lists, code blocks) takes priority over inline\nformatting. Characters that could be either are resolved as\nblock syntax first."
+}

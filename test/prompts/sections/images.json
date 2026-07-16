@@ -1,0 +1,5 @@
+{
+  "notes": "This is a link-related example. Links are a browser concept,\nterminals have no native link mechanism. A link has a main visible\npart (label/text) and a functional part (URL or other type of\nfunctional part) and may have other supportive info. In terminal\noutput, the functional part must be preserved intact. The main\nvisible part should be preserved too. Supportive info is usually\nomitted.\n\nFor images specifically, the image can not be displayed so alt\nbecomes main visible part, so both image source url and alt if\nexist, should be preserved."
+}
+
+

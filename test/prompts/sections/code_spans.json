@@ -1,0 +1,3 @@
+{
+  "notes": "Code spans (backtick-delimited inline code) should be distinct from\nbody text by any style. Content is literal \u2014 Markdown syntax\ninside a code span is not interpreted."
+}

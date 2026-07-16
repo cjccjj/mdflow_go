@@ -1,0 +1,3 @@
+{
+  "notes": "Headings should be visually distinct from body text. HTML uses font\nsizes to differentiate heading levels, but ANSI terminals have no font\nsizes. A renderer may use `#` prefixes, color, or bold to indicate\nlevel \u2014 any approach that makes levels distinguishable is fine.\nClosing `#` markers should not appear in output."
+}

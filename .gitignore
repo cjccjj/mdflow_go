@@ -21,3 +21,6 @@ go.work
 
 # Cahce
 __pycache__/
+
+# venv
+.venv/
