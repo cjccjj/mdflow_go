@@ -681,3 +681,33 @@ func TestGolden_LinkCrossChunk(t *testing.T) {
 		t.Errorf("url missing in cross-chunk: %q", out)
 	}
 }
+
+func TestGolden_ImageInLink(t *testing.T) {
+	input := "[![moon](moon.jpg)](/uri)"
+	out := renderOneShot(input)
+	if !strings.Contains(out, "\033[4;34m") {
+		t.Errorf("link style missing in image-in-link: %q", out)
+	}
+	if !strings.Contains(out, "moon") {
+		t.Errorf("image alt text missing: %q", out)
+	}
+	if !strings.Contains(out, "/uri") {
+		t.Errorf("link url missing: %q", out)
+	}
+}
+
+func TestGolden_ImageInLinkStreaming(t *testing.T) {
+	input := "[![moon](moon.jpg)](/uri)"
+	var buf bytes.Buffer
+	r := NewRenderer(&buf)
+	r.Write([]byte(input[:5]))
+	r.Write([]byte(input[5:]))
+	r.Close()
+	out := buf.String()
+	if !strings.Contains(out, "\033[4;34m") {
+		t.Errorf("link style missing: %q", out)
+	}
+	if !strings.Contains(out, "/uri") {
+		t.Errorf("link url missing: %q", out)
+	}
+}

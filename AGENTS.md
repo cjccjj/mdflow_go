@@ -255,8 +255,8 @@ Current work is CommonMark spec compatibility fixes (see Fix workflow above). Ne
 | Images | #590 | 5 | 2 | 15 | 22 |
 | Indented code blocks | #114 | 8 | 2 | 2 | 12 |
 | Link reference defs | #209 | 4 | 5 | 18 | 27 |
-| Links | #483 | 23 | 18 | 49 | 90 |
-| List items / Lists | #280, #281, #295 | 31 | 10 | 33 | 74 |
+| Links | #483 | 24 | 17 | 49 | 90 |
+| List items / Lists | #280, #281, #295 | 33 | 8 | 33 | 74 |
 | Paragraphs | #219 | 7 | 1 | 0 | 8 |
 | Setext headings | #94 | 23 | 3 | 1 | 27 |
 | Soft line breaks | #648 | 1 | 1 | 0 | 2 |
@@ -264,23 +264,22 @@ Current work is CommonMark spec compatibility fixes (see Fix workflow above). Ne
 | Textual content | #650 | 3 | 0 | 0 | 3 |
 | Thematic breaks | #43 | 17 | 2 | 0 | 19 |
 | Other (HTML, raw HTML) | — | 2 | 3 | 62 | 67 |
-| **TOTAL** | **31** | **316** | **113** | **223** | **652** |
+| **TOTAL** | **31** | **319** | **110** | **223** | **652** |
 
-**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (31 mismatches), links (18), setext headings (3).
+**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (31 mismatches), links (17), setext headings (3).
 
-### Largest mismatch clusters (40 total)
+### Largest mismatch clusters (39 total)
 
 Mismatches grouped by transition signature (`branch | pre_state | expected_kind | actual_kind | outcome`). Operation value excluded to group related bugs.
 
 | Count | Signature | Description | Example |
 |---|---|---|---|
-| 25 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
-| 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #489 |
+| 26 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
+| 10 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #22 |
 | 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #226 |
-| 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #342 |
 | 6 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
+| 5 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #342 |
 | 4 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #341 |
-| 4 | `finalize.close \| normal \| resource_link \| text` | Link broken on finalize (entity in URL, extra content) | #22 |
 | 4 | `deferred.indented_code \| normal \| text \| code_block` | Indented code where none expected | #49 |
 | 4 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #376 |
 | 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #438 |
