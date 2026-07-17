@@ -6773,15 +6773,17 @@
     "markdown": "_(_foo_)_\n",
     "html": "<p><em>(<em>foo</em>)</em></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Nested emphasis of the same type is uncommon in everyday Markdown and is mostly a parser/spec edge case.",
-    "mdflow_terminal": "\u001b[3m(\u001b[0m\u001b[3mfoo\u001b[0m)\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Nested emphasis of the same type is valid Markdown but is uncommon in everyday prose, READMEs, chat, and AI-generated documents.",
+    "mdflow_terminal": "\u001b[3m(\u001b[0m\u001b[3mfoo\u001b[0m\u001b[3m)\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "(foo)                                                                           ",
     "glow_score": 2,
     "pass": true,
-    "issues": [],
-    "explanation": "Renderer A preserves all text and renders the parenthetical content in italic, making the emphasis clear. The separate ANSI resets are harmless visually; distinguishing the redundant nested italic level is not necessary. Renderer B preserves the text and paragraph readability but drops the emphasis styling.",
-    "evaluated_at": "2026-07-17T08:10:58"
+    "issues": [
+      "Renderer B does not visually convey the emphasis."
+    ],
+    "explanation": "Renderer A preserves all content and renders the parenthetical expression in italics, which is an appropriate terminal representation of the nested emphasis. Renderer B remains readable and the single-line paragraph structure is clear, but it drops the available emphasis styling.",
+    "evaluated_at": "2026-07-17T10:13:44"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -6804,16 +6806,19 @@
     "example": 376,
     "markdown": "_foo_bar_baz_\n",
     "html": "<p><em>foo_bar_baz</em></p>\n",
-    "weight": 0.5,
-    "weight_explanation": "Emphasis is common, but this specific underscore-delimiter pattern with internal underscores is a less frequent edge case in everyday Markdown.",
-    "mdflow_terminal": "\u001b[3mfoo\u001b[0m\u001b[3mbar\u001b[0m\u001b[3mbaz\u001b[0m\n\u001b[0m\u001b[0m\u001b[0m",
-    "mdflow_score": 3,
+    "weight": 0.3,
+    "weight_explanation": "Emphasis is common, but this specific underscore-delimiter case with literal internal underscores is relatively uncommon outside spec-edge cases and identifier-like text.",
+    "mdflow_terminal": "\u001b[3mfoo\u001b[0m\u001b[3mbar\u001b[0m\u001b[3mbaz\u001b[0m\u001b[3m\n\u001b[0m\u001b[3m\u001b[0m\u001b[0m",
+    "mdflow_score": 0,
     "glow_terminal": "foo_bar_baz                                                                     ",
     "glow_score": 2,
-    "pass": true,
-    "issues": [],
-    "explanation": "Renderer A preserves the text and renders the entire phrase in italic styling. Although it restarts the italic ANSI sequence around each segment, this is not visibly harmful. Renderer B preserves the text and paragraph readability but does not visually convey the emphasis.",
-    "evaluated_at": "2026-07-17T08:11:03"
+    "pass": false,
+    "issues": [
+      "Renderer A drops the literal internal underscores, changing \"foo_bar_baz\" into \"foobarbaz\".",
+      "Renderer A emits fragmented repeated italic/reset sequences rather than rendering the emphasized content as one coherent span."
+    ],
+    "explanation": "Renderer A alters the content by removing meaningful underscores, so it fails despite applying italic styling. Renderer B preserves the complete text and presents a clear standalone paragraph, though it does not visually indicate emphasis.",
+    "evaluated_at": "2026-07-17T10:13:46"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7070,19 +7075,18 @@
     "example": 389,
     "markdown": "__foo, __bar__, baz__\n",
     "html": "<p><strong>foo, <strong>bar</strong>, baz</strong></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "Nested strong-emphasis delimiters are valid Markdown but are uncommon in everyday prose, READMEs, and chat output. The particular redundant nesting pattern is especially rare.",
-    "mdflow_terminal": "\u001b[1mfoo, \u001b[0m\u001b[1mbar\u001b[0m, baz\u001b[0m\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.4,
+    "weight_explanation": "Strong emphasis is common, but nested strong emphasis using delimiter interactions like this is relatively uncommon in everyday Markdown.",
+    "mdflow_terminal": "\u001b[1mfoo, \u001b[0m\u001b[1mbar\u001b[0m\u001b[1m, baz\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo, bar, baz                                                                   ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A resets styling after the nested `bar`, so `baz` incorrectly appears as normal body text rather than remaining within the outer strong span.",
-      "Renderer B removes all emphasis distinction."
+      "Renderer B drops all strong-emphasis styling, so the inline emphasis structure is not visible."
     ],
-    "explanation": "Renderer A preserves all content and makes most of the strong formatting visible, so the sentence remains clear, but its ANSI style restoration misleadingly ends the outer emphasis too early. Renderer B is readable but flattens the tested emphasis structure entirely.",
-    "evaluated_at": "2026-07-17T08:11:25"
+    "explanation": "Renderer A preserves all text and clearly renders it as bold. Although nested strong levels cannot be visually differentiated with basic ANSI styling, the result is readable and appropriately emphasizes the entire span. Renderer B preserves the words but presents them as plain body text, losing the meaningful emphasis structure.",
+    "evaluated_at": "2026-07-17T10:13:45"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7420,20 +7424,18 @@
     "example": 407,
     "markdown": "_foo _bar_ baz_\n",
     "html": "<p><em>foo <em>bar</em> baz</em></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "Emphasis is common, but nested emphasis using this delimiter pattern is an uncommon edge case in everyday Markdown.",
-    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[3mbar\u001b[0m baz\u001b[0m\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Nested emphasis occurs occasionally in prose and generated Markdown, but this same-style nesting is not a common authoring pattern.",
+    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[3mbar\u001b[0m\u001b[3m baz\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo bar baz                                                                     ",
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A drops the outer emphasis styling from \"baz\".",
-      "Renderer A appears to introduce an extra space between \"foo\" and \"bar\".",
-      "Renderer A's styling suggests separate emphasized fragments rather than one outer emphasized span."
+      "Renderer B preserves the words but removes all emphasis styling, flattening the nested emphasis structure."
     ],
-    "explanation": "Renderer A preserves the words but renders the nested emphasis inconsistently: \"foo\" and \"bar\" are italic while \"baz\" is not, making the inline structure misleading. Renderer B omits emphasis styling entirely, but presents the complete readable paragraph without introducing misleading partial formatting.",
-    "evaluated_at": "2026-07-17T08:11:51"
+    "explanation": "Renderer A preserves all content and clearly distinguishes the emphasized text from normal body text using italic styling. Although the nested inner emphasis cannot be visually stacked beyond italic, that limitation is acceptable here. Renderer B is readable but presents the entire paragraph as unstyled plain text, losing the emphasis structure.",
+    "evaluated_at": "2026-07-17T10:13:48"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7459,18 +7461,18 @@
     "markdown": "*foo**bar*\n",
     "html": "<p><em>foo**bar</em></p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an obscure emphasis-delimiter edge case involving unmatched strong-emphasis markers inside emphasis. It is rarely encountered in ordinary Markdown writing.",
-    "mdflow_terminal": "\u001b[3mfoo*\u001b[0m\u001b[3mbar\u001b[0m\n\u001b[0m\u001b[0m",
+    "weight_explanation": "This is an unusual delimiter-parsing edge case involving overlapping emphasis markers. It is unlikely to appear often in normal prose, READMEs, or AI-generated Markdown.",
+    "mdflow_terminal": "\u001b[3mfoo*\u001b[0m\u001b[3mbar\u001b[0m\u001b[3m\n\u001b[0m\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo**bar                                                                        ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A drops one of the two literal asterisks that should appear between \"foo\" and \"bar\".",
-      "Renderer B preserves the text but does not visually indicate the outer emphasis."
+      "Renderer A drops one of the two literal asterisks between \"foo\" and \"bar\", altering the content.",
+      "Renderer B preserves the literal text but does not visually indicate the surrounding emphasis."
     ],
-    "explanation": "Renderer A appropriately uses italic styling for the outer emphasis, but the rendered content is altered: expected visible text is \"foo**bar\", while A shows \"foo*bar\". Renderer B preserves the visible content correctly, but its lack of emphasis styling leaves the inline structure visually flat.",
-    "evaluated_at": "2026-07-17T08:11:55"
+    "explanation": "Renderer A italicizes the text but renders visible content as \"foo*bar\" rather than the required \"foo**bar\", so content is lost. Renderer B preserves all text and is readable, but flattens the emphasis styling.",
+    "evaluated_at": "2026-07-17T10:13:50"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7553,18 +7555,18 @@
     "markdown": "foo******bar*********baz\n",
     "html": "<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>\n",
     "weight": 0.1,
-    "weight_explanation": "Deeply nested strong-emphasis delimiter runs are extremely rare in normal prose, READMEs, chat, or AI-generated Markdown. This is primarily an edge-case parsing scenario.",
-    "mdflow_terminal": "foo\u001b[1m\u001b[0m\u001b[1m\u001b[0m\u001b[1mbar\u001b[0m\u001b[0m\u001b[0m***baz\n\u001b[0m",
+    "weight_explanation": "Deeply nested strong-emphasis delimiter runs are obscure CommonMark edge cases and are very unlikely in normal documents, READMEs, chat, or AI output.",
+    "mdflow_terminal": "foo\u001b[1m\u001b[0m\u001b[1m\u001b[0m\u001b[1mbar\u001b[0m\u001b[1m\u001b[0m\u001b[1m\u001b[0m***baz\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foobar***baz                                                                    ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A emits redundant empty bold/reset ANSI sequences before and after the visible bold text, though they do not materially harm terminal readability.",
-      "Renderer B does not visually distinguish the nested strong-emphasis content from surrounding text."
+      "Renderer A emits redundant empty ANSI bold/reset sequences around the nested emphasis boundaries, though they do not visibly harm the output.",
+      "Renderer B does not visually distinguish the strongly emphasized text from surrounding body text."
     ],
-    "explanation": "Renderer A preserves all literal content, keeps the trailing literal asterisks clear, and renders \"bar\" in bold, which is an appropriate terminal representation of nested strong emphasis. Renderer B preserves the text but flattens the emphasis structure entirely.",
-    "evaluated_at": "2026-07-17T08:12:04"
+    "explanation": "Renderer A preserves all text and makes \"bar\" visibly bold, which effectively communicates the nested strong emphasis within ANSI's styling limits. Renderer B preserves the readable text and paragraph flow, but flattens the emphasis styling.",
+    "evaluated_at": "2026-07-17T10:13:51"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7697,18 +7699,18 @@
     "markdown": "**foo **bar****\n",
     "html": "<p><strong>foo <strong>bar</strong></strong></p>\n",
     "weight": 0.3,
-    "weight_explanation": "Nested strong emphasis is valid Markdown but uncommon in typical prose, READMEs, chat, and AI output. It is mainly encountered in generated or edge-case formatting.",
-    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Nested strong emphasis is valid Markdown but uncommon in everyday prose, READMEs, and chat output. It is mostly encountered through generated or edge-case formatting.",
+    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar\u001b[0m\u001b[1m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo bar                                                                         ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer B removes the strong-emphasis distinction entirely.",
-      "Renderer A emits redundant ANSI reset sequences, but they do not materially harm readability."
+      "Renderer A emits redundant ANSI reset/style sequences around the nested span, though they do not materially harm readability.",
+      "The nested strong level cannot be visually distinguished from the outer strong level, which is acceptable given ANSI styling limitations."
     ],
-    "explanation": "Renderer A preserves all text and clearly renders both the outer and nested strong spans in bold. ANSI cannot visually stack the identical strong style further, but the result remains readable and appropriately emphasized. Renderer B preserves the words but presents them as unstyled plain text, losing the emphasis structure.",
-    "evaluated_at": "2026-07-17T08:12:15"
+    "explanation": "Renderer A preserves the text and renders the full strong-emphasis region in bold, clearly distinguishing it from normal body text. Renderer B preserves the text and remains readable, but drops the strong-emphasis styling entirely.",
+    "evaluated_at": "2026-07-17T10:13:56"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7753,19 +7755,18 @@
     "example": 425,
     "markdown": "__foo __bar__ baz__\n",
     "html": "<p><strong>foo <strong>bar</strong> baz</strong></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "Strong emphasis is common, but nesting the same strong-emphasis delimiter inside itself is relatively uncommon in everyday Markdown.",
-    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar\u001b[0m baz\u001b[0m\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Nested strong emphasis occurs occasionally, especially in generated or heavily formatted technical text, but deeply nested same-style emphasis is not a daily pattern.",
+    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar\u001b[0m\u001b[1m baz\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo bar baz                                                                     ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A fails to restore the outer bold style after the nested bold span, leaving \" baz\" unstyled even though it remains inside the outer strong emphasis.",
-      "Renderer B preserves the words but provides no visual indication of either the outer or nested strong emphasis."
+      "Renderer B preserves the words but does not visually convey the strong emphasis."
     ],
-    "explanation": "Both renderers preserve readable text. Renderer A offers partial emphasis styling, but its reset after \"bar\" misleadingly ends the outer emphasis early. Renderer B is entirely flat, so the emphasis structure is lost.",
-    "evaluated_at": "2026-07-17T08:12:19"
+    "explanation": "Renderer A preserves all content and renders the outer and nested strong spans in bold. ANSI cannot meaningfully stack identical bold styling, but the result is clean and readable. Renderer B is readable and structurally acceptable for a single paragraph, but loses emphasis styling.",
+    "evaluated_at": "2026-07-17T10:13:51"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7843,19 +7844,18 @@
     "markdown": "**foo *bar **baz**\nbim* bop**\n",
     "html": "<p><strong>foo <em>bar <strong>baz</strong>\nbim</em> bop</strong></p>\n",
     "weight": 0.3,
-    "weight_explanation": "Nested, overlapping emphasis levels occur occasionally in generated or heavily formatted prose, but this specific multi-level nesting is uncommon in everyday Markdown.",
-    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1;3mbar \u001b[0m\u001b[1;3mbaz\u001b[0m\u001b[3m\nbim\u001b[0m bop\u001b[0m\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight_explanation": "Nested, multi-level emphasis is an infrequent pattern, though ordinary emphasis and strong emphasis are common.",
+    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1;3mbar \u001b[0m\u001b[1;3mbaz\u001b[0m\u001b[1;3m\nbim\u001b[0m\u001b[1m bop\u001b[0m\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo bar baz                                                                     \nbim bop                                                                         ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A does not visibly restore the outer bold style for the final “bop” segment.",
-      "Renderer A cannot distinguish the inner strong “baz” from the surrounding bold-italic context, though this is understandable given ANSI style limitations.",
-      "Renderer B drops all emphasis distinctions."
+      "Renderer B removes all visual distinction between strong emphasis and emphasis.",
+      "Renderer A cannot distinguish the innermost strong text from the surrounding bold-italic emphasis, but this is an acceptable ANSI limitation for deeply nested styles."
     ],
-    "explanation": "Renderer A preserves all text and the line break, and its bold/italic styling makes most of the nesting readable. However, the missing bold styling on “bop” weakens the intended outer strong span. Renderer B is readable but presents the nested emphasis as plain text, losing the feature's structure.",
-    "evaluated_at": "2026-07-17T08:12:27"
+    "explanation": "Renderer A preserves all text, the line break, and the outer versus inner emphasis hierarchy using bold and bold-italic styling. Renderer B is readable but presents the tested inline emphasis structure as plain text.",
+    "evaluated_at": "2026-07-17T10:13:57"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7949,18 +7949,19 @@
     "markdown": "foo *_*\n",
     "html": "<p>foo <em>_</em></p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an uncommon emphasis-delimiter edge case: emphasis containing a literal underscore. Emphasis is common, but this exact construction is rare in everyday Markdown.",
-    "mdflow_terminal": "foo \u001b[3m\u001b[0m\u001b[3m*\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Emphasis is common, but this specific delimiter-edge case—an emphasized literal underscore—is rare in everyday Markdown.",
+    "mdflow_terminal": "foo \u001b[3m\u001b[0m\u001b[3m*\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo _                                                                           ",
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A changes the emphasized literal underscore (`_`) into an asterisk (`*`).",
-      "Renderer A emits redundant ANSI reset/style sequences around the incorrect character."
+      "Renderer A changes the literal underscore content to an asterisk.",
+      "Renderer A emits redundant ANSI transitions around the incorrect character.",
+      "Renderer B preserves the character but does not visually convey emphasis."
     ],
-    "explanation": "Renderer A visibly renders `foo *` rather than the required `foo _`, so content is altered despite attempting italic styling. Renderer B preserves the text accurately and is cleanly readable, though it does not visually indicate the emphasis.",
-    "evaluated_at": "2026-07-17T08:12:35"
+    "explanation": "Renderer A alters the document's visible content, making the output incorrect despite attempting italic styling. Renderer B displays the intended underscore clearly, but its emphasis structure is not distinguished from normal text.",
+    "evaluated_at": "2026-07-17T10:13:57"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8166,20 +8167,20 @@
     "example": 450,
     "markdown": "foo _*_\n",
     "html": "<p>foo <em>*</em></p>\n",
-    "weight": 0.1,
-    "weight_explanation": "This is an obscure delimiter-parsing edge case involving emphasis around a literal asterisk, rarely encountered in ordinary Markdown.",
-    "mdflow_terminal": "foo \u001b[3m\u001b[0m\u001b[3m_\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight": 0.2,
+    "weight_explanation": "This is an uncommon edge case involving nested emphasis delimiters and a literal asterisk. It is unlikely to appear often in ordinary Markdown documents.",
+    "mdflow_terminal": "foo \u001b[3m\u001b[0m\u001b[3m_\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo *                                                                           ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A changes the literal emphasized `*` into an underscore, altering the content.",
-      "Renderer A emits redundant ANSI reset/style sequences without correctly representing the intended character.",
-      "Renderer B preserves the visible text but does not visually distinguish the emphasized character."
+      "Renderer A displays an underscore instead of the literal asterisk, altering the content.",
+      "Renderer A emits redundant ANSI style/reset sequences around the incorrect character.",
+      "Renderer B preserves the visible text but does not indicate that the asterisk is emphasized."
     ],
-    "explanation": "Renderer A is incorrect for a human reader because the visible character is altered from `*` to `_`. Renderer B displays the intended text clearly, but loses the inline emphasis distinction.",
-    "evaluated_at": "2026-07-17T08:12:53"
+    "explanation": "Renderer A changes the intended emphasized literal `*` into `_`, so the content is not faithfully rendered. Renderer B shows the correct text and remains readable, but loses the inline emphasis distinction.",
+    "evaluated_at": "2026-07-17T10:14:02"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8365,18 +8366,18 @@
     "markdown": "*_foo_*\n",
     "html": "<p><em><em>foo</em></em></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Nested emphasis using mixed delimiters is valid Markdown but uncommon in everyday prose, READMEs, and chat output.",
-    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[3mfoo\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Nested emphasis using mixed marker characters is an uncommon edge case. Ordinary emphasis is common, but this redundant double-emphasis pattern is rarely authored intentionally.",
+    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[3mfoo\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A emits redundant ANSI reset/style sequences around the text, though they do not visibly harm output.",
-      "Renderer B does not visually convey the emphasis."
+      "Renderer A emits redundant ANSI italic/reset sequences around empty spans, though they do not harm the visible output.",
+      "Renderer B does not visually distinguish the emphasized text from plain body text."
     ],
-    "explanation": "Renderer A displays the preserved text as italic, which clearly distinguishes it from normal body text; the inability to show two stacked emphasis layers is acceptable here. Renderer B preserves the readable text but renders it plainly, losing the emphasis styling.",
-    "evaluated_at": "2026-07-17T08:13:09"
+    "explanation": "Renderer A displays the complete word as italic, which clearly conveys emphasis; the redundant control sequences are not visible to a human reader. Renderer B preserves the content cleanly, and since this is only a one-word paragraph there is little structural information to lose, but it omits emphasis styling.",
+    "evaluated_at": "2026-07-17T10:14:02"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8384,36 +8385,36 @@
     "markdown": "****foo****\n",
     "html": "<p><strong><strong>foo</strong></strong></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Repeated/nested strong emphasis is uncommon in everyday Markdown and is mostly encountered in edge cases or generated content.",
-    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Double-nested strong emphasis is an uncommon edge case, even though ordinary strong emphasis is common. Most real documents do not intentionally stack identical emphasis markers.",
+    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[1m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A emits redundant ANSI style/reset sequences, though they do not visibly harm terminal output."
+      "Renderer A emits redundant ANSI bold/reset sequences, though they do not harm the visible result.",
+      "Renderer B does not visually distinguish the strong-emphasized text from plain body text."
     ],
-    "explanation": "Renderer A presents “foo” in bold, clearly distinguishing it from ordinary body text; nested strong cannot be meaningfully stacked in ANSI, so a single bold treatment is appropriate. Renderer B preserves the text cleanly but provides no emphasis styling.",
-    "evaluated_at": "2026-07-17T08:13:12"
+    "explanation": "Renderer A visibly renders “foo” in bold, preserving the intended emphasis despite ANSI’s inability to stack identical styles. Renderer B preserves the text cleanly, and the single-word paragraph remains readable, but it loses the emphasis styling.",
+    "evaluated_at": "2026-07-17T10:14:08"
   },
   {
     "section": "Emphasis and strong emphasis",
     "example": 463,
     "markdown": "_*foo*_\n",
     "html": "<p><em><em>foo</em></em></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "Nested emphasis markers such as `_*foo*_` are valid but uncommon in everyday Markdown, READMEs, chat, and AI-generated documents.",
-    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[3mfoo\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight": 0.3,
+    "weight_explanation": "Nested emphasis is valid Markdown but is uncommon in everyday prose, READMEs, and chat output. It is more often encountered in edge cases or generated content than intentionally authored.",
+    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[3mfoo\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A emits redundant ANSI style/reset sequences, though they do not harm the visible result.",
-      "Renderer B does not visually represent the emphasis."
+      "Renderer B does not visually convey the emphasis."
     ],
-    "explanation": "Renderer A displays `foo` in italic styling, making it distinct from ordinary body text. ANSI cannot meaningfully stack the two nested emphasis levels, and a single appropriate emphasis style is a good terminal representation here. Renderer B preserves the readable content but presents it as plain text.",
-    "evaluated_at": "2026-07-17T08:13:12"
+    "explanation": "Renderer A preserves the text and renders it in italic, which clearly distinguishes it from normal body text; the redundant ANSI transitions do not harm the visible result. Renderer B preserves the content cleanly, but presents it as plain text without the intended emphasis.",
+    "evaluated_at": "2026-07-17T10:14:03"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8421,15 +8422,18 @@
     "markdown": "____foo____\n",
     "html": "<p><strong><strong>foo</strong></strong></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Repeated nested strong emphasis using four underscores is uncommon in everyday Markdown. It is mainly an edge case around delimiter parsing and nested emphasis behavior.",
-    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Deeply nested strong emphasis using four underscores is uncommon in everyday Markdown. Ordinary bold is common, but this exact multi-layer nesting is mostly edge-case usage.",
+    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[1m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
     "glow_score": 2,
     "pass": true,
-    "issues": [],
-    "explanation": "Renderer A displays the text clearly in bold, which appropriately distinguishes the nested strong-emphasis result from ordinary body text. Its redundant reset sequences are not visible to a human reader. Renderer B preserves the content clearly but provides no visual emphasis styling.",
-    "evaluated_at": "2026-07-17T08:13:13"
+    "issues": [
+      "Renderer A emits redundant ANSI reset/bold sequences around the text, though they do not visibly harm readability.",
+      "Renderer B does not visually convey the strong emphasis."
+    ],
+    "explanation": "Renderer A clearly presents “foo” in bold, appropriately distinguishing it from normal body text despite ANSI's inability to stack two bold layers. Renderer B preserves the content cleanly, but renders it as plain text with no emphasis styling.",
+    "evaluated_at": "2026-07-17T10:14:07"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8452,16 +8456,18 @@
     "example": 466,
     "markdown": "******foo******\n",
     "html": "<p><strong><strong><strong>foo</strong></strong></strong></p>\n",
-    "weight": 0.1,
-    "weight_explanation": "Triple-nested strong emphasis is extremely rare in normal documents, READMEs, chat, and AI output. It is primarily an edge case of emphasis parsing.",
-    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[0m\u001b[0m\n\u001b[0m",
+    "weight": 0.2,
+    "weight_explanation": "Deeply nested repeated strong emphasis is uncommon in everyday Markdown, READMEs, chat, and AI output. Ordinary emphasis and strong emphasis are common, but triple nesting is largely edge-case syntax.",
+    "mdflow_terminal": "\u001b[1m\u001b[0m\u001b[1m\u001b[0m\u001b[1mfoo\u001b[0m\u001b[1m\u001b[0m\u001b[1m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
     "glow_score": 2,
     "pass": true,
-    "issues": [],
-    "explanation": "Renderer A visibly renders \"foo\" in bold; the redundant ANSI resets are not visible to a human reader and do not impair readability. Renderer B preserves the content cleanly but does not convey the strong-emphasis styling.",
-    "evaluated_at": "2026-07-17T08:13:15"
+    "issues": [
+      "Renderer A emits redundant ANSI reset and bold sequences around the text, though they do not visibly harm readability."
+    ],
+    "explanation": "Renderer A presents \"foo\" in bold, clearly distinguishing the emphasized content from normal body text. Since terminal styles cannot meaningfully stack, using bold for the nested strong levels is an appropriate and readable result. Renderer B preserves the text but drops the emphasis styling; this remains readable but provides less visual indication of the Markdown formatting.",
+    "evaluated_at": "2026-07-17T10:14:12"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8469,79 +8475,76 @@
     "markdown": "_____foo_____\n",
     "html": "<p><em><strong><strong>foo</strong></strong></em></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Five consecutive underscore delimiters producing deeply nested emphasis is an uncommon edge case. Ordinary emphasis and strong emphasis are common, but this depth is mostly spec-trivia.",
-    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[1;3m\u001b[0m\u001b[1;3mfoo\u001b[0m\u001b[3m\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Deeply nested emphasis using repeated underscore delimiters is uncommon in everyday Markdown, READMEs, chat, and AI output.",
+    "mdflow_terminal": "\u001b[3m\u001b[0m\u001b[1;3m\u001b[0m\u001b[1;3mfoo\u001b[0m\u001b[1;3m\u001b[0m\u001b[3m\u001b[0m\n\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "foo                                                                             ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
-    "issues": [
-      "Renderer A emits several redundant zero-length ANSI style/reset sequences, though they do not visibly harm the rendered terminal output.",
-      "Renderer B drops all emphasis/strong-emphasis styling."
-    ],
-    "explanation": "Renderer A displays “foo” with a distinct bold-italic treatment, preserving the meaningful visual effect of the nested emphasis despite ANSI's inability to represent every layer separately. Renderer B preserves the text but renders it as plain body text, losing the inline emphasis structure.",
-    "evaluated_at": "2026-07-17T08:13:18"
+    "issues": [],
+    "explanation": "Renderer A displays the content clearly and applies a distinct bold-italic treatment to \"foo\"; the redundant ANSI reset/style sequences are not visibly harmful. Renderer B preserves the word but drops the emphasis styling; since this is only a single paragraph word, it remains readable and not structurally misleading.",
+    "evaluated_at": "2026-07-17T10:14:12"
   },
   {
     "section": "Emphasis and strong emphasis",
     "example": 469,
     "markdown": "*foo _bar* baz_\n",
     "html": "<p><em>foo _bar</em> baz_</p>\n",
-    "weight": 0.2,
-    "weight_explanation": "This is an uncommon edge case involving overlapping emphasis delimiters rather than ordinary emphasis usage. It is unlikely to appear frequently in typical prose, READMEs, or AI-generated Markdown.",
-    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[3mbar* baz\u001b[0m\n\u001b[0m\u001b[0m",
+    "weight": 0.3,
+    "weight_explanation": "Emphasis is common, but this particular mixed-delimiter edge case with unmatched underscores is relatively uncommon in everyday Markdown.",
+    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[3mbar* baz\u001b[0m\u001b[3m\n\u001b[0m\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo _bar baz_                                                                   ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": false,
     "issues": [
-      "Renderer A removes the literal underscore characters that should remain visible.",
-      "Renderer A leaves a literal asterisk after \"bar\" even though the expected rendered text contains no asterisk there.",
-      "Renderer A applies italic styling to \"bar* baz\", although only \"foo _bar\" should be emphasized."
+      "Renderer A drops the literal underscores.",
+      "Renderer A displays a stray asterisk after \"bar\", altering the source content.",
+      "Renderer A applies italic styling to the wrong text span."
     ],
-    "explanation": "Renderer A materially alters both the visible text and the emphasis boundary, making the result misleading. Renderer B preserves the expected visible text exactly, but does not convey the emphasis structure.",
-    "evaluated_at": "2026-07-17T08:13:20"
+    "explanation": "Renderer A materially alters the readable text and presents incorrect emphasis boundaries, so the result is misleading. Renderer B preserves the visible text faithfully; although it does not render the intended emphasis, the single-paragraph content remains clear and readable.",
+    "evaluated_at": "2026-07-17T10:14:14"
   },
   {
     "section": "Emphasis and strong emphasis",
     "example": 470,
     "markdown": "*foo __bar *baz bim__ bam*\n",
     "html": "<p><em>foo <strong>bar *baz bim</strong> bam</em></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "Nested emphasis with mixed delimiter types is an infrequent edge case, though emphasis and strong emphasis themselves are common.",
-    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[1;3mbar \u001b[0m\u001b[1;3mbaz bim__ bam\u001b[0m\u001b[1m\n\u001b[0m\u001b[0m\u001b[0m",
+    "weight": 0.2,
+    "weight_explanation": "Complex nested emphasis with delimiter interactions is uncommon in everyday Markdown, though emphasis itself is common.",
+    "mdflow_terminal": "\u001b[3mfoo \u001b[0m\u001b[1;3mbar \u001b[0m\u001b[1;3mbaz bim__ bam\u001b[0m\u001b[1;3m\n\u001b[0m\u001b[3m\u001b[0m\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo bar *baz bim bam                                                            ",
     "glow_score": 1,
     "pass": false,
     "issues": [
       "Renderer A drops the literal asterisk before \"baz\".",
-      "Renderer A leaves the closing \"__\" visible in the text.",
-      "Renderer A applies strong styling through \"bam\", which should only be emphasized.",
-      "Renderer B preserves the readable text but does not distinguish emphasis or strong emphasis."
+      "Renderer A incorrectly leaves the closing \"__\" visible after \"bim\".",
+      "Renderer A applies the strong/emphasis styling across text that should return to outer emphasis.",
+      "Renderer A emits distracting extra ANSI resets and a trailing blank line."
     ],
-    "explanation": "Renderer A alters visible content and misparses the nesting, making its styling misleading despite using ANSI attributes. Renderer B presents the intended text cleanly, including the literal asterisk, but flattens all inline formatting.",
-    "evaluated_at": "2026-07-17T08:13:22"
+    "explanation": "Renderer A alters visible content and renders the emphasis boundaries incorrectly, making the result misleading despite using ANSI styles. Renderer B preserves the readable textual content, including the literal asterisk, but loses all emphasis and strong-emphasis structure.",
+    "evaluated_at": "2026-07-17T10:14:19"
   },
   {
     "section": "Emphasis and strong emphasis",
     "example": 471,
     "markdown": "**foo **bar baz**\n",
     "html": "<p>**foo <strong>bar baz</strong></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "This is an edge case involving unmatched emphasis delimiters alongside valid strong emphasis. It can occur in malformed or partially edited Markdown, but is not a common intentional document pattern.",
-    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar baz\u001b[0m\n\u001b[0m\u001b[0m",
-    "mdflow_score": 0,
+    "weight": 0.7,
+    "weight_explanation": "Strong emphasis is common in README files, documentation, chat, and AI-generated Markdown. This particular malformed/ambiguous delimiter arrangement is less common than ordinary emphasis.",
+    "mdflow_terminal": "\u001b[1mfoo \u001b[0m\u001b[1mbar baz\u001b[0m\u001b[1m\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "**foo bar baz                                                                   ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A removes the literal leading ** that should remain visible.",
-      "Renderer A incorrectly renders \"foo\" as bold, making the malformed literal delimiter appear as valid emphasis.",
-      "Renderer B preserves the literal leading ** but does not visually distinguish the intended strong text."
+      "Renderer A incorrectly consumes the literal opening ** before \"foo\" and styles \"foo\" as bold.",
+      "Renderer A does not visually distinguish the literal Markdown text from the actual strong-emphasis span.",
+      "Renderer B preserves the opening literal ** but does not make the strong-emphasis portion visually clear."
     ],
-    "explanation": "Renderer A alters content by dropping literal asterisks and applies misleading bold styling to \"foo,\" so it does not faithfully present the input. Renderer B keeps the text content readable, including the literal delimiter, but loses the strong-emphasis distinction for \"bar baz.\"",
-    "evaluated_at": "2026-07-17T08:13:26"
+    "explanation": "Renderer A preserves the words but alters the intended meaning by treating literal delimiter text as formatting, making the inline structure misleading. Renderer B keeps the text readable and retains the literal prefix, but its plain rendering provides no clear indication that \"bar baz\" is strong emphasis.",
+    "evaluated_at": "2026-07-17T10:14:19"
   },
   {
     "section": "Emphasis and strong emphasis",

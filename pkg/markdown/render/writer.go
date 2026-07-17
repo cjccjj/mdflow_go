@@ -14,9 +14,9 @@ type Writer struct {
 	live               bool
 	tableActive        bool
 	inBlockquote       bool
-	inBold             bool
-	inItalic           bool
-	inStrikethrough    bool
+	inBold             int
+	inItalic           int
+	inStrikethrough    int
 	activeHeaderSuffix string
 	tableHeader        []string
 	tableRows          [][]string
@@ -357,18 +357,18 @@ func (w *Writer) Handle(e event.Event) error {
 }
 
 func (w *Writer) emphasisActive() bool {
-	return w.inBold || w.inItalic || w.inStrikethrough
+	return w.inBold > 0 || w.inItalic > 0 || w.inStrikethrough > 0
 }
 
 func (w *Writer) emphasisSGR() string {
 	codes := make([]string, 0, 3)
-	if w.inBold {
+	if w.inBold > 0 {
 		codes = append(codes, "1")
 	}
-	if w.inItalic {
+	if w.inItalic > 0 {
 		codes = append(codes, "3")
 	}
-	if w.inStrikethrough {
+	if w.inStrikethrough > 0 {
 		codes = append(codes, "9")
 	}
 	if len(codes) == 0 {
@@ -389,11 +389,11 @@ func (w *Writer) enterEmphasis(kind string) error {
 
 	switch kind {
 	case "bold":
-		w.inBold = true
+		w.inBold++
 	case "italic":
-		w.inItalic = true
+		w.inItalic++
 	case "strikethrough":
-		w.inStrikethrough = true
+		w.inStrikethrough++
 	}
 
 	if hadActive {
@@ -424,11 +424,11 @@ func (w *Writer) enterEmphasis(kind string) error {
 func (w *Writer) exitEmphasis(kind string) error {
 	switch kind {
 	case "bold":
-		w.inBold = false
+		w.inBold--
 	case "italic":
-		w.inItalic = false
+		w.inItalic--
 	case "strikethrough":
-		w.inStrikethrough = false
+		w.inStrikethrough--
 	}
 
 	stillActive := w.emphasisActive()
@@ -460,9 +460,9 @@ func (w *Writer) exitEmphasis(kind string) error {
 
 func (w *Writer) ResetStyles() error {
 	w.inBlockquote = false
-	w.inBold = false
-	w.inItalic = false
-	w.inStrikethrough = false
+	w.inBold = 0
+	w.inItalic = 0
+	w.inStrikethrough = 0
 	w.activeHeaderSuffix = ""
 	_, err := w.aw.WriteString("\033[0m")
 	return err
