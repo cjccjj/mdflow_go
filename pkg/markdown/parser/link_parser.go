@@ -464,16 +464,26 @@ func (lp *linkParser) collectTitle(q byte) []Event {
 			titleBuilder.WriteByte('\\')
 			continue
 		}
+		if t.Type == tokenizer.RightParenToken && q != '(' {
+			break
+		}
 		p.consume(1)
 		consumed := false
 		if q == '(' {
 			if t.Type == tokenizer.RightParenToken {
 				consumed = true
 			}
-		} else if t.Type == tokenizer.TextToken && len(t.Value) > 0 && t.Value[0] == closeQ {
-			consumed = true
-			if len(t.Value) > 1 {
-				p.prependTokens(tokenizer.Token{Type: tokenizer.TextToken, Value: t.Value[1:]})
+		} else if t.Type == tokenizer.TextToken {
+			closeIdx := strings.IndexByte(t.Value, closeQ)
+			if closeIdx >= 0 {
+				consumed = true
+				if closeIdx > 0 {
+					titleBuilder.WriteString(t.Value[:closeIdx])
+				}
+				trail := t.Value[closeIdx+1:]
+				if trail != "" {
+					p.prependTokens(tokenizer.Token{Type: tokenizer.TextToken, Value: trail})
+				}
 			}
 		}
 		if consumed {

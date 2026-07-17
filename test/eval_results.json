@@ -387,18 +387,19 @@
     "markdown": "[foo](/bar\\* \"ti\\*tle\")\n",
     "html": "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>\n",
     "weight": 0.3,
-    "weight_explanation": "Escaped punctuation is useful, but escaping punctuation specifically inside link destinations and titles is an infrequent edge case in everyday Markdown.",
-    "mdflow_terminal": "[foo](/bar*\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Backslash escaping within link destinations and titles is a relatively infrequent edge case. It matters for correctness when punctuation must be literal, but is not a common everyday Markdown pattern.",
+    "mdflow_terminal": "\u001b[4;34mfoo\u001b[0m (\u001b[2;34m/bar*\u001b[0m \"ti\\*tle\")\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "foo /bar%5C%2A                                                                  ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A leaves broken-looking Markdown syntax, omits the link title, and includes a visible/reset ANSI artifact.",
-      "Renderer B exposes an incorrectly encoded destination: the escaped asterisk becomes `%5C%2A` rather than a literal `*`."
+      "Renderer A incorrectly leaves the backslash visible in the link title (`ti\\*tle`), even though the escaped asterisk should render as `ti*tle`.",
+      "Renderer B displays the destination with percent-encoded backslash/asterisk (`/bar%5C%2A`) rather than the resolved literal destination (`/bar*`).",
+      "Renderer B omits the title information."
     ],
-    "explanation": "Renderer A preserves the link text and most of the destination, but its unclosed raw-link appearance is misleading and visually untidy. Renderer B is cleaner structurally by showing link text and a destination, but the destination is semantically wrong because the escape is retained as an encoded backslash.",
-    "evaluated_at": "2026-07-17T08:01:26"
+    "explanation": "Renderer A clearly presents the link label and destination, with useful link styling and readable metadata, but mishandles the escape in the title. Renderer B preserves the label and some destination-like text, but its encoded URL is misleading and it drops the title, making the link representation less faithful and less structurally informative.",
+    "evaluated_at": "2026-07-17T11:09:16"
   },
   {
     "section": "Backslash escapes",
@@ -571,19 +572,18 @@
     "example": 32,
     "markdown": "[foo](/f&ouml;&ouml; \"f&ouml;&ouml;\")\n",
     "html": "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "Entity and numeric reference decoding is useful for correctly rendering internationalized text and URLs, but it is an infrequent edge case in typical Markdown documents.",
-    "mdflow_terminal": "[foo](/f&ouml;&ouml;\u001b[0m",
-    "mdflow_score": 0,
+    "weight": 0.4,
+    "weight_explanation": "Entity decoding in link destinations and titles is moderately infrequent but occurs in imported HTML-adjacent Markdown and internationalized content.",
+    "mdflow_terminal": "\u001b[4;34mfoo\u001b[0m (\u001b[2;34m/föö\u001b[0m \"föö\")\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo /f&ouml;&ouml;                                                              ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A leaves entity references unresolved, exposes incomplete literal Markdown link syntax, emits a visible ANSI reset sequence in the captured output, and appears to drop the title/closing portion of the link.",
-      "Renderer B leaves the entity references unresolved and does not expose the link title."
+      "Renderer B exposes the literal entity syntax in the URL and omits the link title, reducing fidelity and clarity."
     ],
-    "explanation": "Renderer A is truncated and misleading enough to count as partial content loss. Renderer B is readable and conveys the link text and destination, but it fails the required entity decoding and provides only basic link structure.",
-    "evaluated_at": "2026-07-17T08:01:44"
+    "explanation": "Renderer A clearly presents the link text as an underlined blue link and shows the decoded destination and title in a dim auxiliary form. Renderer B preserves the visible label and destination text but does not decode entities or convey the title/link styling.",
+    "evaluated_at": "2026-07-17T11:09:12"
   },
   {
     "section": "Entity and numeric character references",
@@ -9157,18 +9157,18 @@
     "markdown": "[link](/url \"title \\\"&quot;\")\n",
     "html": "<p><a href=\"/url\" title=\"title &quot;&quot;\">link</a></p>\n",
     "weight": 0.9,
-    "weight_explanation": "Inline links are very common in READMEs, documentation, chat, and AI-generated Markdown. Preserving both label and destination is important in terminal output.",
-    "mdflow_terminal": "[link](/url\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Inline links are very common in READMEs, documentation, chat, and AI-generated Markdown. Preserving both their label and destination is important in a terminal.",
+    "mdflow_terminal": "\u001b[4;34mlink\u001b[0m (\u001b[2;34m/url\u001b[0m \"title \"\"\")\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "link /url                                                                       ",
-    "glow_score": 3,
-    "pass": false,
+    "glow_score": 2,
+    "pass": true,
     "issues": [
-      "Renderer A leaves Markdown link syntax visible, omits the closing parenthesis, and emits a raw ANSI reset escape sequence in the visible output.",
-      "Renderer A preserves the label and URL but presents them in a malformed, distracting form."
+      "Renderer A displays the decoded title quotes as an unescaped `\"\"`, which is slightly visually awkward but does not impair readability.",
+      "Renderer B preserves the URL but provides no visual distinction between the link label and destination."
     ],
-    "explanation": "Renderer A retains the essential label and destination, so the link remains somewhat understandable, but the broken syntax and visible escape sequence hinder readability. Renderer B cleanly presents both the label and URL, preserving the link's useful terminal-relevant information; omitting the title is appropriate supportive-information omission.",
-    "evaluated_at": "2026-07-17T08:14:18"
+    "explanation": "Renderer A clearly presents the linked text with underline/color and retains the destination and title in a readable parenthetical form. Renderer B preserves the label and URL, so the link remains usable, but its plain presentation provides less structural and stylistic clarity.",
+    "evaluated_at": "2026-07-17T11:09:14"
   },
   {
     "section": "Links",
