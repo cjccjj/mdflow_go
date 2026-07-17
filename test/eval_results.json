@@ -9334,56 +9334,57 @@
     "markdown": "[link [bar](/uri)\n",
     "html": "<p>[link <a href=\"/uri\">bar</a></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Links are common, but this malformed/nested-bracket parsing edge case is rarely encountered in typical Markdown documents.",
-    "mdflow_terminal": "\u001b[4;34mlink [bar]\u001b[0m (\u001b[2;34m/uri\u001b[0m)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Malformed or partially formed link syntax with a nested bracket is an uncommon edge case. Ordinary links are common, but this particular pattern is rare in typical documents.",
+    "mdflow_terminal": "[link [bar](/uri)]\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "[link bar /uri                                                                  ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly makes \"link [bar]\" appear to be the link label rather than preserving the literal \"[link \" text and linking only \"bar\".",
-      "Renderer B preserves the text and URL but provides little visual distinction between the literal text, link label, and destination."
+      "Renderer A leaves the link in Markdown syntax rather than presenting a cleaner terminal-oriented label/URL form.",
+      "Renderer A appears to add a trailing closing bracket not present in the source.",
+      "Renderer B drops the literal opening bracket that is visible text in the expected result."
     ],
-    "explanation": "Renderer A is readable and preserves the destination, with helpful link-like styling, but its parsing changes the visible structure and meaning of the source. Renderer B keeps the essential text and URL but flattens the link presentation into an ambiguous plain-text sequence.",
-    "evaluated_at": "2026-07-17T08:14:32"
+    "explanation": "Both outputs preserve the meaningful link label and URL, making the result understandable to a terminal reader. Renderer A more clearly retains the source's literal text and link relationship, though its raw syntax and added bracket are imperfect. Renderer B is clean and readable, but its plain 'link bar /uri' presentation weakens the distinction between surrounding literal text and the link.",
+    "evaluated_at": "2026-07-17T12:13:41"
   },
   {
     "section": "Links",
     "example": 517,
     "markdown": "[![moon](moon.jpg)](/uri)\n",
     "html": "<p><a href=\"/uri\"><img src=\"moon.jpg\" alt=\"moon\" /></a></p>\n",
-    "weight": 0.4,
-    "weight_explanation": "Linked images are used in READMEs, badges, and documentation, but nested image-inside-link syntax is less common than ordinary links or images.",
-    "mdflow_terminal": "\u001b[4;34m![moon]\u001b[0m (\u001b[2;34mmoon.jpg\u001b[0m)](/uri)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.3,
+    "weight_explanation": "An image used as the label of a link is a relatively infrequent nested-link pattern, though it appears in badges, logos, and navigation elements.",
+    "mdflow_terminal": "\u001b[4;34m![moon](moon.jpg)\u001b[0m (\u001b[2;34m/uri\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "moon /moon.jpg /uri                                                             ",
-    "glow_score": 0,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A leaves confusing, unmatched-looking Markdown punctuation around the nested image/link construct.",
-      "Renderer B changes the image URL from the relative `moon.jpg` to `/moon.jpg`, which can point to a different resource."
+      "Renderer A exposes the image as literal Markdown syntax rather than presenting its alt text cleanly.",
+      "Renderer B flattens the image and link relationship, and changes the image source from \"moon.jpg\" to \"/moon.jpg\"."
     ],
-    "explanation": "Renderer A preserves the alt text, image source, and destination URL, but presents them as malformed-looking raw syntax, making the relationship difficult to read. Renderer B is cleanly readable, but it does not preserve the image URL intact; adding the leading slash changes its meaning.",
-    "evaluated_at": "2026-07-17T08:14:34"
+    "explanation": "Renderer A preserves both the image information and destination URL, and its link styling makes the destination relationship understandable, but the visible Markdown image syntax is distracting. Renderer B preserves most text but presents three flat tokens with no clear nesting or relationship; the altered image URL is also undesirable.",
+    "evaluated_at": "2026-07-17T12:13:39"
   },
   {
     "section": "Links",
     "example": 518,
     "markdown": "[foo [bar](/uri)](/uri)\n",
     "html": "<p>[foo <a href=\"/uri\">bar</a>](/uri)</p>\n",
-    "weight": 0.2,
-    "weight_explanation": "Nested-bracket link edge cases are uncommon in everyday Markdown, though ordinary links themselves are very common.",
-    "mdflow_terminal": "\u001b[4;34mfoo [bar]\u001b[0m (\u001b[2;34m/uri\u001b[0m)](/uri)\n\u001b[0m",
+    "weight": 0.1,
+    "weight_explanation": "This is an obscure nested-link parsing edge case involving an invalid outer link. It is very unlikely in ordinary Markdown documents, READMEs, or chat output.",
+    "mdflow_terminal": "\u001b[4;34mfoo [bar](/uri)\u001b[0m (\u001b[2;34m/uri\u001b[0m)\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "[foo bar /uri](/uri)                                                            ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly styles `foo [bar` as the link label rather than only `bar`, making the Markdown structure misleading.",
-      "Renderer A retains the outer literal link syntax but presents it awkwardly after the incorrectly expanded link styling."
+      "Renderer A incorrectly treats the outer construct as a link, even though CommonMark parses the outer brackets and destination literally.",
+      "Renderer A hides the literal outer-link syntax and applies link styling to text that should not be a single link."
     ],
-    "explanation": "Renderer A preserves the text and `/uri`, but its link styling implies a larger link than CommonMark parses, obscuring the intended literal outer syntax. Renderer B is unstyled but readable: it preserves the literal outer construct and makes the inner link text and URL apparent.",
-    "evaluated_at": "2026-07-17T08:14:34"
+    "explanation": "Renderer A preserves the visible text and URL, but its underline/color styling misleadingly presents the entire outer construct as a functional link rather than showing the inner link within literal surrounding text. Renderer B is unstyled and somewhat source-like, but it retains the literal outer brackets and destination while exposing the inner link's URL, making the unusual structure more understandable.",
+    "evaluated_at": "2026-07-17T12:13:40"
   },
   {
     "section": "Links",
@@ -9410,19 +9411,17 @@
     "markdown": "[foo *[bar [baz](/uri)](/uri)*](/uri)\n",
     "html": "<p>[foo <em>[bar <a href=\"/uri\">baz</a>](/uri)</em>](/uri)</p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an unusually complex, malformed-looking nested-link/emphasis construct. It is unlikely in normal Markdown documents, READMEs, chat, or AI output.",
-    "mdflow_terminal": "\u001b[4;34mfoo *[bar [baz](/uri)]\u001b[0m (\u001b[2;34m/uri\u001b[0m)*](/uri)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Deeply nested link-like syntax inside a link label is uncommon in everyday Markdown. It is mainly a parsing edge case, though links themselves are common.",
+    "mdflow_terminal": "\u001b[4;34mfoo *[bar [baz](/uri)](/uri)*\u001b[0m (\u001b[2;34m/uri\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "[foo [bar baz /uri](/uri)](/uri)                                                ",
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly turns a large portion of the literal/bracketed text into one underlined link.",
-      "Renderer A's link boundary is misleading, making it difficult to tell which text is actually intended as the link label.",
-      "Renderer B does not convey the emphasis, and its inline URL presentation is somewhat flat."
+      "Renderer B changes or drops literal label characters, including the emphasis markers and nested bracket/link-like text."
     ],
-    "explanation": "Renderer A preserves the characters and a /uri destination, but its prominent underlined link styling implies an incorrect structure and hinders interpretation of this already complex input. Renderer B is plain, but the bracket structure, visible label text, and URL information remain comparatively understandable.",
-    "evaluated_at": "2026-07-17T09:14:29"
+    "explanation": "Renderer A preserves the complete outer link label exactly as visible text and clearly exposes the functional URL with appropriate link styling. Renderer B remains somewhat readable, but it rewrites the literal nested syntax into a misleading flattened form, so the displayed content does not faithfully represent the source's visible label.",
+    "evaluated_at": "2026-07-17T12:13:46"
   },
   {
     "section": "Links",
@@ -9430,19 +9429,18 @@
     "markdown": "![[[foo](uri1)](uri2)](uri3)\n",
     "html": "<p><img src=\"uri3\" alt=\"[foo](uri2)\" /></p>\n",
     "weight": 0.1,
-    "weight_explanation": "This deeply nested image/link delimiter case is CommonMark edge-case trivia and is extremely unlikely in normal Markdown documents.",
-    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34m[[foo](uri1)]\u001b[0m (\u001b[2;34muri2\u001b[0m)](uri3)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "This is an obscure nested-link/image parsing edge case rather than a pattern people commonly write intentionally.",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34m[[foo](uri1)](uri2)\u001b[0m (\u001b[2;34muri3\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "[foo](uri2) /uri3                                                               ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A exposes `uri1`, which is not part of the resulting image semantics.",
-      "Renderer A's nested styling makes `uri2` look like the active link target while the actual image URL `uri3` is left in confusing literal syntax.",
-      "The trailing `](uri3)` presentation is visually awkward and does not clearly communicate the image destination."
+      "Renderer A exposes the inner uri1 and renders the image label as [[foo](uri1)](uri2), whereas the effective image alt text is [foo](uri2).",
+      "Renderer A's link-like styling on the full image label can imply that the nested source syntax remains functionally meaningful."
     ],
-    "explanation": "Renderer A preserves recognizable text and the final URL, but its rendering is misleading: it appears to interpret nested link components that should instead become image alt text. Renderer B cleanly shows the effective alt text and preserves the image URL with a simple separator, though it provides only basic image structure/styling.",
-    "evaluated_at": "2026-07-17T08:14:42"
+    "explanation": "Renderer A clearly identifies an image and preserves the outer functional URL uri3, with helpful ANSI distinction between the label and URL. However, it presents extra nested source-level link information that is not part of the effective alt text. Renderer B presents the effective label and outer URL clearly, but without styling; its slash separator still makes the relationship understandable.",
+    "evaluated_at": "2026-07-17T12:13:49"
   },
   {
     "section": "Links",
@@ -9615,39 +9613,39 @@
     "markdown": "[![moon](moon.jpg)][ref]\n\n[ref]: /uri\n",
     "html": "<p><a href=\"/uri\"><img src=\"moon.jpg\" alt=\"moon\" /></a></p>\n",
     "weight": 0.4,
-    "weight_explanation": "Linked images occur in READMEs and documentation, but this specific nested reference-style form is less common than ordinary inline links or images.",
-    "mdflow_terminal": "\u001b[4;34m![moon]\u001b[0m (\u001b[2;34mmoon.jpg\u001b[0m)][ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Images wrapped in links and reference-style link definitions occur in READMEs and documentation, but this specific nested combination is not everyday Markdown.",
+    "mdflow_terminal": "\u001b[4;34m![moon](moon.jpg)\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "moon /moon.jpg /uri                                                             ",
-    "glow_score": 2,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A leaves malformed Markdown syntax in the visible output: \"][ref]\".",
-      "Renderer A does not clearly render the outer link target as part of the linked image.",
-      "Renderer A's displayed image source is helpful, but the overall nesting is confusing."
+      "Renderer A exposes raw image Markdown rather than presenting the image alt text cleanly.",
+      "Renderer A's visible '[→ ref]' points to the reference identifier rather than directly presenting the resolved destination alongside the link.",
+      "Renderer B preserves the relevant text and URLs but presents them as an ambiguous flat sequence."
     ],
-    "explanation": "Renderer A preserves the alt text, image URL, and reference definition target, but presents the linked image as broken-looking Markdown rather than a clear image/link construct. Renderer B cleanly preserves the image label, image source, and destination URL, though the three unlabelled values are somewhat flat and do not explicitly communicate their roles.",
-    "evaluated_at": "2026-07-17T08:15:02"
+    "explanation": "Renderer A preserves the image label, image source, reference relationship, and resolved link destination. Its styling identifies the linked portion, but the raw image syntax and separate dim definition make the result less polished. Renderer B retains the information, but lacks clear cues for which URL is the image source versus the link target.",
+    "evaluated_at": "2026-07-17T12:13:46"
   },
   {
     "section": "Links",
     "example": 532,
     "markdown": "[foo [bar](/uri)][ref]\n\n[ref]: /uri\n",
     "html": "<p>[foo <a href=\"/uri\">bar</a>]<a href=\"/uri\">ref</a></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "Links are common, but this particular adjacent/nested-bracket parsing pattern is unusual CommonMark edge-case syntax rather than everyday Markdown.",
-    "mdflow_terminal": "\u001b[4;34mfoo [bar]\u001b[0m (\u001b[2;34m/uri\u001b[0m)][ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
+    "weight": 0.3,
+    "weight_explanation": "Reference-style links and nested bracket/link constructs occur occasionally, but this particular nested-link-label pattern is uncommon outside edge cases and generated Markdown.",
+    "mdflow_terminal": "\u001b[4;34mfoo [bar](/uri)\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "[foo bar /uri]ref /uri                                                          ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly associates /uri with \"foo [bar\" rather than just \"bar\".",
-      "Renderer A leaves stray closing syntax ( \")] [ref]\"-like text) and does not clearly render the reference link labeled \"ref\".",
-      "Renderer A exposes the reference definition even though it is supportive metadata rather than reader-facing content."
+      "Renderer A leaves the inner Markdown link syntax visible inside an underlined outer link label, making the actual link structure misleading.",
+      "Renderer A's \"[→ ref]\" notation is unclear, although the reference definition preserves the destination URL.",
+      "Renderer B flattens the nested structure, but keeps both visible text and URL destinations readable."
     ],
-    "explanation": "Renderer A retains the text and URL, but its link boundaries are misleading and the leftover Markdown punctuation makes the result look malformed. Renderer B is plain but readable: it preserves both visible labels and URL functionality in a reasonably understandable linear form.",
-    "evaluated_at": "2026-07-17T08:15:04"
+    "explanation": "Renderer A preserves the text and destination information, but visually suggests that \"foo [bar](/uri)\" is a single link and exposes raw Markdown syntax. Renderer B is plain and loses precise nesting, yet its label-and-URL presentation is more immediately readable and does not misleadingly style the raw syntax.",
+    "evaluated_at": "2026-07-17T12:13:53"
   },
   {
     "section": "Links",
@@ -9674,20 +9672,20 @@
     "example": 533,
     "markdown": "[foo *bar [baz][ref]*][ref]\n\n[ref]: /uri\n",
     "html": "<p>[foo <em>bar <a href=\"/uri\">baz</a></em>]<a href=\"/uri\">ref</a></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "Links are common, but this particular nested reference-link and emphasis interaction is an uncommon edge case in everyday Markdown.",
-    "mdflow_terminal": "\u001b[4;34mfoo *bar [baz]\u001b[0m [→ ref]*][ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
+    "weight": 0.4,
+    "weight_explanation": "Links are common, but this specific nested/reference-link edge case is uncommon in everyday Markdown.",
+    "mdflow_terminal": "\u001b[4;34mfoo *bar [baz][ref]*\u001b[0m [→ ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "[foo bar baz /uri]ref /uri                                                      ",
-    "glow_score": 2,
-    "pass": true,
+    "glow_score": 1,
+    "pass": false,
     "issues": [
-      "Renderer A applies link styling to the wrong apparent span and leaves raw Markdown delimiters visible.",
-      "Renderer A's trailing \"[→ ref]*][ref]\" is confusing and makes the link nesting difficult to understand.",
-      "Renderer A displays the reference definition as extra terminal output rather than using it solely to resolve the link."
+      "Renderer A applies link styling to text that is literal bracketed text in the parsed result, which is misleading.",
+      "Renderer A leaves emphasis and nested reference-link syntax visibly raw instead of presenting the readable text cleanly.",
+      "Renderer B flattens the content and makes the bracket structure confusing, though it retains the destination URL."
     ],
-    "explanation": "Renderer A preserves most text and the reference destination, but the result looks like broken Markdown and misleadingly represents the link boundaries. Renderer B is plain, but it preserves the visible text and exposes both link destinations in a readable enough linear form.",
-    "evaluated_at": "2026-07-17T09:14:33"
+    "explanation": "Both renderers preserve the important text and URL information, but neither clearly communicates the intended parsed structure. Renderer A is readable and retains the definition URL, but its blue underlined styling incorrectly implies that the large literal bracketed segment is a link. Renderer B exposes the URL inline but loses useful structural distinctions.",
+    "evaluated_at": "2026-07-17T12:13:54"
   },
   {
     "section": "Links",
@@ -10419,18 +10417,17 @@
     "markdown": "![foo ![bar](/url)](/url2)\n",
     "html": "<p><img src=\"/url2\" alt=\"foo bar\" /></p>\n",
     "weight": 0.2,
-    "weight_explanation": "Images are common, but an image whose alt text contains nested image syntax is an uncommon edge case.",
-    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo ![bar]\u001b[0m (\u001b[2;34m/url\u001b[0m)](/url2)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Images are common, but an image whose alt text contains nested image-like Markdown is an obscure edge case. Most real-world image syntax is much simpler.",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo ![bar](/url)\u001b[0m (\u001b[2;34m/url2\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "foo bar /url2                                                                   ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A exposes unparsed Markdown delimiters in the alt text.",
-      "Renderer A presents the inner /url and outer /url2 in a confusing, misleading arrangement."
+      "Renderer A exposes the nested source Markdown (`![bar](/url)`) inside the alt text instead of flattening it to the intended visible alt text, `foo bar`."
     ],
-    "explanation": "Renderer A retains the relevant text and outer image URL, but its raw nested syntax makes the result hard to interpret as a single image with alt text. Renderer B cleanly presents the resolved alt text and image source URL, though without additional styling.",
-    "evaluated_at": "2026-07-17T08:16:34"
+    "explanation": "Renderer A clearly identifies the item as an image and preserves its destination URL, with useful ANSI distinction, but its visible alt text contains distracting literal nested Markdown. Renderer B cleanly preserves the flattened alt text and destination URL, though it provides no explicit image marker or styling.",
+    "evaluated_at": "2026-07-17T12:13:56"
   },
   {
     "section": "Images",
@@ -10457,20 +10454,16 @@
     "example": 575,
     "markdown": "![foo [bar](/url)](/url2)\n",
     "html": "<p><img src=\"/url2\" alt=\"foo bar\" /></p>\n",
-    "weight": 0.3,
-    "weight_explanation": "Images are common, but this specific case—link-like syntax inside image alt text—is an infrequent edge case.",
-    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo [bar]\u001b[0m (\u001b[2;34m/url\u001b[0m)](/url2)\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.4,
+    "weight_explanation": "Images with nested bracket-like text in their alt text are uncommon, though images themselves are common in READMEs and documentation.",
+    "mdflow_terminal": "\u001b[2m[IMG: \u001b[0m\u001b[4;34mfoo [bar](/url)\u001b[0m (\u001b[2;34m/url2\u001b[0m)\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "foo bar /url2                                                                   ",
     "glow_score": 2,
     "pass": true,
-    "issues": [
-      "Renderer A exposes the nested link syntax and its /url destination even though it is only part of image alt text.",
-      "Renderer A's bracket and parenthesis layout makes it unclear which URL is the image source.",
-      "Renderer A does preserve the actual image source URL, /url2, but presents it in a confusing form."
-    ],
-    "explanation": "Renderer A retains the words and the image source, but its output misleadingly resembles nested link structure rather than a simple image with alt text. Renderer B cleanly presents the flattened alt text and image URL; it is plain but readable and structurally understandable.",
-    "evaluated_at": "2026-07-17T08:16:38"
+    "issues": [],
+    "explanation": "Renderer A clearly identifies the image, preserves the full alt text including its literal nested-link syntax, and preserves the source URL with helpful ANSI differentiation. Renderer B preserves the normalized alt text and URL in a clean readable form, but provides less visual indication that the content is an image.",
+    "evaluated_at": "2026-07-17T12:13:56"
   },
   {
     "section": "Images",

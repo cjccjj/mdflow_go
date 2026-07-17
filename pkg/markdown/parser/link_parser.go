@@ -44,6 +44,7 @@ func (lp *linkParser) reset() {
 // It initializes link state and transitions to LinkTextState.
 func (lp *linkParser) startLinkText() {
 	lp.reset()
+	lp.linkDepth = 1
 	lp.p.enterState(LinkTextState)
 }
 
@@ -52,6 +53,7 @@ func (lp *linkParser) startLinkText() {
 func (lp *linkParser) startImageText() {
 	lp.reset()
 	lp.isImage = true
+	lp.linkDepth = 1
 	lp.p.enterState(LinkTextState)
 }
 
@@ -114,9 +116,12 @@ func (lp *linkParser) processLinkText() []Event {
 		if tok.Type == tokenizer.RightBracketToken {
 			if lp.linkDepth > 0 {
 				p.consume(1)
-				lp.linkBuf = append(lp.linkBuf, tok)
 				lp.linkDepth--
-				if lp.linkDepth == 0 && len(p.buf) > 0 {
+				if lp.linkDepth == 0 {
+					if len(p.buf) == 0 {
+						lp.linkBracketConsumed = true
+						return nil
+					}
 					if p.buf[0].Type == tokenizer.LeftParenToken {
 						p.consume(1)
 						p.state = LinkURLState
@@ -125,7 +130,9 @@ func (lp *linkParser) processLinkText() []Event {
 					if p.buf[0].Type == tokenizer.LeftBracketToken {
 						return lp.processLinkRefLabel()
 					}
+					return lp.flushLinkAsText()
 				}
+				lp.linkBuf = append(lp.linkBuf, tok)
 				continue
 			}
 			p.consume(1)
