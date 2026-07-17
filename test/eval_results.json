@@ -5351,19 +5351,19 @@
     "example": 296,
     "markdown": "10) foo\n    - bar\n",
     "html": "<ol start=\"10\">\n<li>foo\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>\n",
-    "weight": 0.7,
-    "weight_explanation": "Ordered and nested lists are common in READMEs, documentation, and AI-generated instructions, though this specific start-number-plus-nested-list form is somewhat less universal.",
-    "mdflow_terminal": "10) foo\n\u001b[38;5;245m- bar\n\u001b[0m\u001b[0m",
+    "weight": 0.6,
+    "weight_explanation": "Nested lists are common in READMEs, documentation, and generated content, though this particular ordered-list start value and marker form is less frequent.",
+    "mdflow_terminal": "10) foo\n  - bar\n\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \n10foo                                                                           \nbar                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A does not visibly indent the nested bullet beneath its parent, weakening nesting clarity.",
-      "Renderer B drops both the ordered-list delimiter and the bullet marker, making list structure unclear."
+      "Renderer A provides no ANSI styling, though its plain-text list layout remains clear.",
+      "Renderer B drops the list markers and flattens the parent/child relationship."
     ],
-    "explanation": "Renderer A preserves all content and clearly shows an ordered item followed by a bullet, with unobtrusive styling, but the missing indentation makes the parent-child relationship ambiguous. Renderer B preserves the words but flattens the list presentation and loses the meaningful markers.",
-    "evaluated_at": "2026-07-17T08:08:56"
+    "explanation": "Renderer A preserves the ordered marker, bullet marker, line separation, and visible nesting, making the hierarchy readable. Renderer B preserves the words but renders \"10foo\" without a useful list marker or spacing and leaves the nested item visually unstructured.",
+    "evaluated_at": "2026-07-17T11:30:36"
   },
   {
     "section": "List items",
@@ -5501,19 +5501,20 @@
     "example": 302,
     "markdown": "1. foo\n2. bar\n3) baz\n",
     "html": "<ol>\n<li>foo</li>\n<li>bar</li>\n</ol>\n<ol start=\"3\">\n<li>baz</li>\n</ol>\n",
-    "weight": 0.7,
-    "weight_explanation": "Ordered lists are a common Markdown feature in documentation, READMEs, and generated content. The specific mixed-delimiter behavior that splits lists is less common, but the underlying list rendering is important.",
-    "mdflow_terminal": "1. foo\n2. bar\n  3) baz\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.6,
+    "weight_explanation": "Ordered lists are common, though the specific case of changing delimiter style mid-sequence is less frequent. Clear list markers and list boundaries still matter in READMEs, documentation, and generated text.",
+    "mdflow_terminal": "1. foo\n2. bar\n3) baz\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \n1foo                                                                            \n2bar                                                                            \n                                                                                \n3baz                                                                            ",
     "glow_score": 2,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A indents `3) baz`, making it appear nested under the preceding list rather than the start of a separate ordered list.",
-      "Renderer B omits the space after each numeric marker (`1foo`, `2bar`, `3baz`), which reduces readability and makes the list formatting look cramped."
+      "Renderer A does not visually separate the two ordered lists.",
+      "Renderer A retains inconsistent marker styles without making the list boundary explicit.",
+      "Renderer B removes the space after the numeric markers, producing less natural-looking list items."
     ],
-    "explanation": "Renderer A preserves all content and numbering, but its indentation misleadingly represents the third item as a nested item instead of a new list. Renderer B visibly separates the two lists with a blank line and keeps the numbering, so its structure is clearer, though the cramped markers prevent a polished presentation.",
-    "evaluated_at": "2026-07-17T10:24:23"
+    "explanation": "Renderer A preserves all content and recognizable list markers; the changed ')' marker gives some indication that the final item differs, but the separate-list structure is not explicit. Renderer B clearly inserts a blank line between the lists, but its compact '1foo' formatting harms readability. Both remain understandable, but neither provides polished list presentation.",
+    "evaluated_at": "2026-07-17T11:30:40"
   },
   {
     "section": "Lists",

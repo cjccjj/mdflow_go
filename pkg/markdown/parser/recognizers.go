@@ -31,13 +31,28 @@ func (p *Parser) tryOrderedList() ([]Event, bool) {
 	}
 	fullValue := p.buf[0].Value
 	prefix, ok := orderedListPrefix(fullValue)
+	var rest string
 	if !ok {
-		return nil, false
+		if isDigitsOnly(fullValue) && len(p.buf) > 1 && p.buf[1].Type == tokenizer.RightParenToken {
+			p.consume(2)
+			prefix = fullValue + ")"
+			if len(p.buf) > 0 && p.buf[0].Type == tokenizer.TextToken {
+				rest = p.buf[0].Value
+				p.consume(1)
+				if strings.HasPrefix(rest, " ") {
+					prefix += " "
+					rest = rest[1:]
+				}
+			}
+		} else {
+			return nil, false
+		}
+	} else {
+		p.consume(1)
+		rest = fullValue[len(prefix):]
 	}
-	p.consume(1)
 	p.lineStart = false
 	events := []Event{{Type: BulletItemEvent, Value: prefix}}
-	rest := fullValue[len(prefix):]
 	p.listContentIndent = p.lineStartIndent + len(prefix)
 	if strings.HasPrefix(rest, "    ") {
 		p.enterState(IndentedCodeBlockState)
@@ -213,6 +228,9 @@ func hasLineStartTextPattern(v string) bool {
 		}
 	}
 	if _, ok := orderedListPrefix(v); ok {
+		return true
+	}
+	if isDigitsOnly(v) {
 		return true
 	}
 	return false
