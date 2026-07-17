@@ -424,7 +424,7 @@ def assemble_result(section: str, example_num: int,
 
 def _eval_one(api_key: str, entry: dict, result_map: dict,
               force: bool) -> tuple:
-    """Evaluate a single example. Returns (key, result_dict_or_None, action)."""
+    """Evaluate a single example. Returns (key, result_or_None, action, is_error)."""
     example_num = entry["example"]
     section = entry["section"]
     markdown = entry["markdown"]
@@ -437,7 +437,7 @@ def _eval_one(api_key: str, entry: dict, result_map: dict,
     if not force:
         existing = result_map.get(key)
         if existing and mdflow_terminal == existing.get("mdflow_terminal", ""):
-            return (key, None, "skip")
+            return (key, None, "skip", False)
 
     action = "Update" if key in result_map else "New"
 
@@ -451,17 +451,19 @@ def _eval_one(api_key: str, entry: dict, result_map: dict,
         )
         llm = json.loads(response.choices[0].message.content)
     except Exception as exc:
-        llm = {
+        result = assemble_result(section, example_num, markdown, html,
+                                 mdflow_terminal, glow_terminal, {
             "weight": 0.5,
             "weight_explanation": f"LLM error: {exc}",
             "a_score": 0, "b_score": 0,
             "issues": [str(exc)],
             "explanation": f"LLM evaluation error: {exc}",
-        }
+        })
+        return (key, result, action, True)
 
     result = assemble_result(section, example_num, markdown, html,
                              mdflow_terminal, glow_terminal, llm)
-    return (key, result, action)
+    return (key, result, action, False)
 
 
 def cmd_run(filters: dict):
@@ -510,28 +512,21 @@ def cmd_run(filters: dict):
             i = fut_to_idx[future]
             entry = entries[i]
             try:
-                key, result, action = future.result()
+                key, result, action, is_error = future.result()
             except Exception as exc:
                 print(f"[{i + 1:>3}/{total}] FAIL   #{entry['example']} "
                       f"{entry['section']:<30}  worker error: {exc}")
-                changed += 1
-                result = assemble_result(
-                    entry["section"], entry["example"],
-                    entry["markdown"], entry["html"],
-                    "", "", {
-                        "weight": 0.5,
-                        "weight_explanation": f"Worker error: {exc}",
-                        "a_score": 0, "b_score": 0,
-                        "issues": [str(exc)],
-                        "explanation": f"Worker error: {exc}",
-                    })
-                result_map[(entry["section"], entry["example"])] = result
                 continue
 
             if result is None:
                 skipped += 1
                 print(f"[{i + 1:>3}/{total}] Skip   #{entry['example']} "
                       f"{entry['section']:<30} (unchanged)")
+                continue
+
+            if is_error:
+                print(f"[{i + 1:>3}/{total}] FAIL   #{entry['example']} "
+                      f"{entry['section']:<30}  {result.get('explanation', 'error')[:80]}")
                 continue
 
             changed += 1
@@ -542,9 +537,7 @@ def cmd_run(filters: dict):
                   f"glow={result['glow_score']}  "
                   f"weight={result['weight']:.1f}  "
                   f"{_pass_fail(result['pass'])}")
-
-            if sequential:
-                write_json(RESULTS_PATH, list(result_map.values()))
+            write_json(RESULTS_PATH, list(result_map.values()))
 
     write_json(RESULTS_PATH, list(result_map.values()))
 
