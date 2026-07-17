@@ -57,19 +57,19 @@
     "example": 4,
     "markdown": "  - foo\n\n\tbar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>\n",
-    "weight": 0.4,
-    "weight_explanation": "Indented continuation paragraphs within list items occur in real Markdown, but literal tab-based indentation is relatively uncommon compared with ordinary lists and paragraphs.",
-    "mdflow_terminal": "• foo\n\nbar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.3,
+    "weight_explanation": "Tabbed indentation for list-item continuation paragraphs is valid Markdown but relatively uncommon in everyday writing. Lists are common, but this exact tab-based indentation pattern is niche.",
+    "mdflow_terminal": "• foo\n\n  bar\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoobar                                                                          ",
     "glow_score": 0,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A presents \"bar\" without indentation or a list-item continuation cue, making it appear outside the bullet item.",
-      "Renderer B concatenates \"foo\" and \"bar\" into \"foobar\", losing the word boundary and paragraph structure."
+      "Renderer A does not visually style the separate paragraph beyond indentation, though the blank line and indent still make its relationship to the list item understandable.",
+      "Renderer B merges \"foo\" and \"bar\" into \"foobar\", losing both the word boundary and list/paragraph structure."
     ],
-    "explanation": "Renderer A preserves all text and shows the initial list marker, but loses the fact that \"bar\" is a separate paragraph in the same list item. Renderer B makes the content misleading by merging the two words and provides no visible list or paragraph structure.",
-    "evaluated_at": "2026-07-17T08:00:53"
+    "explanation": "Renderer A preserves the bullet, the paragraph break, and the indented continuation paragraph clearly enough for a reader to understand the list-item structure. Renderer B flattens and concatenates the text, making the output structurally misleading and altering the readable content.",
+    "evaluated_at": "2026-07-17T10:23:26"
   },
   {
     "section": "Tabs",
@@ -77,18 +77,18 @@
     "markdown": "- foo\n\n\t\tbar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<pre><code>  bar\n</code></pre>\n</li>\n</ul>\n",
     "weight": 0.3,
-    "weight_explanation": "Indented code blocks nested within list items are valid Markdown but relatively uncommon in everyday prose, READMEs, and chat output. Tab-dependent indentation is especially niche.",
-    "mdflow_terminal": "• foo\n\n\tbar\n\u001b[0m",
+    "weight_explanation": "Indented code blocks are reasonably common, but this specific tab-based nested code block inside a list item is an infrequent edge case.",
+    "mdflow_terminal": "• foo\n\n  \tbar\n\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoo                                                                             \n  bar                                                                           \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A does not visually distinguish the code block beyond indentation and a blank line.",
-      "Renderer B omits the list marker, weakening the relationship between \"foo\" and the nested code block."
+      "Renderer A does not visually style the code block beyond indentation.",
+      "Renderer B drops the list marker, making the list-item structure unclear."
     ],
-    "explanation": "Renderer A preserves the bullet, paragraph, blank-line separation, and indented code content, making the structure understandable even without dedicated code styling. Renderer B preserves the text and indentation, but dropping the list marker makes the list-item structure less clear.",
-    "evaluated_at": "2026-07-17T08:00:53"
+    "explanation": "Renderer A preserves the bullet, paragraph, blank-line separation, and indented code content, so the hierarchy remains readable despite minimal code styling. Renderer B preserves the text and indentation for the code, but removing the bullet makes the surrounding list structure largely invisible.",
+    "evaluated_at": "2026-07-17T10:23:27"
   },
   {
     "section": "Tabs",
@@ -188,19 +188,19 @@
     "markdown": " - foo\n   - bar\n\t - baz\n",
     "html": "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n",
     "weight": 0.3,
-    "weight_explanation": "Nested lists are common, but relying on literal tabs and mixed tab/space indentation is relatively uncommon in everyday Markdown.",
-    "mdflow_terminal": "• foo\n• bar\n\u001b[38;5;245m - baz\n\u001b[0m\u001b[0m",
+    "weight_explanation": "Nested lists are reasonably common, but using literal tabs for list indentation is infrequent in typical Markdown authoring.",
+    "mdflow_terminal": "• foo\n• bar\n\u001b[38;5;245m   - baz\n\u001b[0m\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \nbaz                                                                             \n                                                                                \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A does not visually preserve the nested relationship between foo, bar, and baz.",
-      "Renderer A renders baz with an inconsistent dim style and a raw hyphen rather than a consistent list marker.",
-      "Renderer B preserves all text but flattens the entire list structure."
+      "Renderer A does not visually convey that \"bar\" is nested under \"foo\".",
+      "Renderer A presents \"baz\" as dim, indented literal text with a hyphen rather than clearly as the deepest list item.",
+      "Renderer B removes all bullet and nesting cues."
     ],
-    "explanation": "Both renderers retain the words and line separation, so the content is readable. Renderer A at least uses bullets for the first two items, but their identical indentation and the oddly dimmed final line make the intended three-level nesting unclear. Renderer B presents only flat text, losing list markers and nesting entirely.",
-    "evaluated_at": "2026-07-17T08:01:04"
+    "explanation": "Both renderers preserve the words and line separation, so the content remains readable. Renderer A retains some list-like markers but misrepresents the hierarchy, while Renderer B presents a completely flat sequence of words with no list structure.",
+    "evaluated_at": "2026-07-17T10:23:26"
   },
   {
     "section": "Backslash escapes",
@@ -1909,39 +1909,38 @@
     "example": 108,
     "markdown": "  - foo\n\n    bar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>\n",
-    "weight": 0.6,
-    "weight_explanation": "Multi-paragraph list items occur regularly in documentation and longer Markdown, though they are less common than simple lists. This example tests list-item continuation indentation rather than an indented code block.",
-    "mdflow_terminal": "• foo\n\nbar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Loose list items with multiple paragraphs occur occasionally in documentation, READMEs, and generated Markdown, though this exact indentation pattern is less common than basic lists.",
+    "mdflow_terminal": "• foo\n\n  bar\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoobar                                                                          ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A leaves the second paragraph unindented, so its membership in the bullet item is unclear.",
-      "Renderer B removes the list marker, paragraph separation, and spacing, merging the content into \"foobar\".",
-      "The stated indented-code-block description does not match the expected HTML, which represents a loose list item with two paragraphs."
+      "Renderer A's trailing ANSI reset escape is unnecessary.",
+      "Renderer B merges \"foo\" and \"bar\" and loses the list-item and paragraph structure."
     ],
-    "explanation": "Renderer A preserves all text and the initial bullet, but presents \"bar\" as an apparently separate top-level paragraph rather than part of the list item. Renderer B preserves the words but concatenates them and loses all meaningful list and paragraph structure.",
-    "evaluated_at": "2026-07-17T08:03:35"
+    "explanation": "Renderer A preserves the bullet, the separation between the two paragraphs, and the continuation indentation, making the list structure readable. Renderer B preserves the words but presents them as a flat \"foobar\" line, obscuring both the list and paragraph break.",
+    "evaluated_at": "2026-07-17T10:23:34"
   },
   {
     "section": "Indented code blocks",
     "example": 109,
     "markdown": "1.  foo\n\n    - bar\n",
     "html": "<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>\n",
-    "weight": 0.6,
-    "weight_explanation": "Nested lists are fairly common in READMEs, documentation, and generated content, though less universal than simple lists or headings.",
-    "mdflow_terminal": "1.  foo\n\n- bar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.7,
+    "weight_explanation": "Nested lists are common in READMEs, documentation, and AI-generated instructions, though less universal than simple paragraphs or headings.",
+    "mdflow_terminal": "1.  foo\n\n  - bar\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \n1foo                                                                            \nbar                                                                             \n                                                                                ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A removes the indentation that conveys the unordered list is nested under the ordered-list item.",
-      "Renderer B removes list markers and nesting cues, making the list structure unclear."
+      "Renderer A provides no styling beyond list markers and indentation, and includes a visible terminal reset sequence in the captured output.",
+      "Renderer B removes the space between the ordered-list marker and its text and does not visually convey that \"bar\" is nested beneath \"foo\"."
     ],
-    "explanation": "Renderer A preserves all visible text and list markers, but presents the nested '- bar' item as a top-level list item, which is structurally misleading. Renderer B preserves the words but collapses both list type and nesting, leaving only a weak '1foo' cue followed by plain text.",
-    "evaluated_at": "2026-07-17T08:03:35"
+    "explanation": "Renderer A preserves both items and makes the nested unordered list clear through indentation and a bullet marker. Renderer B preserves the words, but its flattened layout makes the parent-child list relationship unclear.",
+    "evaluated_at": "2026-07-17T10:23:33"
   },
   {
     "section": "Indented code blocks",
@@ -4587,97 +4586,94 @@
     "example": 254,
     "markdown": "1.  A paragraph\n    with two lines.\n\n        indented code\n\n    > A block quote.\n",
     "html": "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>\n",
-    "weight": 0.5,
-    "weight_explanation": "Ordered lists are common, while this specific combination of multiline list content, indented code, and a block quote is moderately common in technical documentation.",
-    "mdflow_terminal": "1.  A paragraph\nwith two lines.\n\n\u001b[38;5;245m    indented code\n\n> A block quote.\n\u001b[0m\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.4,
+    "weight_explanation": "Multi-paragraph list items containing both indented code and block quotes are useful but substantially less common than ordinary lists, paragraphs, and inline formatting.",
+    "mdflow_terminal": "1.  A paragraph\n  with two lines.\n\n\u001b[38;5;245m      indented code\n\n  > A block quote.\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 \nindented code                                                                   \n                                                                                \nA block quote.                                                                  \n                                                                                ",
     "glow_score": 1,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A does not indent the list item's continuation paragraph, making it look potentially outside the list.",
-      "Renderer A applies the same dim code styling through the block quote, which weakens the visual distinction between code and quotation.",
-      "Renderer B removes meaningful list spacing and does not preserve visible code-block or block-quote structure."
+      "Renderer A appears to style the block quote as part of the indented code block, which misrepresents its structure.",
+      "Renderer A's continuation-line indentation is inconsistent with the list item's initial text alignment.",
+      "Renderer B removes or obscures key structural cues: the ordered-list marker runs into the text, code is not distinguished, and the block quote marker is absent."
     ],
-    "explanation": "Renderer A preserves all content and provides useful markers for the ordered item and quote, while the dim styling makes the code recognizable. However, continuation indentation and quote styling are misleading. Renderer B keeps the words readable but flattens the document substantially: the ordered marker runs into the text and the code and quote are no longer distinguishable as separate block types.",
-    "evaluated_at": "2026-07-17T08:07:43"
+    "explanation": "Renderer A preserves all text and retains useful list, code-like coloring, and literal quote-marker cues, but the quote is visually absorbed into the code region and is therefore misleading. Renderer B preserves the content and line separation, but it flattens most of the nested structure and provides little indication that the final paragraph is a block quote.",
+    "evaluated_at": "2026-07-17T10:23:39"
   },
   {
     "section": "List items",
     "example": 255,
     "markdown": "- one\n\n two\n",
     "html": "<ul>\n<li>one</li>\n</ul>\n<p>two</p>\n",
-    "weight": 0.9,
-    "weight_explanation": "Bullet lists are a very common Markdown pattern in READMEs, documentation, notes, and AI-generated content. Correctly separating a list from a following paragraph is also important for readable document structure.",
-    "mdflow_terminal": "• one\n\ntwo\n\u001b[0m",
-    "mdflow_score": 3,
+    "weight": 0.8,
+    "weight_explanation": "Unordered lists are a common Markdown feature in READMEs, documentation, and chat output. This particular list-to-paragraph boundary is somewhat less frequent, but still important for clear document structure.",
+    "mdflow_terminal": "• one\n\n  two\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \none                                                                             \n                                                                                \ntwo                                                                             ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B omits the list marker, so the first line is indistinguishable from an ordinary standalone paragraph.",
-      "Renderer A includes a trailing ANSI reset escape sequence, though it does not materially affect readability."
+      "Renderer A retains two leading spaces before the paragraph, which can make it appear associated with or nested under the preceding list item.",
+      "Renderer B removes the list bullet entirely, losing the distinction between a list item and an ordinary paragraph."
     ],
-    "explanation": "Renderer A clearly marks “one” as a bullet item and preserves the blank-line separation before the paragraph “two”; its styling is appropriate and readable. Renderer B preserves all text and spacing, but losing the bullet marker loses the list structure.",
-    "evaluated_at": "2026-07-17T08:07:45"
+    "explanation": "Renderer A clearly shows the first line as a bulleted item and separates the following text with a blank line, though the retained indentation is mildly misleading. Renderer B preserves all text and spacing but presents both lines as plain text, so the list structure is lost.",
+    "evaluated_at": "2026-07-17T10:23:39"
   },
   {
     "section": "List items",
     "example": 257,
     "markdown": " -    one\n\n     two\n",
     "html": "<ul>\n<li>one</li>\n</ul>\n<pre><code> two\n</code></pre>\n",
-    "weight": 0.3,
-    "weight_explanation": "Lists and indented code blocks are common individually, but this specific blank-line/indentation interaction immediately after a list item is relatively infrequent.",
-    "mdflow_terminal": "• one\n\n\u001b[38;5;245m two\n\u001b[0m\u001b[0m",
+    "weight": 0.6,
+    "weight_explanation": "Unordered lists are common, while this specific boundary between a list and an indented code block is less frequent but still useful in technical Markdown.",
+    "mdflow_terminal": "• one\n\n\u001b[38;5;245m   two\n\u001b[0m\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "                                                                                \none                                                                             \n                                                                                \n two                                                                            ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B omits the list marker, making the first item look like ordinary paragraph text.",
-      "Renderer B provides little visual distinction for the indented code block beyond its leading space."
+      "Renderer B omits the list marker, so the first line is indistinguishable from an ordinary paragraph."
     ],
-    "explanation": "Renderer A clearly presents the list item with a bullet and separates the following code block with whitespace and dim styling; the preserved leading space further supports its code-like appearance. Renderer B preserves the text and line breaks, but loses the visible list structure and does not meaningfully distinguish the code block.",
-    "evaluated_at": "2026-07-17T08:07:47"
+    "explanation": "Renderer A clearly presents “one” as a bullet item and separates the following dim, indented code block with whitespace and code-oriented styling. Renderer B preserves the text and blank-line separation, but loses the list structure entirely.",
+    "evaluated_at": "2026-07-17T10:23:46"
   },
   {
     "section": "List items",
     "example": 256,
     "markdown": "- one\n\n  two\n",
     "html": "<ul>\n<li>\n<p>one</p>\n<p>two</p>\n</li>\n</ul>\n",
-    "weight": 0.4,
-    "weight_explanation": "Bullet lists are common, but a single list item containing multiple paragraphs is a less frequent, more advanced list pattern.",
-    "mdflow_terminal": "• one\n\ntwo\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Multi-paragraph list items occur occasionally in technical documentation, READMEs, and generated Markdown, though they are less common than simple lists.",
+    "mdflow_terminal": "• one\n\n  two\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nonetwo                                                                          ",
-    "glow_score": 1,
-    "pass": false,
+    "glow_score": 0,
+    "pass": true,
     "issues": [
-      "Renderer A leaves the second paragraph unindented, making it appear outside the list item.",
-      "Renderer A includes a visible ANSI reset artifact.",
-      "Renderer B concatenates the two paragraph texts as \"onetwo\", losing the word boundary and all list/paragraph structure."
+      "Renderer A does not visually distinguish the continuation paragraph beyond indentation and spacing.",
+      "Renderer B removes the list structure, paragraph separation, and even merges the words into \"onetwo\"."
     ],
-    "explanation": "Renderer A preserves the text and shows an initial bullet, but the relationship of \"two\" to the list item is unclear. Renderer B retains roughly the text but flattens it into a single merged token with no recognizable list or paragraph structure.",
-    "evaluated_at": "2026-07-17T08:07:49"
+    "explanation": "Renderer A preserves the bullet, item text, blank-line paragraph break, and indentation well enough for the nested paragraph structure to be understood. Renderer B collapses all content into a single merged token, making both the text boundary and list structure unclear.",
+    "evaluated_at": "2026-07-17T10:23:39"
   },
   {
     "section": "List items",
     "example": 258,
     "markdown": " -    one\n\n      two\n",
     "html": "<ul>\n<li>\n<p>one</p>\n<p>two</p>\n</li>\n</ul>\n",
-    "weight": 0.6,
-    "weight_explanation": "Bullet lists are common, and list items containing multiple paragraphs occur regularly in documentation and longer-form Markdown. The exact indentation pattern is less common than simple one-line list items.",
-    "mdflow_terminal": "• one\n\ntwo\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Multiple paragraphs within a single list item occur in documentation and longer Markdown content, though they are less common than ordinary one-line list items.",
+    "mdflow_terminal": "• one\n\n  two\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \nonetwo                                                                          ",
     "glow_score": 0,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A does not visually indicate that \"two\" continues the same list item; it appears to be an unindented paragraph outside the list.",
-      "Renderer B collapses the words into \"onetwo\", removing both word separation and all list/paragraph structure."
+      "Renderer B removes the list marker and paragraph separation, merging the words into \"onetwo\"."
     ],
-    "explanation": "Renderer A preserves all text and the initial bullet, so it remains readable, but the continuation paragraph is structurally misleading. Renderer B loses essential whitespace and structure, producing merged text that is not an acceptable terminal rendering.",
-    "evaluated_at": "2026-07-17T08:07:52"
+    "explanation": "Renderer A clearly presents a bulleted list item with a separated, indented second paragraph, making the single-item structure easy to read. Renderer B collapses the content into a single merged word and loses all list and paragraph structure.",
+    "evaluated_at": "2026-07-17T10:23:44"
   },
   {
     "section": "List items",
@@ -4740,37 +4736,36 @@
     "markdown": "- foo\n\n\n  bar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>\n",
     "weight": 0.5,
-    "weight_explanation": "Bullet lists are common, while a single list item containing multiple paragraphs is less frequent but still a practical Markdown pattern.",
-    "mdflow_terminal": "• foo\n\n\nbar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Multi-paragraph list items occur occasionally in documentation and longer technical writing, though they are less common than simple single-line list items.",
+    "mdflow_terminal": "• foo\n\n\n  bar\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoobar                                                                          ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A leaves the second paragraph unindented, making it appear to be outside the list item.",
-      "Renderer B removes the bullet marker and paragraph separation, joining the text into \"foobar\"."
+      "Renderer A leaves unusually large blank gaps and uses only subtle indentation to associate the second paragraph with the list item.",
+      "Renderer B removes the list marker and paragraph separation, concatenating the text as \"foobar\"."
     ],
-    "explanation": "Renderer A preserves all text and the initial list marker, but fails to make clear that \"bar\" is a second paragraph within the same list item. Renderer B preserves recognizable text but flattens both the list structure and the separation between the paragraphs.",
-    "evaluated_at": "2026-07-17T08:07:58"
+    "explanation": "Renderer A preserves both paragraphs and makes the list relationship reasonably clear with a bullet and indentation, although its spacing is somewhat awkward. Renderer B preserves the underlying words but loses the list and paragraph structure, making the result misleadingly flat.",
+    "evaluated_at": "2026-07-17T10:23:45"
   },
   {
     "section": "List items",
     "example": 263,
     "markdown": "1.  foo\n\n    ```\n    bar\n    ```\n\n    baz\n\n    > bam\n",
     "html": "<ol>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n<p>baz</p>\n<blockquote>\n<p>bam</p>\n</blockquote>\n</li>\n</ol>\n",
-    "weight": 0.6,
-    "weight_explanation": "Ordered list items containing multiple block types are reasonably common in technical documentation and READMEs, though less frequent than simple lists.",
-    "mdflow_terminal": "1.  foo\n\n\u001b[38;5;215;48;5;236m     bar     \u001b[0m\n\nbaz\n\n> bam\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.5,
+    "weight_explanation": "Ordered-list items containing multiple block types are reasonably common in technical documentation, though less frequent than simple lists or paragraphs.",
+    "mdflow_terminal": "1.  foo\n\n\u001b[38;5;215;48;5;236m       bar     \u001b[0m\n\n  baz\n\n  > bam\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \n1foo                                                                            \nbar                                                                             \nbaz                                                                             \nbam                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A does not indent the continuation paragraph and block quote under the list item, making their list-item membership somewhat less explicit.",
-      "Renderer B flattens the code block and block quote, and renders the ordered marker as \"1foo\" without clear spacing."
+      "Renderer B removes the space after the ordered-list marker (\"1foo\") and does not distinguish the code block or block quote from ordinary text."
     ],
-    "explanation": "Renderer A preserves all content and makes the code block and quotation visually recognizable through ANSI styling and the > marker. The blank lines and ordering still make the overall structure understandable, although missing continuation indentation weakens it. Renderer B preserves the words but largely loses the distinctions among list text, code, and quotation.",
-    "evaluated_at": "2026-07-17T08:07:59"
+    "explanation": "Renderer A clearly presents the ordered item, preserves continuation indentation, uses a distinct styled code block, and retains the blockquote marker. Renderer B preserves the words and line separation but largely flattens the nested structure and makes the list marker malformed.",
+    "evaluated_at": "2026-07-17T10:23:49"
   },
   {
     "section": "List items",
@@ -4796,18 +4791,17 @@
     "markdown": "- Foo\n\n      bar\n\n\n      baz\n",
     "html": "<ul>\n<li>\n<p>Foo</p>\n<pre><code>bar\n\n\nbaz\n</code></pre>\n</li>\n</ul>\n",
     "weight": 0.3,
-    "weight_explanation": "A fenced/indented code block nested inside a loose list item is a valid but relatively uncommon pattern. Nested code examples in lists do occur in technical documentation.",
-    "mdflow_terminal": "• Foo\n\n\u001b[38;5;245m  bar\n\n\n  baz\n\u001b[0m\u001b[0m",
+    "weight_explanation": "Indented code blocks nested inside list items are a legitimate Markdown pattern, but the exact blank-line and indentation rules are relatively uncommon in everyday writing.",
+    "mdflow_terminal": "• Foo\n\n\u001b[38;5;245m    bar\n\n\n    baz\n\u001b[0m\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "                                                                                \nFoo                                                                             \nbar                                                                             \n                                                                                \n                                                                                \nbaz                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B drops the list bullet and does not visually distinguish the indented code block from ordinary text.",
-      "Renderer B's spacing makes the relationship between Foo and the code content unclear."
+      "Renderer B drops the list marker and removes the code block's indentation and visual distinction."
     ],
-    "explanation": "Renderer A clearly presents Foo as a bullet item and uses indentation plus muted ANSI coloring to identify the nested code block, while preserving its internal blank lines. Renderer B preserves the words but loses the list structure and code-block distinction.",
-    "evaluated_at": "2026-07-17T08:08:00"
+    "explanation": "Renderer A clearly presents a bullet item and a separately indented, dim-styled code block while preserving the code's blank lines. Renderer B preserves the words but flattens the list and code-block structure, making the relationship between Foo and the following lines unclear.",
+    "evaluated_at": "2026-07-17T10:23:49"
   },
   {
     "section": "List items",
@@ -4864,18 +4858,18 @@
     "example": 270,
     "markdown": "- foo\n\n      bar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ul>\n",
-    "weight": 0.4,
-    "weight_explanation": "Nested code blocks inside list items occur in technical documentation, but are much less common than ordinary lists or standalone code blocks.",
-    "mdflow_terminal": "• foo\n\n\u001b[38;5;245m  bar\n\u001b[0m\u001b[0m",
+    "weight": 0.6,
+    "weight_explanation": "Bullet lists and code blocks are common documentation patterns, though an indented code block nested within a list item is moderately less frequent than either feature alone.",
+    "mdflow_terminal": "• foo\n\n\u001b[38;5;245m    bar\n\u001b[0m\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B omits the list marker and does not visually distinguish the nested code block."
+      "Renderer B drops the list marker and provides no visual distinction between the paragraph text and the code block."
     ],
-    "explanation": "Renderer A clearly presents a bullet item, separates the following block with a blank line, and uses indentation plus dim styling to distinguish the code content. Renderer B preserves the words but flattens both the list and code-block structure.",
-    "evaluated_at": "2026-07-17T08:08:07"
+    "explanation": "Renderer A clearly retains the bullet item, separates the code block with a blank line, indents it, and uses muted styling to distinguish code from prose. Renderer B preserves the words but flattens the list and code-block structure into plain lines.",
+    "evaluated_at": "2026-07-17T10:23:51"
   },
   {
     "section": "List items",
@@ -4902,18 +4896,18 @@
     "markdown": "  10.  foo\n\n           bar\n",
     "html": "<ol start=\"10\">\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ol>\n",
     "weight": 0.4,
-    "weight_explanation": "Ordered lists are common, but a multi-digit starting number combined with an indented code block inside a list item is a less frequent nested-layout case.",
-    "mdflow_terminal": "10.  foo\n\n\u001b[38;5;245m       bar\n\u001b[0m\u001b[0m",
+    "weight_explanation": "Ordered lists are common, but this specific combination of a list item containing an indented code block is less frequent in everyday Markdown.",
+    "mdflow_terminal": "10.  foo\n\n\u001b[38;5;245m         bar\n\u001b[0m\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "                                                                                \n10foo                                                                           \nbar                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B runs the ordered-list marker and item text together as \"10foo\".",
-      "Renderer B does not visibly preserve the code block's nesting or indentation."
+      "Renderer B merges the ordered-list marker and item text into \"10foo\", losing clear list formatting.",
+      "Renderer B removes the code block's indentation and provides no visual distinction for code."
     ],
-    "explanation": "Renderer A clearly shows an ordered item beginning at 10, preserves the paragraph/code separation with a blank line, and uses indentation plus dim styling to make the nested code block distinct. Renderer B preserves the words but flattens the list marker and loses the nested code-block presentation.",
-    "evaluated_at": "2026-07-17T08:08:09"
+    "explanation": "Renderer A clearly shows an ordered list item, preserves the paragraph/code separation, and uses indentation plus dim styling to make the code block distinct. Renderer B preserves the words but flattens the list marker and code block structure.",
+    "evaluated_at": "2026-07-17T10:23:55"
   },
   {
     "section": "List items",
@@ -4939,19 +4933,17 @@
     "markdown": "1.      indented code\n\n   paragraph\n\n       more code\n",
     "html": "<ol>\n<li>\n<pre><code> indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>\n",
     "weight": 0.3,
-    "weight_explanation": "An ordered list item containing multiple indented code blocks and an intervening paragraph is valid but relatively uncommon in everyday Markdown.",
-    "mdflow_terminal": "1. \u001b[38;5;245m indented code\n\n\u001b[0mparagraph\n\n\u001b[38;5;245m   more code\n\u001b[0m\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "A list item containing multiple block types, especially indented code blocks separated by a paragraph, is relatively uncommon outside technical Markdown and spec-oriented content.",
+    "mdflow_terminal": "1. \u001b[38;5;245m indented code\n\n\u001b[0m  paragraph\n\n\u001b[38;5;245m     more code\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \n1                                                                               \n indented code                                                                  \nparagraph                                                                       \nmore code                                                                       \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Both renderers fail to visually associate the paragraph and second code block with the numbered list item.",
-      "Renderer A's code styling helps identify code, but the continuation lines are flush left rather than indented beneath the list marker.",
-      "Renderer B does not visually distinguish the code blocks from the paragraph."
+      "Renderer B places the list marker on a separate line and removes the indentation/styling distinctions between the code blocks and paragraph."
     ],
-    "explanation": "Both preserve all text and line separation, so the result is readable. However, the list item's multi-block structure is unclear because its continuation content appears outside the list. Renderer A is somewhat more legible due to dim code styling, but not enough to make the list structure clear.",
-    "evaluated_at": "2026-07-17T08:08:15"
+    "explanation": "Renderer A preserves the ordered-list context, separates the blocks with blank lines, and uses muted ANSI styling plus indentation to make the code blocks distinct from the paragraph. Renderer B preserves the text but substantially flattens the list item's internal structure, making the code and paragraph appear like unrelated plain lines.",
+    "evaluated_at": "2026-07-17T10:23:56"
   },
   {
     "section": "List items",
@@ -4975,18 +4967,18 @@
     "markdown": "-    foo\n\n  bar\n",
     "html": "<ul>\n<li>foo</li>\n</ul>\n<p>bar</p>\n",
     "weight": 0.8,
-    "weight_explanation": "Unordered lists and paragraph boundaries are common in READMEs, documentation, chat, and AI-generated Markdown. This particular loose-list termination pattern is somewhat less frequent but still practical.",
-    "mdflow_terminal": "• foo\n\nbar\n\u001b[0m",
-    "mdflow_score": 3,
+    "weight_explanation": "Bullet lists and the distinction between a list item and a following paragraph are common Markdown patterns in documentation, READMEs, and generated text.",
+    "mdflow_terminal": "• foo\n\n  bar\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoo                                                                             \n                                                                                \nbar                                                                             ",
-    "glow_score": 2,
+    "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B omits the bullet marker, making the first line less clearly identifiable as a list item.",
-      "Renderer A emits a trailing ANSI reset escape sequence after the visible content, though it does not materially hinder reading."
+      "Renderer A indents the following standalone paragraph, which can make it look associated with the list item despite the blank line.",
+      "Renderer B removes the bullet marker, losing the explicit list structure."
     ],
-    "explanation": "Renderer A clearly shows the list item with a bullet, preserves the separation before the following paragraph, and is easy to scan. Renderer B preserves all text and the blank-line structure, but without a list marker the distinction between a one-item list and ordinary paragraph text is weaker.",
-    "evaluated_at": "2026-07-17T08:08:20"
+    "explanation": "Renderer A preserves the bullet and uses a blank line, so the list item and subsequent paragraph remain mostly clear, though the paragraph indentation is mildly misleading. Renderer B preserves all text and separation but presents the list item as ordinary unmarked text.",
+    "evaluated_at": "2026-07-17T10:24:00"
   },
   {
     "section": "List items",
@@ -4994,75 +4986,74 @@
     "markdown": "1.     indented code\n\n   paragraph\n\n       more code\n",
     "html": "<ol>\n<li>\n<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>\n",
     "weight": 0.3,
-    "weight_explanation": "Indented code blocks nested inside list items are valid and occasionally appear in technical documentation, but this exact layout is relatively uncommon in everyday Markdown.",
-    "mdflow_terminal": "1. \u001b[38;5;245mindented code\n\n\u001b[0mparagraph\n\n\u001b[38;5;245m   more code\n\u001b[0m\u001b[0m",
-    "mdflow_score": 3,
+    "weight_explanation": "Lists are common, but a list item containing multiple indented code blocks and a paragraph is a relatively infrequent nested-layout pattern.",
+    "mdflow_terminal": "1. \u001b[38;5;245mindented code\n\n\u001b[0m  paragraph\n\n\u001b[38;5;245m     more code\n\u001b[0m\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \n1                                                                               \nindented code                                                                   \nparagraph                                                                       \nmore code                                                                       \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B does not visually distinguish the code blocks from the paragraph.",
-      "Renderer B places the list marker on a separate line and loses the nested-item/code relationship."
+      "Renderer A's paragraph and second code block indentation does not align consistently with the first code block after the list marker.",
+      "Renderer B loses the code-block distinction and makes the list item's internal structure appear flat."
     ],
-    "explanation": "Renderer A preserves all content and makes the ordered-list item, intervening paragraph, and code sections readable. The dim styling usefully distinguishes code from normal prose, while blank lines preserve the block structure. Renderer B preserves the words but presents the blocks as mostly flat text, making the code-versus-paragraph structure unclear.",
-    "evaluated_at": "2026-07-17T08:08:20"
+    "explanation": "Renderer A preserves all content, the ordered-list marker, paragraph separation, and visually distinguishes code with dim styling. Its alignment is somewhat confusing, so the structure is clear but not polished. Renderer B preserves the text but removes meaningful code formatting and nesting cues.",
+    "evaluated_at": "2026-07-17T10:23:56"
   },
   {
     "section": "List items",
     "example": 277,
     "markdown": "-  foo\n\n   bar\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>\n",
-    "weight": 0.4,
-    "weight_explanation": "Lists are common, but a single list item containing multiple paragraphs is a less frequent pattern in everyday Markdown.",
-    "mdflow_terminal": "• foo\n\nbar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Multi-paragraph list items occur occasionally in documentation and longer prose, but are less common than ordinary single-paragraph lists.",
+    "mdflow_terminal": "• foo\n\n  bar\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \nfoobar                                                                          ",
-    "glow_score": 0,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A does not indent or otherwise associate the second paragraph with the bullet item.",
-      "Renderer B removes the bullet and blank-line paragraph separation, merging \"foo\" and \"bar\" into \"foobar\"."
+      "Renderer B concatenates the two paragraphs into \"foobar\", losing both the list marker and paragraph separation."
     ],
-    "explanation": "Renderer A preserves all text and the initial list marker, but the unindented \"bar\" misleadingly appears to be outside the list item. Renderer B alters the content by concatenating the words and loses all list and paragraph structure.",
-    "evaluated_at": "2026-07-17T08:08:23"
+    "explanation": "Renderer A clearly presents a bullet item and preserves the separate second paragraph with appropriate indentation and spacing. Renderer B preserves the words but flattens their structure and removes the bullet context.",
+    "evaluated_at": "2026-07-17T10:23:58"
   },
   {
     "section": "List items",
     "example": 279,
     "markdown": "-   \n  foo\n",
     "html": "<ul>\n<li>foo</li>\n</ul>\n",
-    "weight": 0.9,
-    "weight_explanation": "Unordered lists are a very common Markdown pattern in READMEs, documentation, chat, and AI-generated content. This particular blank-first-line list-item form is less common, but it exercises core list-item handling.",
-    "mdflow_terminal": "• \nfoo\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Lists are very common, but this particular form—an otherwise blank list marker whose content appears on an indented following line—is an uncommon edge case.",
+    "mdflow_terminal": "• \n  foo\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoo                                                                             ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A places the bullet on a separate line from its content, with no indentation connecting \"foo\" to the marker.",
-      "Renderer B omits any visible list marker, so the list structure is lost."
+      "Renderer A leaves the bullet on a separate line from its item text, which is visually awkward.",
+      "Renderer B omits the list marker and indentation, losing the list structure."
     ],
-    "explanation": "Both renderers preserve the text \"foo\" and remain readable. Renderer A at least shows a bullet, but its detached placement makes it look like an empty bullet followed by an unrelated paragraph. Renderer B presents only plain text and does not communicate that it was a list item.",
-    "evaluated_at": "2026-07-17T08:08:26"
+    "explanation": "Renderer A preserves the item and makes its list relationship understandable through the bullet and indentation, though the split layout is not polished. Renderer B preserves the text \"foo\" but presents it as ordinary unstructured text.",
+    "evaluated_at": "2026-07-17T10:24:04"
   },
   {
     "section": "List items",
     "example": 278,
     "markdown": "-\n  foo\n-\n  ```\n  bar\n  ```\n-\n      baz\n",
     "html": "<ul>\n<li>foo</li>\n<li>\n<pre><code>bar\n</code></pre>\n</li>\n<li>\n<pre><code>baz\n</code></pre>\n</li>\n</ul>\n",
-    "weight": 0.5,
-    "weight_explanation": "Unordered lists are common, while list items whose contents are solely fenced or indented code blocks are a less frequent but practical documentation pattern.",
-    "mdflow_terminal": "• \nfoo\n• \n\u001b[38;5;245m\n  bar\n\u001b[0m\n• \n\u001b[38;5;245m  baz\n\u001b[0m\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.6,
+    "weight_explanation": "Unordered lists are common, while list items consisting of indented or fenced code blocks are moderately common in READMEs and technical documentation.",
+    "mdflow_terminal": "• \n  foo\n• \n\u001b[38;5;245m\n    bar\n\u001b[0m\n• \n\u001b[38;5;245m    baz\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \nfoo                                                                             \n                                                                                \nbar                                                                             \n                                                                                \n                                                                                \nbaz                                                                             \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A places each bullet marker on a line by itself, making the association with its item content less immediate.",
-      "Renderer B removes all list markers and does not visually distinguish the code blocks from ordinary text."
+      "Renderer A places each bullet on a line by itself rather than alongside the item content, which is slightly less compact than typical terminal list rendering.",
+      "Renderer B drops all list markers, so the three items no longer read clearly as members of one list."
     ],
-    "explanation": "Renderer A preserves all content, uses consistent bullets, and uses dim styling to distinguish code, so the list and code content remain understandable despite awkward standalone markers and spacing. Renderer B preserves the words but flattens the list and code-block structure into separated plain lines.",
-    "evaluated_at": "2026-07-17T08:08:26"
+    "explanation": "Renderer A preserves the list structure with consistent bullets and indentation, while dim styling effectively distinguishes the code content. Renderer B preserves the words but presents them as disconnected blocks with no visible list structure or code distinction.",
+    "evaluated_at": "2026-07-17T10:24:02"
   },
   {
     "section": "List items",
@@ -5070,17 +5061,18 @@
     "markdown": "-\n\n  foo\n",
     "html": "<ul>\n<li></li>\n</ul>\n<p>foo</p>\n",
     "weight": 0.2,
-    "weight_explanation": "An empty list item followed by a separately parsed paragraph is an uncommon edge case. Ordinary lists are common, but this exact blank-item pattern is rare in typical documents.",
-    "mdflow_terminal": "• \n\nfoo\n\u001b[0m",
-    "mdflow_score": 3,
+    "weight_explanation": "An empty list item followed by a separate paragraph is an unusual edge case rather than a common Markdown pattern.",
+    "mdflow_terminal": "• \n\n  foo\n\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "                                                                                \n                                                                                \n                                                                                \nfoo                                                                             ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B omits the empty list item entirely, so the list structure is not conveyed."
+      "Renderer A indents \"foo\" beneath the empty bullet, making the separate paragraph look like list-item content.",
+      "Renderer B drops the empty-list structure entirely."
     ],
-    "explanation": "Renderer A clearly shows an empty bullet on its own line and preserves \"foo\" as a separate paragraph, matching the meaningful structure in a terminal-friendly way. Renderer B preserves the paragraph text but gives no indication that an empty unordered list preceded it.",
-    "evaluated_at": "2026-07-17T08:08:28"
+    "explanation": "Renderer A preserves the bullet and paragraph text, but its indentation misleadingly associates the paragraph with the empty list item. Renderer B preserves the visible text clearly but provides no indication that an empty list preceded it.",
+    "evaluated_at": "2026-07-17T10:24:04"
   },
   {
     "section": "List items",
@@ -5143,37 +5135,39 @@
     "markdown": "foo\n*\n\nfoo\n1.\n",
     "html": "<p>foo\n*</p>\n<p>foo\n1.</p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an edge case involving list-marker-like text that remains ordinary paragraph content. It is uncommon in typical Markdown documents, though it can appear in generated or malformed text.",
-    "mdflow_terminal": "foo\n• \n\nfoo\n1.\n\u001b[0m",
+    "weight_explanation": "This is an edge case involving lines that resemble list markers but are plain paragraph text because they lack required item content/spacing. It is uncommon in everyday Markdown.",
+    "mdflow_terminal": "foo\n• \n\n  foo\n1.\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "foo                                                                             \n*                                                                               \n                                                                                \nfoo                                                                             \n1.                                                                              ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A changes the literal asterisk into a bullet glyph, making ordinary paragraph text look like a list item.",
-      "The transformed marker misleadingly suggests list structure that is not present in the Markdown."
+      "Renderer A changes the literal asterisk into a bullet glyph, incorrectly suggesting list structure.",
+      "Renderer A adds unexpected indentation before the second paragraph.",
+      "Renderer A includes an unnecessary trailing ANSI reset sequence."
     ],
-    "explanation": "Renderer A preserves the general text and paragraph separation, but semantically reinterprets the literal `*` as a bullet, which is misleading. Renderer B preserves both marker-like lines literally and keeps the two paragraphs clearly separated, though it adds no styling.",
-    "evaluated_at": "2026-07-17T08:08:35"
+    "explanation": "Renderer A keeps the text broadly readable and retains paragraph separation, but it misrepresents the literal '*' as a list bullet and indents the next paragraph misleadingly. Renderer B preserves the literal marker-like text and the blank-line paragraph separation clearly, though it adds no styling.",
+    "evaluated_at": "2026-07-17T10:24:09"
   },
   {
     "section": "List items",
     "example": 286,
     "markdown": " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote.\n",
     "html": "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>\n",
-    "weight": 0.5,
-    "weight_explanation": "Ordered lists are common, while a single list item containing a multiline paragraph, indented code block, and block quote is a moderately occasional composite pattern.",
-    "mdflow_terminal": "1.  A paragraph\n     with two lines.\n\n\u001b[38;5;245m     indented code\n\n > A block quote.\n\u001b[0m\u001b[0m",
+    "weight": 0.4,
+    "weight_explanation": "Ordered-list items with continuation paragraphs are common, while an item combining indented code and a block quote is a less frequent nested-layout case.",
+    "mdflow_terminal": "1.  A paragraph\n       with two lines.\n\n\u001b[38;5;245m       indented code\n\n   > A block quote.\n\u001b[0m\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 \nindented code                                                                   \n                                                                                \nA block quote.                                                                  \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A's dim code styling appears to continue onto the block quote, making the quote look like part of the code block.",
-      "Renderer B removes the ordered-list spacing/marker presentation, code indentation, and block quote marker."
+      "Renderer A indents the paragraph continuation differently from the first line.",
+      "Renderer A applies the same dim code-like styling across the block quote, making the quote appear visually associated with the code.",
+      "Renderer B drops the ordered-list punctuation and provides no visible indication that the code and final paragraph are nested code and a block quote."
     ],
-    "explanation": "Renderer A preserves all content and makes the list item, continuation paragraph, code, and quote reasonably identifiable through indentation, blank lines, and the quote marker. However, the ANSI styling does not clearly end after the code block, weakening the distinction between code and quote. Renderer B preserves the words but flattens most of the nested block structure, especially the code block and quotation.",
-    "evaluated_at": "2026-07-17T08:08:39"
+    "explanation": "Renderer A preserves all content and makes the list marker, separated code block, and quote marker reasonably recognizable, though its indentation and styling are inconsistent. Renderer B remains readable as plain text, but substantially flattens the list, code block, and block quote structure.",
+    "evaluated_at": "2026-07-17T10:24:10"
   },
   {
     "section": "List items",
@@ -5200,19 +5194,20 @@
     "markdown": "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote.\n",
     "html": "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>\n",
     "weight": 0.5,
-    "weight_explanation": "Ordered list items containing multiple block types are a real but moderately advanced Markdown pattern. They occur in technical documentation and READMEs, though much less often than simple lists.",
-    "mdflow_terminal": "1.  A paragraph\n      with two lines.\n\n\u001b[38;5;245m      indented code\n\n  > A block quote.\n\u001b[0m\u001b[0m",
+    "weight_explanation": "Ordered lists are common, while list items containing multi-line paragraphs, indented code, and block quotes are a moderately common richer-list pattern.",
+    "mdflow_terminal": "1.  A paragraph\n        with two lines.\n\n\u001b[38;5;245m        indented code\n\n    > A block quote.\n\u001b[0m\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 \nindented code                                                                   \n                                                                                \nA block quote.                                                                  \n                                                                                ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A appears to leave the dim code styling active through the block quote, making the quote look like part of the code block.",
-      "Renderer A's quote indentation is somewhat ambiguous within the list item.",
-      "Renderer B removes the ordered-list punctuation spacing, code-block distinction, and block-quote marker."
+      "Renderer A gives the block quote the same dim/code-like styling as the code block, making the quote type less distinct.",
+      "Renderer A's continuation-line indentation is somewhat excessive and visually detached from the list marker.",
+      "Renderer B removes the meaningful separation and nesting cues for the code block and block quote.",
+      "Renderer B renders the ordered-list marker as \"1A paragraph\", with no visible space after the number."
     ],
-    "explanation": "Renderer A preserves all content and mostly communicates the list, multiline paragraph, code, and quote through spacing and markers. However, the ANSI color bleed makes the block quote visually misleading. Renderer B keeps the text readable but substantially flattens the structure: the quote is no longer recognizable as a quote and the code is not visibly distinguished.",
-    "evaluated_at": "2026-07-17T08:08:41"
+    "explanation": "Renderer A preserves all content and retains useful list, code, and quote markers, so the overall structure is understandable despite imperfect styling. Renderer B preserves the words but flattens the nested block structure and has a malformed-looking list prefix, making the document read more like plain text.",
+    "evaluated_at": "2026-07-17T10:24:10"
   },
   {
     "section": "List items",
@@ -5237,40 +5232,41 @@
     "example": 288,
     "markdown": "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote.\n",
     "html": "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>\n",
-    "weight": 0.5,
-    "weight_explanation": "Ordered lists are common, but this specific combination of a multiline list paragraph, indented code block, and nested block quote is moderately occasional.",
-    "mdflow_terminal": "1.  A paragraph\n       with two lines.\n\n\u001b[38;5;245m       indented code\n\n   > A block quote.\n\u001b[0m\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.4,
+    "weight_explanation": "Ordered lists are common, but this specific combination of multiline list content, indented code, and a block quote within one item is comparatively occasional.",
+    "mdflow_terminal": "1.  A paragraph\n         with two lines.\n\n\u001b[38;5;245m         indented code\n\n     > A block quote.\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 \nindented code                                                                   \n                                                                                \nA block quote.                                                                  \n                                                                                ",
     "glow_score": 1,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A applies the same dim code styling across the following block quote, making the quote appear visually associated with the code block.",
-      "Renderer B removes or obscures important structure: the ordered-list marker becomes \"1A\", the code block has no visual distinction, and the block quote loses its quote marker."
+      "Renderer A indents the continuation line much farther than the first line's content, making the list item's paragraph alignment look awkward.",
+      "Renderer A renders the block quote in the same dim code styling as the indented code block, misleadingly suggesting that the quote is code.",
+      "Renderer B collapses the ordered-list marker and text into \"1A paragraph\" and removes the visible block-quote structure.",
+      "Renderer B provides no clear visual distinction for the indented code block."
     ],
-    "explanation": "Renderer A preserves all content and makes the list, continuation line, indented code, and quote marker generally understandable. However, styling leaks from the code block into the quote, so the presentation is not fully polished. Renderer B remains readable as text but substantially flattens the nested structures and makes their roles unclear.",
-    "evaluated_at": "2026-07-17T08:08:47"
+    "explanation": "Renderer A preserves all text and retains a visible list marker and quote marker, but its styling misclassifies the block quote as code and its indentation is confusing. Renderer B preserves the text but flattens important structure, including the quote and code block, while also producing an awkward list-marker join.",
+    "evaluated_at": "2026-07-17T10:24:16"
   },
   {
     "section": "List items",
     "example": 290,
     "markdown": "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote.\n",
     "html": "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>\n",
-    "weight": 0.5,
-    "weight_explanation": "Ordered-list items containing multiple block types are used occasionally in technical documentation and AI-generated instructions, but this exact indentation-heavy combination is not everyday Markdown.",
-    "mdflow_terminal": "1.  A paragraph\nwith two lines.\n\n\u001b[38;5;245m      indented code\n\n  > A block quote.\n\u001b[0m\u001b[0m",
+    "weight": 0.4,
+    "weight_explanation": "Ordered lists are common, but this specific combination of multiline list content, indented code, and a block quote within one item is relatively infrequent in everyday Markdown.",
+    "mdflow_terminal": "1.  A paragraph\n  with two lines.\n\n\u001b[38;5;245m        indented code\n\n    > A block quote.\n\u001b[0m\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 \nindented code                                                                   \n                                                                                \nA block quote.                                                                  \n                                                                                ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A styles the block quote as though it is part of the indented code block, making the quote structure misleading.",
-      "Renderer A's list-item indentation is not clearly maintained for the continuation paragraph.",
-      "Renderer B removes the ordered-list punctuation and spacing, producing the awkward prefix \"1A paragraph\".",
-      "Renderer B does not visually distinguish the indented code block or block quote from ordinary text."
+      "Renderer A renders the block quote as part of the dim code block, misleadingly treating it as code.",
+      "Renderer A's continuation-line indentation does not clearly align with the list item's paragraph.",
+      "Renderer B largely flattens the nested structure: the ordered-list marker is cramped, code is unmarked, and the block quote loses its quote indicator."
     ],
-    "explanation": "Renderer A preserves all content and retains some useful Markdown-like markers, but its dim code styling appears to encompass the block quote, obscuring the intended separate block structure. Renderer B preserves the words but substantially flattens the list, code, and quote structure; its \"1A paragraph\" presentation is especially unclear.",
-    "evaluated_at": "2026-07-17T08:08:48"
+    "explanation": "Renderer A preserves all text and makes the code-like region visually distinct, but incorrectly groups the block quote into that code region. Renderer B preserves the words but removes most useful cues for the nested code and quote structure.",
+    "evaluated_at": "2026-07-17T10:24:18"
   },
   {
     "section": "List items",
@@ -5278,38 +5274,37 @@
     "markdown": "  1.  A paragraph\n    with two lines.\n",
     "html": "<ol>\n<li>A paragraph\nwith two lines.</li>\n</ol>\n",
     "weight": 0.8,
-    "weight_explanation": "Ordered lists are a common, foundational Markdown pattern, including in READMEs, documentation, and AI-generated content. Multi-line list items occur regularly in prose-heavy lists.",
-    "mdflow_terminal": "1.  A paragraph\n    with two lines.\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight_explanation": "Ordered lists and multiline list items are common in documentation, READMEs, and generated instructions. Exact indentation rules are less commonly authored deliberately, but readable continuation lines matter.",
+    "mdflow_terminal": "1.  A paragraph\n      with two lines.\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \n1A paragraph                                                                    \nwith two lines.                                                                 ",
-    "glow_score": 1,
+    "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A does not add styling beyond plain list layout, though its indentation is clear.",
-      "Renderer B drops the ordered-list punctuation and does not indent the continuation line, weakening the list-item structure."
+      "Renderer B omits the normal visual separator after the ordered-list marker (\"1A paragraph\"), making the item marker and text run together.",
+      "Renderer A indents the continuation line more than the first-line text, but this effectively conveys that it belongs to the list item."
     ],
-    "explanation": "Renderer A preserves the number marker, spacing, and continuation indentation, making the list item easy to read despite plain styling. Renderer B preserves the words but renders \"1A paragraph\" without a clear marker separator and flattens the continuation line, making the intended list structure less clear.",
-    "evaluated_at": "2026-07-17T08:08:49"
+    "explanation": "Renderer A clearly presents an ordered item and uses continuation indentation to make the second line read as part of that item; its formatting is appropriate for terminal output. Renderer B preserves the text and line relationship, but \"1A paragraph\" is less readable because the marker is not visibly separated from the item content.",
+    "evaluated_at": "2026-07-17T10:24:14"
   },
   {
     "section": "List items",
     "example": 294,
     "markdown": "- foo\n  - bar\n    - baz\n      - boo\n",
     "html": "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz\n<ul>\n<li>boo</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n",
-    "weight": 0.6,
-    "weight_explanation": "Unordered lists are common in documentation, READMEs, and AI output. Four-level nesting is less frequent, but preserving nesting is important when it occurs.",
-    "mdflow_terminal": "• foo\n• bar\n- baz\n- boo\n\u001b[0m",
+    "weight": 0.7,
+    "weight_explanation": "Nested unordered lists are common in READMEs, documentation, and AI-generated outlines, though deeply nested four-level lists are less frequent than simple lists.",
+    "mdflow_terminal": "• foo\n• bar\n  - baz\n  - boo\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \nbaz                                                                             \nboo                                                                             \n                                                                                \n                                                                                \n                                                                                ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A removes all indentation, so the nested list hierarchy is presented as a flat list.",
-      "Renderer A changes marker styles without conveying nesting through indentation.",
-      "Renderer B removes both list markers and indentation, making the list structure entirely implicit."
+      "Renderer A collapses the intended four nesting levels into two apparent levels: \"bar\" appears as a sibling of \"foo\", and \"boo\" appears as a sibling of \"baz\".",
+      "Renderer B removes all list markers and indentation, presenting the nested list as flat lines."
     ],
-    "explanation": "Both renderers preserve the item text and keep it readable, but neither makes the parent-child nesting clear. Renderer A at least signals that these are list items with bullets, while Renderer B shows only separate lines of text; however, both lose the essential nested structure.",
-    "evaluated_at": "2026-07-17T08:08:53"
+    "explanation": "Both renderers preserve all item text and remain readable, but neither communicates the intended nested hierarchy. Renderer A provides some list styling and partial indentation, but its altered parent-child relationships are misleading; Renderer B is fully flat.",
+    "evaluated_at": "2026-07-17T10:24:18"
   },
   {
     "section": "List items",
@@ -5451,18 +5446,18 @@
     "markdown": "- foo\n- bar\n+ baz\n",
     "html": "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<ul>\n<li>baz</li>\n</ul>\n",
     "weight": 0.8,
-    "weight_explanation": "Unordered lists are common in READMEs, documentation, notes, and AI-generated content. This specific case of adjacent lists using different marker characters is somewhat less common, but still practical.",
-    "mdflow_terminal": "• foo\n• bar\n+ baz\n\u001b[0m",
-    "mdflow_score": 3,
+    "weight_explanation": "Unordered lists are a common, everyday Markdown feature in READMEs, documentation, notes, and AI-generated content. Marker changes that split lists are less common but still meaningful list syntax.",
+    "mdflow_terminal": "• foo\n• bar\n  + baz\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \n                                                                                \nbaz                                                                             ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B removes all list markers, making the list structure much less apparent.",
-      "Renderer B preserves the separation between the two lists with a blank line, but individual items read like ordinary lines."
+      "Renderer A visually nests the '+ baz' item under the preceding list rather than clearly showing that it begins a separate top-level list.",
+      "Renderer B removes all list markers, making the list structure and separation between the two lists unclear."
     ],
-    "explanation": "Renderer A clearly presents the first list with consistent bullet markers and preserves the source marker for the separate second list, with alignment and content intact. Renderer B preserves all text and separates the lists, but lacks bullets or other item markers, so list structure is weak.",
-    "evaluated_at": "2026-07-17T08:09:04"
+    "explanation": "Renderer A preserves all content and uses consistent bullets for the first list, but the indentation before '+ baz' misleadingly suggests nesting instead of a new list. Renderer B preserves the words and a blank-line separation, but without markers it reads largely as plain lines rather than clearly as list items.",
+    "evaluated_at": "2026-07-17T10:24:22"
   },
   {
     "section": "Lists",
@@ -5487,39 +5482,38 @@
     "example": 300,
     "markdown": "- # Foo\n- Bar\n  ---\n  baz\n",
     "html": "<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<h2>Bar</h2>\nbaz</li>\n</ul>\n",
-    "weight": 0.4,
-    "weight_explanation": "Lists are common, but headings embedded inside list items—especially a setext heading within a list item—are a relatively uncommon pattern.",
-    "mdflow_terminal": "• # Foo\n• Bar\n\u001b[2m────────────────\u001b[0m\n\nbaz\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.6,
+    "weight_explanation": "Lists are very common, while headings and setext headings nested inside list items are a moderately common richer-list pattern.",
+    "mdflow_terminal": "• # Foo\n• Bar\n\u001b[2m────────────────\u001b[0m\n\n  baz\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \nFoo                                                                             \nBarbaz                                                                          ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A leaves the ATX heading marker (`#`) visible rather than styling the first item as a heading.",
-      "Renderer A renders the setext heading underline as a prominent rule, which is somewhat visually ambiguous.",
-      "Renderer B removes list markers and concatenates \"Bar\" and \"baz\", obscuring both list and block structure."
+      "Renderer B removes the list markers and heading distinctions.",
+      "Renderer B runs \"Bar\" and \"baz\" together as \"Barbaz\"."
     ],
-    "explanation": "Renderer A preserves all content and clearly retains the two list items, with consistent bullets and readable separation. Its heading treatment is imperfect but still understandable. Renderer B preserves the words but flattens the list and runs content together, making the intended structure unclear.",
-    "evaluated_at": "2026-07-17T08:09:07"
+    "explanation": "Renderer A clearly presents a consistent bulleted list, retains the explicit heading marker for Foo, and uses an underline-like rule to distinguish Bar as a heading before the indented baz continuation. Renderer B preserves most text but flattens the list and heading structure, and concatenates two separate text portions.",
+    "evaluated_at": "2026-07-17T10:24:26"
   },
   {
     "section": "Lists",
     "example": 302,
     "markdown": "1. foo\n2. bar\n3) baz\n",
     "html": "<ol>\n<li>foo</li>\n<li>bar</li>\n</ol>\n<ol start=\"3\">\n<li>baz</li>\n</ol>\n",
-    "weight": 0.8,
-    "weight_explanation": "Ordered lists are common in documentation, READMEs, instructions, and AI-generated content. The specific delimiter-change case is less common, but list readability is broadly important.",
-    "mdflow_terminal": "1. foo\n2. bar\n3) baz\n\u001b[0m",
-    "mdflow_score": 2,
+    "weight": 0.7,
+    "weight_explanation": "Ordered lists are a common Markdown feature in documentation, READMEs, and generated content. The specific mixed-delimiter behavior that splits lists is less common, but the underlying list rendering is important.",
+    "mdflow_terminal": "1. foo\n2. bar\n  3) baz\n\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "                                                                                \n1foo                                                                            \n2bar                                                                            \n                                                                                \n3baz                                                                            ",
     "glow_score": 2,
-    "pass": true,
+    "pass": false,
     "issues": [
-      "Renderer A does not visually separate the two distinct ordered lists, though the changed ')' marker provides some indication.",
-      "Renderer B omits spacing between list numbers and item text (for example, \"1foo\"), reducing readability."
+      "Renderer A indents `3) baz`, making it appear nested under the preceding list rather than the start of a separate ordered list.",
+      "Renderer B omits the space after each numeric marker (`1foo`, `2bar`, `3baz`), which reduces readability and makes the list formatting look cramped."
     ],
-    "explanation": "Renderer A preserves all content and the original markers, making the delimiter change visible, but it offers no spacing or styling to clarify that a new list begins at item 3. Renderer B clearly separates the two lists with a blank line, but its cramped number-and-text formatting is less readable. Both remain understandable and convey the basic list structure.",
-    "evaluated_at": "2026-07-17T08:09:09"
+    "explanation": "Renderer A preserves all content and numbering, but its indentation misleadingly represents the third item as a nested item instead of a new list. Renderer B visibly separates the two lists with a blank line and keeps the numbering, so its structure is clearer, though the cramped markers prevent a polished presentation.",
+    "evaluated_at": "2026-07-17T10:24:23"
   },
   {
     "section": "Lists",
@@ -5579,21 +5573,20 @@
     "markdown": "- foo\n  - bar\n    - baz\n\n\n      bim\n",
     "html": "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>\n<p>baz</p>\n<p>bim</p>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n",
     "weight": 0.5,
-    "weight_explanation": "Nested lists are reasonably common in READMEs, documentation, and AI-generated outlines, though deeply nested loose list items with multiple paragraphs are less frequent.",
-    "mdflow_terminal": "• foo\n• bar\n- baz\n\n\nbim\n\u001b[0m",
+    "weight_explanation": "Nested lists are reasonably common in READMEs, documentation, and AI-generated content. The specific deeply nested loose-list-item paragraph case is less frequent.",
+    "mdflow_terminal": "• foo\n• bar\n  - baz\n\n\n  bim\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \nbazbim                                                                          \n                                                                                \n                                                                                ",
     "glow_score": 0,
     "pass": false,
     "issues": [
-      "Renderer A removes all nesting indentation, so the parent-child list hierarchy is lost.",
-      "Renderer A changes marker style within the same nested list level context, using bullets for the first items and a dash for \"baz\".",
-      "Renderer A leaves \"bim\" visually detached from its containing \"baz\" list item.",
-      "Renderer B removes list markers and indentation entirely.",
-      "Renderer B runs \"baz\" and \"bim\" together as \"bazbim\", altering the readable content."
+      "Renderer A fails to indent `bar` beneath `foo`, obscuring a key level of list nesting.",
+      "Renderer A uses inconsistent markers within what appears to be the same nested list level.",
+      "Renderer B removes all list markers and indentation.",
+      "Renderer B concatenates `baz` and `bim`, making the separate paragraphs unreadable as structure."
     ],
-    "explanation": "Renderer A preserves the words and broadly indicates list-like content, but its flattened hierarchy and detached paragraph make the structure misleading. Renderer B loses the list structure entirely and merges separate paragraph text, making it effectively garbled.",
-    "evaluated_at": "2026-07-17T08:09:15"
+    "explanation": "Renderer A preserves all text and some separation, but its incorrect nesting makes the list hierarchy misleading. Renderer B loses both list structure and the paragraph break by rendering `bazbim` as one run of text.",
+    "evaluated_at": "2026-07-17T10:24:28"
   },
   {
     "section": "Lists",
@@ -5619,19 +5612,18 @@
     "markdown": "-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>\n",
     "weight": 0.4,
-    "weight_explanation": "Lists are common, but this specific case—loose list paragraphs followed by an HTML-comment-separated indented code block—is relatively uncommon in everyday Markdown.",
-    "mdflow_terminal": "• foo\n\nnotcode\n\n• foo\n\n\ncode\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "Loose list items and indented code blocks occur in real Markdown, but this exact combination with multi-paragraph list items and an HTML comment separator is relatively uncommon.",
+    "mdflow_terminal": "• foo\n\n  notcode\n\n• foo\n\n\n  code\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "                                                                                \nfoonotcode                                                                      \nfoo                                                                             \n                                                                                \ncode                                                                            ",
-    "glow_score": 0,
-    "pass": false,
+    "glow_score": 1,
+    "pass": true,
     "issues": [
-      "Renderer A does not visually associate \"notcode\" with the preceding list item.",
-      "Renderer A renders the final indented code block as ordinary unindented text with no code distinction.",
-      "Renderer B concatenates \"foo\" and \"notcode\" into \"foonotcode\", altering readability and losing the list structure."
+      "Renderer A does not visually distinguish the final indented code block from ordinary indented text.",
+      "Renderer B drops list markers and merges \"foo\" and \"notcode\" without spacing."
     ],
-    "explanation": "Renderer A preserves all visible content and shows the two bullet items, but the continuation paragraph and final code block lose their structural meaning. Renderer B both flattens the list and merges words, making the content presentation materially degraded.",
-    "evaluated_at": "2026-07-17T08:09:17"
+    "explanation": "Renderer A preserves all content and makes the list structure clear with consistent bullets and indentation. The final code is readable but lacks code-specific styling or a sufficiently distinct presentation. Renderer B preserves the words but flattens the list and paragraph structure, including concatenating the first item's text.",
+    "evaluated_at": "2026-07-17T10:24:29"
   },
   {
     "section": "Lists",
@@ -5695,18 +5687,18 @@
     "markdown": "- a\n - b\n  - c\n   - d\n    - e\n",
     "html": "<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d\n- e</li>\n</ul>\n",
     "weight": 0.8,
-    "weight_explanation": "Unordered lists are a common Markdown pattern in READMEs, documentation, chat, and AI-generated content. This example's irregular indentation is less common, but list-marker consistency and item alignment are broadly important.",
-    "mdflow_terminal": "• a\n• b\n• c\n• d\n\u001b[38;5;245m- e\n\u001b[0m\u001b[0m",
-    "mdflow_score": 2,
+    "weight_explanation": "Unordered lists are a common Markdown pattern in READMEs, documentation, notes, and AI-generated content. This particular irregular-indentation edge case is less common, but it tests basic list-marker handling.",
+    "mdflow_terminal": "• a\n• b\n• c\n• d\n\u001b[38;5;245m  - e\n\u001b[0m\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \na                                                                               \nb                                                                               \nc                                                                               \nd                                                                               \n- e                                                                             ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A styles the literal continuation text \"- e\" dimly, which can make it appear secondary or code-like without a clear reason.",
-      "Renderer B removes all list markers, making the list structure substantially less apparent."
+      "Renderer A dims the final continuation line, which may be slightly unexpected, but it remains readable and visibly attached to the preceding item.",
+      "Renderer B removes the list markers for the actual list items, flattening their structure."
     ],
-    "explanation": "Renderer A preserves the items and clearly marks the four list entries with consistent bullets. The final \"- e\" is retained as literal text under the final item, but its dim styling is somewhat misleading. Renderer B preserves all text on separate lines, yet flattening the bullets leaves the reader without a clear indication that a–d are list items.",
-    "evaluated_at": "2026-07-17T08:09:24"
+    "explanation": "Renderer A clearly presents a through d as consistently marked list items and preserves the final '- e' as an indented continuation under d, matching the meaningful structure of the parsed result. Renderer B preserves the text but makes a through d look like ordinary separate lines, so the list structure is lost.",
+    "evaluated_at": "2026-07-17T10:24:33"
   },
   {
     "section": "Lists",
@@ -5714,18 +5706,18 @@
     "markdown": "1. a\n\n  2. b\n\n    3. c\n",
     "html": "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>\n<pre><code>3. c\n</code></pre>\n",
     "weight": 0.6,
-    "weight_explanation": "Ordered lists are common, though this exact indentation case involving a transition from list items to an indented code block is less frequent.",
-    "mdflow_terminal": "1. a\n\n2. b\n\n\u001b[38;5;245m3. c\n\u001b[0m\u001b[0m",
+    "weight_explanation": "Ordered lists and indented code blocks are common Markdown constructs, though this exact indentation edge case is less frequent than ordinary list usage.",
+    "mdflow_terminal": "1. a\n\n2. b\n\n\u001b[38;5;245m  3. c\n\u001b[0m\u001b[0m",
     "mdflow_score": 3,
     "glow_terminal": "                                                                                \n1a                                                                              \n2b                                                                              \n                                                                                \n3. c                                                                            ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer B removes the spaces after ordered-list markers, producing \"1a\" and \"2b\".",
-      "Renderer B does not clearly distinguish the final indented code block from ordinary text or a possible list item."
+      "Renderer B drops the periods after the ordered-list markers, making the list formatting look cramped and nonstandard.",
+      "Renderer B does not visually distinguish the final code block from surrounding list-like text."
     ],
-    "explanation": "Renderer A clearly presents two consistently marked ordered-list items and visually separates the final literal \"3. c\" with dim code styling. Renderer B preserves the text but makes the list markers cramped and leaves the code-block structure ambiguous.",
-    "evaluated_at": "2026-07-17T08:09:25"
+    "explanation": "Renderer A clearly presents two ordered-list items and visually separates the final code block with dim styling and indentation. Renderer B preserves the words but weakens list readability and leaves the code block structurally ambiguous.",
+    "evaluated_at": "2026-07-17T10:24:35"
   },
   {
     "section": "Lists",
@@ -5770,19 +5762,18 @@
     "example": 316,
     "markdown": "- a\n- b\n\n  c\n- d\n",
     "html": "<ul>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n<li>\n<p>d</p>\n</li>\n</ul>\n",
-    "weight": 0.6,
-    "weight_explanation": "Bulleted lists are very common, while a list item containing a separate continuation paragraph is somewhat less frequent but still practical in documentation and generated text.",
-    "mdflow_terminal": "• a\n• b\n\nc\n• d\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.5,
+    "weight_explanation": "Unordered lists are common, while a second paragraph within a list item is a moderately common but less universal pattern.",
+    "mdflow_terminal": "• a\n• b\n\n  c\n• d\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \na                                                                               \nbc                                                                              \nd                                                                               ",
     "glow_score": 0,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A leaves the continuation paragraph \"c\" unindented, making its association with list item \"b\" unclear.",
-      "Renderer B removes all list markers and concatenates \"b\" and \"c\" into \"bc\", losing both content separation and list structure."
+      "Renderer B removes all list markers and visually concatenates the separate text from the second item into \"bc\"."
     ],
-    "explanation": "Renderer A preserves all text and most list markers, but fails to show that \"c\" is a second paragraph within the \"b\" item. Renderer B substantially flattens the list and runs two distinct paragraphs together, making the result misleading.",
-    "evaluated_at": "2026-07-17T08:09:30"
+    "explanation": "Renderer A clearly preserves the three bullet items, the blank-line paragraph break, and the indentation showing that \"c\" belongs to the second item. Renderer B loses list structure and makes the item text ambiguous and partially garbled.",
+    "evaluated_at": "2026-07-17T10:24:33"
   },
   {
     "section": "Lists",
@@ -5808,40 +5799,39 @@
     "example": 320,
     "markdown": "* a\n  > b\n  >\n* c\n",
     "html": "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n</li>\n<li>c</li>\n</ul>\n",
-    "weight": 0.3,
-    "weight_explanation": "Block quotes nested inside list items are a relatively infrequent composition, though both lists and quotes themselves are common Markdown features.",
-    "mdflow_terminal": "• a\n\u001b[2m│ \u001b[0mb\n\u001b[2m│ \u001b[0m  >\n• c\n\u001b[0m",
+    "weight": 0.4,
+    "weight_explanation": "Lists are common, but a block quote nested within a list item, especially with an explicit blank quote line, is a less frequent formatting pattern.",
+    "mdflow_terminal": "• a\n\u001b[2m│ \u001b[0m  b\n\u001b[2m│ \u001b[0m    >\n• c\n\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \na                                                                               \nb                                                                               \n                                                                                \nc                                                                               ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A shows a literal `>` on the quoted blank line, which is distracting syntax leakage.",
-      "Renderer B removes both the list markers and the block quote distinction."
+      "Renderer A renders the blank blockquote line as a visible literal `>` marker, which is distracting and looks like unprocessed Markdown syntax.",
+      "Renderer B removes both the list markers and the blockquote distinction, flattening the document."
     ],
-    "explanation": "Renderer A clearly preserves the two list items and visually indicates that `b` belongs to a nested quoted block using a dim vertical bar. The extra literal `>` is imperfect but does not make the content unreadable. Renderer B preserves the text and blank line but flattens the list and quote structure.",
-    "evaluated_at": "2026-07-17T08:09:34"
+    "explanation": "Renderer A preserves the list and makes the nested quote visually recognizable with indentation and a quote bar, though the extra `>` on the blank line hinders polish. Renderer B preserves the text and line separation but loses the list and blockquote structure.",
+    "evaluated_at": "2026-07-17T10:24:38"
   },
   {
     "section": "Lists",
     "example": 319,
     "markdown": "- a\n  - b\n\n    c\n- d\n",
     "html": "<ul>\n<li>a\n<ul>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n</ul>\n</li>\n<li>d</li>\n</ul>\n",
-    "weight": 0.5,
-    "weight_explanation": "Nested lists with multiple paragraphs in a list item occur occasionally in READMEs, documentation, and generated Markdown, though they are less common than simple flat lists.",
-    "mdflow_terminal": "• a\n• b\n\nc\n• d\n\u001b[0m",
+    "weight": 0.4,
+    "weight_explanation": "Nested lists occur in READMEs and technical documentation, but a nested item containing multiple paragraphs is relatively uncommon.",
+    "mdflow_terminal": "• a\n• b\n\n  c\n• d\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \na                                                                               \nbc                                                                              \nd                                                                               ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A does not indent the nested bullet, so `b` incorrectly appears to be at the same list level as `a` and `d`.",
-      "Renderer A leaves the continuation paragraph `c` unindented, weakening its association with the nested `b` item.",
-      "Renderer B removes all list markers and nesting cues.",
-      "Renderer B runs `b` and `c` together as `bc`, obscuring the separate paragraphs."
+      "Renderer A does not indent the nested \"b\" item, making it appear to be a top-level sibling of \"a\" and \"d\".",
+      "Renderer A's indented \"c\" suggests continuation text, but does not clearly communicate that it is a separate paragraph within the nested item.",
+      "Renderer B removes all list markers and indentation, and merges \"b\" and \"c\" into \"bc\"."
     ],
-    "explanation": "Renderer A preserves all content and some list affordances through bullet markers, but loses the essential nesting and paragraph association. Renderer B preserves the text in roughly the right order, but its lack of markers, hierarchy, and separation between `b` and `c` makes the list structure largely invisible.",
-    "evaluated_at": "2026-07-17T08:09:36"
+    "explanation": "Renderer A preserves all content and provides bullets and paragraph spacing, but its missing nested indentation materially misrepresents the list hierarchy. Renderer B retains the text but loses list structure entirely and runs two separate paragraphs together.",
+    "evaluated_at": "2026-07-17T10:24:38"
   },
   {
     "section": "Lists",
@@ -5867,59 +5857,56 @@
     "markdown": "- a\n  > b\n  ```\n  c\n  ```\n- d\n",
     "html": "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>\n",
     "weight": 0.4,
-    "weight_explanation": "Lists are common, but this specific combination of a block quote and fenced code block nested within a list item is relatively infrequent.",
-    "mdflow_terminal": "• a\n\u001b[2m│ \u001b[0mb\n\u001b[2m│ \u001b[0m  ```\n\u001b[2m│ \u001b[0m  c\n\u001b[2m│ \u001b[0m  ```\n• d\n\u001b[0m",
+    "weight_explanation": "A list item containing both a block quote and a fenced code block is a legitimate but relatively infrequent nested-content pattern. Lists, quotes, and code blocks are common individually, but this exact combination is less routine.",
+    "mdflow_terminal": "• a\n\u001b[2m│ \u001b[0m  b\n\u001b[2m│ \u001b[0m    ```\n\u001b[2m│ \u001b[0m    c\n\u001b[2m│ \u001b[0m    ```\n• d\n\u001b[0m",
     "mdflow_score": 2,
     "glow_terminal": "                                                                                \na                                                                               \nb                                                                               \n                                                                                \nc                                                                               \n                                                                                \nd                                                                               ",
     "glow_score": 1,
     "pass": true,
     "issues": [
-      "Renderer A visually continues the blockquote marker onto the fenced code block, making the code appear quoted even though it is a separate sibling block.",
-      "Renderer A leaves fence delimiters visible rather than presenting the code block more distinctly.",
-      "Renderer B removes all list, blockquote, and code-block cues."
+      "Renderer A visually extends the blockquote continuation bar onto the fenced code block, making the code appear to be part of the quote when it is not.",
+      "Renderer A leaves the code fences visible rather than distinctly styling the code block."
     ],
-    "explanation": "Renderer A preserves all content and clearly presents the outer list; its dim quote bar helps identify the quote, and the code is still readable. However, the quote marker incorrectly appears beside the code block and the raw fences are less polished. Renderer B preserves the words but flattens the list and nested block structure, so the document organization is largely lost.",
-    "evaluated_at": "2026-07-17T08:09:38"
+    "explanation": "Renderer A preserves all content, the list bullets are consistent, and indentation makes the nested material readable. However, the quote bar incorrectly covers the code block, which mildly misrepresents the structure. Renderer B preserves the words but removes the list markers, quote distinction, and code-block framing, leaving the document largely flat.",
+    "evaluated_at": "2026-07-17T10:24:40"
   },
   {
     "section": "Lists",
     "example": 324,
     "markdown": "1. ```\n   foo\n   ```\n\n   bar\n",
     "html": "<ol>\n<li>\n<pre><code>foo\n</code></pre>\n<p>bar</p>\n</li>\n</ol>\n",
-    "weight": 0.5,
-    "weight_explanation": "List items containing block content such as fenced code and follow-up paragraphs occur regularly in technical documentation, though they are less common than simple lists or standalone code blocks.",
-    "mdflow_terminal": "1. \u001b[38;5;215;48;5;236m    foo    \u001b[0m\n\nbar\n\u001b[0m",
-    "mdflow_score": 1,
+    "weight": 0.4,
+    "weight_explanation": "A list item containing a fenced code block and a following paragraph is useful in technical documentation, but is much less common than ordinary lists or standalone code blocks.",
+    "mdflow_terminal": "1. \u001b[38;5;215;48;5;236m    foo    \u001b[0m\n\n  bar\n\u001b[0m",
+    "mdflow_score": 3,
     "glow_terminal": "                                                                                \n1                                                                               \nfoo                                                                             \nbar                                                                             ",
     "glow_score": 1,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A places the follow-up paragraph \"bar\" at the left margin, making it look like it is outside the numbered list item.",
-      "Renderer B does not visually distinguish the fenced code from ordinary text and does not make the paragraph's membership in the list item clear.",
-      "Neither renderer preserves useful list-item indentation for the nested block content."
+      "Renderer B does not visually distinguish the code block from the following paragraph or preserve their nesting within the list item."
     ],
-    "explanation": "Both renderers preserve all textual content, and Renderer A's colored code treatment helps identify \"foo\" as code. However, the continuation paragraph is visually detached from the list item, so the intended nested structure is misleading. Renderer B is even plainer: the list marker, code, and paragraph are all presented without clear block or nesting cues.",
-    "evaluated_at": "2026-07-17T08:09:42"
+    "explanation": "Renderer A clearly presents the ordered-list marker, uses a contrasting code-block style for `foo`, and separates the following paragraph with spacing and indentation. Renderer B preserves the text but flattens the internal list-item structure, making `foo` look like ordinary prose.",
+    "evaluated_at": "2026-07-17T10:24:43"
   },
   {
     "section": "Lists",
     "example": 325,
     "markdown": "* foo\n  * bar\n\n  baz\n",
     "html": "<ul>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n<p>baz</p>\n</li>\n</ul>\n",
-    "weight": 0.6,
-    "weight_explanation": "Nested lists are common in READMEs, documentation, and AI-generated content, though this specific loose-list paragraph arrangement is less frequent than simple lists.",
-    "mdflow_terminal": "• foo\n• bar\n\nbaz\n\u001b[0m",
+    "weight": 0.5,
+    "weight_explanation": "Nested lists with continuation paragraphs occur occasionally in READMEs, technical documentation, and generated Markdown, though they are less common than simple lists.",
+    "mdflow_terminal": "• foo\n• bar\n\n  baz\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "                                                                                \nfoo                                                                             \nbar                                                                             \nbaz                                                                             ",
     "glow_score": 1,
     "pass": false,
     "issues": [
-      "Renderer A does not indent the nested `bar` item, so it appears to be a sibling of `foo` rather than a child.",
-      "Renderer A leaves `baz` unindented and unmarked, obscuring that it is a continuation paragraph within the outer list item.",
-      "Renderer B removes all list markers and indentation, flattening both list hierarchy and list-item boundaries."
+      "Renderer A shows the nested `bar` item at the same indentation level as `foo`, making it appear to be a sibling rather than a child.",
+      "Renderer A's indented `baz` suggests association with the preceding item, but the lost nesting makes the overall hierarchy misleading.",
+      "Renderer B removes all list markers and visible nesting, flattening the list and paragraph structure."
     ],
-    "explanation": "Both renderers preserve the words and line separation, so the content remains readable. However, neither clearly communicates the nested-list structure or the relationship of `baz` to `foo`; Renderer A at least retains bullet markers, while Renderer B presents only flat lines of text.",
-    "evaluated_at": "2026-07-17T08:09:44"
+    "explanation": "Both renderers preserve the text and remain readable, but neither clearly conveys the intended nested-list hierarchy. Renderer A retains bullets but presents the nesting incorrectly; Renderer B presents only a sequence of plain lines.",
+    "evaluated_at": "2026-07-17T10:24:44"
   },
   {
     "section": "Lists",

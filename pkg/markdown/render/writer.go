@@ -14,6 +14,8 @@ type Writer struct {
 	live               bool
 	tableActive        bool
 	inBlockquote       bool
+	inListItem         bool
+	indentNextText     bool
 	inBold             int
 	inItalic           int
 	inStrikethrough    int
@@ -54,12 +56,21 @@ func (w *Writer) SetTermWidth(width int) {
 func (w *Writer) Handle(e event.Event) error {
 	switch e.Type {
 	case event.TextEvent:
+		if w.indentNextText {
+			w.indentNextText = false
+			if _, err := w.aw.WriteString("  "); err != nil {
+				return err
+			}
+		}
 		_, err := w.aw.WriteString(e.Value)
 		return err
 
 	case event.NewlineEvent:
 		if _, err := w.aw.WriteString("\n"); err != nil {
 			return err
+		}
+		if w.inListItem {
+			w.indentNextText = true
 		}
 		if w.inBlockquote {
 			_, err := w.aw.WriteStyled("│ ", w.theme.Blockquote)
@@ -161,6 +172,8 @@ func (w *Writer) Handle(e event.Event) error {
 		return err
 
 	case event.BulletItemEvent:
+		w.inListItem = true
+		w.indentNextText = false
 		if e.Value != "" {
 			_, err := w.aw.WriteString(e.Value)
 			return err
@@ -460,6 +473,8 @@ func (w *Writer) exitEmphasis(kind string) error {
 
 func (w *Writer) ResetStyles() error {
 	w.inBlockquote = false
+	w.inListItem = false
+	w.indentNextText = false
 	w.inBold = 0
 	w.inItalic = 0
 	w.inStrikethrough = 0
