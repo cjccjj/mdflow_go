@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoadReadsSourceSpec(t *testing.T) {
-	examples, err := Load("../../dev_docs/commonMark_spec.txt")
+	examples, err := Load("../../dev_docs/spec.json")
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}

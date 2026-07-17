@@ -13,20 +13,20 @@ import (
 // intentionally separate from the full smoke suite: a future parser change
 // must keep these measured compatibility improvements event-equivalent.
 func TestProtectedCommonMarkDelimiterRunCases(t *testing.T) {
-	assertProtectedSpecCases(t, []int{391, 427, 467, 468, 470})
+	assertProtectedSpecCases(t, []int{389, 425, 465, 466, 468})
 }
 
 func TestProtectedCommonMarkStreamingEmphasisCases(t *testing.T) {
-	assertProtectedSpecCases(t, []int{407, 419})
+	assertProtectedSpecCases(t, []int{405, 417})
 }
 
 func TestProtectedCommonMarkEmptyListItemCases(t *testing.T) {
-	assertProtectedSpecCases(t, []int{282, 283})
+	assertProtectedSpecCases(t, []int{280, 281})
 }
 
 func assertProtectedSpecCases(t *testing.T, numbers []int) {
 	t.Helper()
-	examples, err := commonmark.Load("../../../dev_docs/commonMark_spec.txt")
+	examples, err := commonmark.Load("../../../dev_docs/spec.json")
 	if err != nil {
 		t.Fatalf("load CommonMark fixtures: %v", err)
 	}
@@ -112,35 +112,35 @@ func TestProtectedATXHeadings(t *testing.T) {
 }
 
 func TestProtectedThematicBreaksAndParagraphs(t *testing.T) {
-	assertProtectedSpecCases(t, []int{43, 221})
+	assertProtectedSpecCases(t, []int{43, 219})
 }
 
 func TestProtectedBlockQuotes(t *testing.T) {
-	assertProtectedSpecCases(t, []int{236})
+	assertProtectedSpecCases(t, []int{234})
 }
 
 func TestProtectedListNesting(t *testing.T) {
-	assertProtectedSpecCases(t, []int{297})
+	assertProtectedSpecCases(t, []int{295})
 }
 
 func TestProtectedEmphasisBasic(t *testing.T) {
-	assertProtectedSpecCases(t, []int{352, 359})
+	assertProtectedSpecCases(t, []int{350, 357})
 }
 
 func TestProtectedLinks(t *testing.T) {
-	assertProtectedSpecCases(t, []int{485})
+	assertProtectedSpecCases(t, []int{483})
 }
 
 func TestProtectedSoftLineBreaks(t *testing.T) {
-	assertProtectedSpecCases(t, []int{651})
+	assertProtectedSpecCases(t, []int{648})
 }
 
 func TestProtectedAutolinks(t *testing.T) {
-	assertProtectedSpecCases(t, []int{606, 599})
+	assertProtectedSpecCases(t, []int{604, 597})
 }
 
 func TestProtectedTextualContent(t *testing.T) {
-	assertProtectedSpecCases(t, []int{653})
+	assertProtectedSpecCases(t, []int{650})
 }
 
 func TestProtectedEmptyListItemVariants(t *testing.T) {
@@ -195,19 +195,19 @@ func TestProtectedFencedCodeBlocks(t *testing.T) {
 }
 
 func TestProtectedLinkReferenceDefinitions(t *testing.T) {
-	assertProtectedSpecCases(t, []int{211})
+	assertProtectedSpecCases(t, []int{209})
 }
 
 func TestProtectedCodeSpans(t *testing.T) {
-	assertProtectedSpecCases(t, []int{341})
+	assertProtectedSpecCases(t, []int{339})
 }
 
 func TestProtectedImages(t *testing.T) {
-	assertProtectedSpecCases(t, []int{592})
+	assertProtectedSpecCases(t, []int{590})
 }
 
 func TestProtectedHardLineBreaks(t *testing.T) {
-	assertProtectedSpecCases(t, []int{647})
+	assertProtectedSpecCases(t, []int{644})
 }
 
 func parseWithPositions(input string, positions []int) []Event {

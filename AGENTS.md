@@ -228,7 +228,7 @@ Current work is CommonMark spec compatibility fixes (see Fix workflow above). Ne
 
 ## Role of CommonMark spec
 
-`dev_docs/commonMark_spec.txt` contains the spec with 655 embedded examples. CommonMark is a reference and robustness benchmark, not a strict compliance target — mdflow is a streaming state machine that cannot buffer the full document.
+`dev_docs/spec.json` (extracted from `commonMark_spec.txt`) contains the spec with 652 embedded examples. CommonMark is a reference and robustness benchmark, not a strict compliance target — mdflow is a streaming state machine that cannot buffer the full document.
 
 - **Output differs** — CommonMark defines HTML; mdflow renders ANSI terminal output
 - **Architecture differs** — CommonMark assumes full-document parsing; mdflow streams
@@ -242,49 +242,49 @@ Current work is CommonMark spec compatibility fixes (see Fix workflow above). Ne
 *Dynamic — update after each diagnostic inventory run.*
 
 | Section | Protected | Match | Mismatch | Noncomp | Total |
-|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|
 | ATX headings | #63 | 17 | 1 | 0 | 18 |
-| Autolinks | #599, #606 | 8 | 2 | 9 | 19 |
+| Autolinks | #597, #604 | 8 | 2 | 9 | 19 |
 | Backslash escapes | #13 | 8 | 1 | 4 | 13 |
-| Block quotes | #236 | 12 | 3 | 10 | 25 |
-| Code spans | #341 | 11 | 7 | 4 | 22 |
-| Emphasis | #352, #359, #391, #407, #419, #427, #467, #468, #470 | 92 | 33 | 7 | 132 |
+| Block quotes | #234 | 12 | 3 | 10 | 25 |
+| Code spans | #339 | 11 | 7 | 4 | 22 |
+| Emphasis | #350, #357, #389, #405, #417, #425, #465, #466, #468 | 94 | 31 | 7 | 132 |
 | Entity references | #29 | 8 | 7 | 2 | 17 |
 | Fenced code blocks | #126 | 20 | 8 | 1 | 29 |
-| Hard line breaks | #647 | 7 | 6 | 2 | 15 |
-| Images | #592 | 5 | 2 | 15 | 22 |
+| Hard line breaks | #644 | 7 | 6 | 2 | 15 |
+| Images | #590 | 5 | 2 | 15 | 22 |
 | Indented code blocks | #114 | 8 | 2 | 2 | 12 |
-| Link reference defs | #211 | 4 | 5 | 18 | 27 |
-| Links | #485 | 23 | 18 | 49 | 90 |
-| List items / Lists | #282, #283, #297 | 31 | 10 | 33 | 74 |
-| Paragraphs | #221 | 7 | 1 | 0 | 8 |
+| Link reference defs | #209 | 4 | 5 | 18 | 27 |
+| Links | #483 | 23 | 18 | 49 | 90 |
+| List items / Lists | #280, #281, #295 | 31 | 10 | 33 | 74 |
+| Paragraphs | #219 | 7 | 1 | 0 | 8 |
 | Setext headings | #94 | 23 | 3 | 1 | 27 |
-| Soft line breaks | #651 | 1 | 1 | 0 | 2 |
+| Soft line breaks | #648 | 1 | 1 | 0 | 2 |
 | Tabs | #1 | 7 | 0 | 4 | 11 |
-| Textual content | #653 | 3 | 0 | 0 | 3 |
+| Textual content | #650 | 3 | 0 | 0 | 3 |
 | Thematic breaks | #43 | 17 | 2 | 0 | 19 |
 | Other (HTML, raw HTML) | — | 2 | 3 | 62 | 67 |
-| **TOTAL** | **31** | **314** | **115** | **226** | **655** |
+| **TOTAL** | **31** | **316** | **113** | **223** | **652** |
 
-**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (33 mismatches), links (18), setext headings (3).
+**Protected:** 31 spec examples across 24 test functions (every spec section covered except raw HTML). **Next priorities by volume:** emphasis (31 mismatches), links (18), setext headings (3).
 
-### Largest mismatch clusters (41 total)
+### Largest mismatch clusters (40 total)
 
 Mismatches grouped by transition signature (`branch | pre_state | expected_kind | actual_kind | outcome`). Operation value excluded to group related bugs.
 
 | Count | Signature | Description | Example |
 |---|---|---|---|
-| 24 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
-| 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #491 |
-| 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #228 |
-| 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #344 |
+| 25 | `finalize.close \| normal \| text \| text` | Text-value diffs on finalize (entity encoding, whitespace) | #25 |
+| 8 | `state.link_url \| link_url \| resource_link \| resource_link` | URL encoding differences in links | #489 |
+| 6 | `finalize.flush \| normal \| text \| text` | Text-value diffs on flush (trailing whitespace, encoding) | #226 |
+| 6 | `state.link_url \| link_url \| text \| resource_link` | Nested brackets in link URL | #342 |
 | 6 | `normal.text \| normal \| text \| newline` | Extra blank lines emitted | #97 |
-| 5 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #343 |
-| 5 | `line_start.bullet_or_emphasis_star \| normal \| text \| emphasis_marker` | Star at line start confused between bullet/emphasis | #356 |
+| 4 | `inline.star \| normal \| text \| emphasis_marker` | Star not recognized as emphasis at inline position | #341 |
 | 4 | `finalize.close \| normal \| resource_link \| text` | Link broken on finalize (entity in URL, extra content) | #22 |
 | 4 | `deferred.indented_code \| normal \| text \| code_block` | Indented code where none expected | #49 |
-| 4 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #378 |
-| 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #440 |
+| 4 | `normal.text \| normal \| text \| text` | Plain text diffs (entity encoding, whitespace) | #376 |
+| 4 | `finalize.flush \| normal \| text \| emphasis_marker` | Emphasis opened on flush | #438 |
 | 3 | `state.code_block \| code_block \| text \| text` | Code block content diffs (encoding/whitespace) | #131 |
-| 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #339 |
-| 3 | `inline.underscore \| normal \| text \| text` | Underscore not recognized as emphasis | #400 |
+| 3 | `finalize.close \| normal \| code_start \| text` | Code span unclosed on finalize | #337 |
+| 3 | `inline.underscore \| normal \| text \| text` | Underscore not recognized as emphasis | #398 |
+| 3 | `line_start.bullet_or_emphasis_star \| normal \| text \| emphasis_marker` | Star at line start confused between bullet/emphasis | #444 |

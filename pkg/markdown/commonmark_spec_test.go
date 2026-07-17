@@ -10,7 +10,7 @@ import (
 	"github.com/cjccjj/mdflow/internal/commonmark"
 )
 
-const specFile = "../../dev_docs/commonMark_spec.txt"
+const specFile = "../../dev_docs/spec.json"
 
 // ---------------------------------------------------------------------------
 // Section category classification

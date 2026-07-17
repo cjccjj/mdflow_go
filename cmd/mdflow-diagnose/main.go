@@ -75,7 +75,7 @@ type cluster struct {
 
 func main() {
 	var opts options
-	flag.StringVar(&opts.specPath, "spec", commonmark.DefaultSpecFile, "path to commonMark_spec.txt")
+	flag.StringVar(&opts.specPath, "spec", commonmark.DefaultSpecFile, "path to spec.json")
 	flag.IntVar(&opts.example, "example", 0, "CommonMark example number")
 	flag.StringVar(&opts.input, "input", "", "Markdown input to diagnose")
 	flag.StringVar(&opts.inputFile, "input-file", "", "file containing Markdown input")
