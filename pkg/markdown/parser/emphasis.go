@@ -356,6 +356,19 @@ func (ep *emphasisParser) tryStar() ([]Event, bool) {
 				p.lineStart = false
 				return []Event{{Type: TextEvent, Value: "*"}}, true
 			}
+			// No matching closer within the same paragraph → literal.
+			if hasParagraphBreakIn(p.buf[1:]) {
+				p.consume(1)
+				p.lineStart = false
+				return []Event{{Type: TextEvent, Value: "*"}}, true
+			}
+			// Inline star (not line-start, where tryBulletOrBold returned nil):
+			// if no star at all in remaining buffer, emphasis can never close.
+			if !p.lineStart && !hasAnyStarIn(p.buf[1:]) {
+				p.consume(1)
+				p.lineStart = false
+				return []Event{{Type: TextEvent, Value: "*"}}, true
+			}
 		}
 		p.consume(1)
 		ep.push(emphasisFrame{state: ItalicState, closerType: tokenizer.StarToken, closerLen: 1})

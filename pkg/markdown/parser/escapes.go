@@ -1,8 +1,19 @@
 package parser
 
 import (
+	"unicode"
+	"unicode/utf8"
+
 	"github.com/cjccjj/mdflow/pkg/markdown/tokenizer"
 )
+
+func lastRuneIsCommonMarkPunct(s string) bool {
+	r, _ := utf8.DecodeLastRuneInString(s)
+	if r == utf8.RuneError {
+		return false
+	}
+	return unicode.IsPunct(r) || unicode.IsSymbol(r)
+}
 
 func isASCIIPunctByte(b byte) bool {
 	return (b >= 0x21 && b <= 0x2F) ||
@@ -81,6 +92,23 @@ func hasFlankingCloser(tokens []tokenizer.Token, tt tokenizer.TokenType, n int, 
 						continue
 					}
 				}
+				if tt == tokenizer.StarToken && i-n >= 0 && i+1 < len(tokens) {
+					prevTok := tokens[i-n]
+					precededByPunct := false
+					if prevTok.Type == tokenizer.TextToken && len(prevTok.Value) > 0 {
+						precededByPunct = lastRuneIsCommonMarkPunct(prevTok.Value)
+					} else if prevTok.Type != tokenizer.StarToken && len(prevTok.Value) > 0 {
+						precededByPunct = isASCIIPunctByte(prevTok.Value[0])
+					}
+					if precededByPunct {
+						followedByWhitespace, followedByPunct := classifyNextChar(tokens[i+1])
+						if !followedByWhitespace && !followedByPunct {
+							runLen = 0
+							hadIntervening = true
+							continue
+						}
+					}
+				}
 				return true
 			}
 			continue
@@ -120,6 +148,30 @@ func hasCodeSpanCloser(tokens []tokenizer.Token, n int) bool {
 			return true
 		}
 		i += n - 1
+	}
+	return false
+}
+
+func hasAnyStarIn(tokens []tokenizer.Token) bool {
+	for _, tok := range tokens {
+		if tok.Type == tokenizer.StarToken {
+			return true
+		}
+	}
+	return false
+}
+
+func hasParagraphBreakIn(tokens []tokenizer.Token) bool {
+	newlineStreak := 0
+	for _, tok := range tokens {
+		if tok.Type == tokenizer.NewlineToken {
+			newlineStreak++
+			if newlineStreak >= 2 {
+				return true
+			}
+		} else {
+			newlineStreak = 0
+		}
 	}
 	return false
 }

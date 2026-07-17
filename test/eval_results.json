@@ -2817,19 +2817,18 @@
     "markdown": "<div *???-&&&-<---\n*foo*\n",
     "html": "<div *???-&&&-<---\n*foo*\n",
     "weight": 0.2,
-    "weight_explanation": "Raw HTML blocks are an occasional interoperability feature, but are far less common than ordinary Markdown prose, headings, lists, and emphasis.",
-    "mdflow_terminal": "<div \u001b[3m???-&&&-<---\u001b[0m\n\u001b[3mfoo\u001b[0m\n\u001b[0m",
+    "weight_explanation": "Raw HTML blocks occur occasionally, but this malformed/open-ended HTML-block edge case is uncommon in everyday Markdown, READMEs, and chat output.",
+    "mdflow_terminal": "<div *???-&&&-<---\n\u001b[3mfoo\u001b[0m\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "",
     "glow_score": 0,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly parses asterisks inside the HTML block as Markdown emphasis.",
-      "The literal asterisks surrounding `???-&&&-<---` are not visibly preserved.",
-      "Renderer B produces no output, losing all content."
+      "Renderer A interprets `*foo*` as Markdown emphasis even though it belongs to a raw HTML block and should remain literal.",
+      "Renderer A appears to omit the source blank line separating the HTML lines."
     ],
-    "explanation": "Renderer A preserves the main text and line structure, but it fails to recognize the input as raw HTML-block content and applies misleading italic styling. Renderer B is empty and therefore loses the document entirely.",
-    "evaluated_at": "2026-07-17T08:05:07"
+    "explanation": "Renderer A preserves the visible text and is readable, but it misleadingly applies italic styling to literal asterisks inside the HTML block, so the raw-block structure is not faithfully conveyed. Renderer B produces no visible content.",
+    "evaluated_at": "2026-07-17T09:14:18"
   },
   {
     "section": "HTML blocks",
@@ -6485,19 +6484,15 @@
     "markdown": "*$*alpha.\n\n*£*bravo.\n\n*€*charlie.\n",
     "html": "<p>*$*alpha.</p>\n<p>*£*bravo.</p>\n<p>*€*charlie.</p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an uncommon delimiter-parsing edge case involving emphasis markers adjacent to currency symbols. It is much less frequent than ordinary emphasis usage.",
-    "mdflow_terminal": "\u001b[3m$*alpha.\n\n\u001b[0m\u001b[3m£\u001b[0mbravo.\n\n\u001b[3m€\u001b[0mcharlie.\n\u001b[0m\u001b[0m",
-    "mdflow_score": 1,
+    "weight_explanation": "This is an obscure delimiter-parsing edge case involving punctuation and currency symbols, not a common authoring pattern.",
+    "mdflow_terminal": "*$*alpha.\n\n*£*bravo.\n\n*€*charlie.\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "*$*alpha.                                                                       \n                                                                                \n*£*bravo.                                                                       \n                                                                                \n*€*charlie.                                                                     ",
-    "glow_score": 3,
+    "glow_score": 2,
     "pass": true,
-    "issues": [
-      "Renderer A incorrectly interprets literal asterisks as emphasis delimiters.",
-      "Renderer A removes visible literal asterisks and applies misleading italic styling.",
-      "The first line's italic styling extends into text that should remain literal body text."
-    ],
-    "explanation": "Renderer A preserves the currency symbols and words, but alters the intended literal Markdown text and introduces misleading emphasis. Renderer B preserves all literal characters and paragraph separation accurately; since no semantic emphasis is intended, its unstyled presentation is appropriate and clear.",
-    "evaluated_at": "2026-07-17T08:10:35"
+    "issues": [],
+    "explanation": "Both renderers preserve the literal text and paragraph separation clearly. No emphasis is expected here because the asterisks do not form valid emphasis delimiters; Renderer A's trailing reset code has no meaningful reader-visible impact.",
+    "evaluated_at": "2026-07-17T09:14:18"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -6692,18 +6687,15 @@
     "markdown": "*(*foo)\n",
     "html": "<p>*(*foo)</p>\n",
     "weight": 0.2,
-    "weight_explanation": "This is an obscure edge case involving unmatched emphasis delimiters, unlikely to appear often in normal prose, READMEs, or chat output.",
-    "mdflow_terminal": "\u001b[3m(*foo)\n\u001b[0m\u001b[0m",
-    "mdflow_score": 0,
+    "weight_explanation": "Unmatched emphasis delimiters are an infrequent edge case, though they can occur in ordinary prose or code-like text.",
+    "mdflow_terminal": "*(*foo)\n\u001b[0m",
+    "mdflow_score": 2,
     "glow_terminal": "*(*foo)                                                                         ",
     "glow_score": 2,
-    "pass": false,
-    "issues": [
-      "Renderer A drops the leading literal asterisk.",
-      "Renderer A incorrectly applies italic styling to text that should remain literal."
-    ],
-    "explanation": "Renderer A alters the content and misleadingly presents it as emphasis. Renderer B preserves the literal text exactly; there is no meaningful Markdown structure to style in this input.",
-    "evaluated_at": "2026-07-17T08:10:51"
+    "pass": true,
+    "issues": [],
+    "explanation": "Both renderers preserve the literal text exactly as intended. This is a single plain paragraph with no parsed emphasis structure to visually distinguish; Renderer A's trailing reset code is harmless.",
+    "evaluated_at": "2026-07-17T09:14:19"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -7115,19 +7107,18 @@
     "example": 392,
     "markdown": "**(**foo)\n",
     "html": "<p>**(**foo)</p>\n",
-    "weight": 0.3,
-    "weight_explanation": "This tests an unmatched/emphasis-like delimiter edge case. Literal asterisks occur in real text and code-adjacent prose, but this exact malformed nesting pattern is relatively uncommon.",
-    "mdflow_terminal": "\u001b[1m(**foo)\n\u001b[0m\u001b[0m",
-    "mdflow_score": 0,
+    "weight": 0.2,
+    "weight_explanation": "This is an uncommon malformed emphasis-delimiter edge case rather than a pattern people intentionally use in everyday Markdown.",
+    "mdflow_terminal": "*\u001b[3m(**foo)\n\u001b[0m\u001b[0m",
+    "mdflow_score": 1,
     "glow_terminal": "**(**foo)                                                                       ",
     "glow_score": 2,
-    "pass": false,
+    "pass": true,
     "issues": [
-      "Renderer A removes the leading literal `**`.",
-      "Renderer A incorrectly applies bold styling to text that should remain literal plain text."
+      "Renderer A incorrectly applies italic styling to text that should remain literal Markdown punctuation."
     ],
-    "explanation": "Renderer A alters the source content and misleadingly interprets invalid emphasis syntax as bold. Renderer B preserves the literal text exactly; its plain presentation is clear and appropriate because the input contains no actual Markdown emphasis.",
-    "evaluated_at": "2026-07-17T08:11:25"
+    "explanation": "Renderer A preserves the visible characters, so the content remains readable, but its italic styling misleadingly implies emphasis where CommonMark treats the input as plain text. Renderer B displays the literal input clearly without introducing misleading structure or styling.",
+    "evaluated_at": "2026-07-17T09:14:23"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -8231,19 +8222,19 @@
     "example": 453,
     "markdown": "foo __*__\n",
     "html": "<p>foo <strong>*</strong></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "This is an edge case involving nested emphasis delimiters around a literal asterisk. Nested emphasis occurs sometimes, but this exact delimiter interaction is rare in normal documents.",
-    "mdflow_terminal": "foo \u001b[1m\u001b[0m\u001b[1;3m__\u001b[0m\u001b[1m\u001b[0m\n\u001b[0m",
+    "weight": 0.1,
+    "weight_explanation": "This is an obscure delimiter-edge case involving nested emphasis markers around a literal asterisk. It is very unlikely in ordinary Markdown documents.",
+    "mdflow_terminal": "foo \u001b[1m*__\u001b[0m\n\u001b[0m",
     "mdflow_score": 0,
     "glow_terminal": "foo *                                                                           ",
     "glow_score": 2,
     "pass": false,
     "issues": [
-      "Renderer A changes the literal asterisk content into two underscore characters.",
-      "Renderer A's ANSI sequences style the incorrect text, so styling cannot compensate for the content error."
+      "Renderer A leaks the closing `__` delimiters into the output, altering the rendered content.",
+      "Renderer A renders the literal asterisk and leaked delimiters as bold rather than rendering only the literal asterisk as strong."
     ],
-    "explanation": "Renderer A does not preserve the source meaning: the visible result is `foo __` rather than `foo *`. Renderer B preserves the intended visible text and is readable, though it does not visually distinguish the strong-emphasis span.",
-    "evaluated_at": "2026-07-17T08:12:57"
+    "explanation": "Renderer A produces `*__`, adding visible Markdown syntax that should not be present, so the content is altered. Renderer B preserves the intended visible text, `foo *`; it does not show strong emphasis, but the result remains clear and readable.",
+    "evaluated_at": "2026-07-17T09:14:26"
   },
   {
     "section": "Emphasis and strong emphasis",
@@ -9428,19 +9419,19 @@
     "markdown": "[foo *[bar [baz](/uri)](/uri)*](/uri)\n",
     "html": "<p>[foo <em>[bar <a href=\"/uri\">baz</a>](/uri)</em>](/uri)</p>\n",
     "weight": 0.2,
-    "weight_explanation": "Links are common, but this deeply nested, delimiter-sensitive link/emphasis interaction is uncommon spec-edge-case material.",
-    "mdflow_terminal": "\u001b[4;34mfoo *[bar [baz](/uri)]\u001b[0m (\u001b[2;34m/uri\u001b[0m)\u001b[3m](/uri)\n\u001b[0m\u001b[0m",
+    "weight_explanation": "This is an unusually complex, malformed-looking nested-link/emphasis construct. It is unlikely in normal Markdown documents, READMEs, chat, or AI output.",
+    "mdflow_terminal": "\u001b[4;34mfoo *[bar [baz](/uri)]\u001b[0m (\u001b[2;34m/uri\u001b[0m)*](/uri)\n\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "[foo [bar baz /uri](/uri)](/uri)                                                ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A incorrectly treats a larger outer span as a link, despite the CommonMark parse leaving that outer link syntax literal.",
-      "Renderer A drops the initial literal '[' and leaves raw emphasis/link syntax inside an underlined link label, making the nesting misleading.",
-      "Renderer A's trailing italic styling on '](/uri)' does not correspond cleanly to the intended emphasis structure."
+      "Renderer A incorrectly turns a large portion of the literal/bracketed text into one underlined link.",
+      "Renderer A's link boundary is misleading, making it difficult to tell which text is actually intended as the link label.",
+      "Renderer B does not convey the emphasis, and its inline URL presentation is somewhat flat."
     ],
-    "explanation": "Renderer A remains mostly readable and preserves the URI text, but its styling implies an incorrect link structure and exposes confusing raw markup. Renderer B is unstyled but presents the text and nested delimiters more coherently, while keeping the inner link label and URL visible.",
-    "evaluated_at": "2026-07-17T08:14:41"
+    "explanation": "Renderer A preserves the characters and a /uri destination, but its prominent underlined link styling implies an incorrect structure and hinders interpretation of this already complex input. Renderer B is plain, but the bracket structure, visible label text, and URL information remain comparatively understandable.",
+    "evaluated_at": "2026-07-17T09:14:29"
   },
   {
     "section": "Links",
@@ -9692,20 +9683,20 @@
     "example": 533,
     "markdown": "[foo *bar [baz][ref]*][ref]\n\n[ref]: /uri\n",
     "html": "<p>[foo <em>bar <a href=\"/uri\">baz</a></em>]<a href=\"/uri\">ref</a></p>\n",
-    "weight": 0.2,
-    "weight_explanation": "This is an unusual edge case involving nested reference-link syntax and emphasis within a link label. Ordinary inline and reference links are common, but this exact construction is rare.",
-    "mdflow_terminal": "\u001b[4;34mfoo *bar [baz]\u001b[0m [→ ref]\u001b[3m][ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m\u001b[0m",
+    "weight": 0.3,
+    "weight_explanation": "Links are common, but this particular nested reference-link and emphasis interaction is an uncommon edge case in everyday Markdown.",
+    "mdflow_terminal": "\u001b[4;34mfoo *bar [baz]\u001b[0m [→ ref]*][ref]\n\n\u001b[2m[Link Def: ref → /uri]\u001b[0m\u001b[0m",
     "mdflow_score": 1,
     "glow_terminal": "[foo bar baz /uri]ref /uri                                                      ",
     "glow_score": 2,
     "pass": true,
     "issues": [
-      "Renderer A applies link styling to text that should not all be part of the same link.",
-      "Renderer A leaves literal Markdown delimiters such as asterisks, brackets, and the trailing `][ref]` in the visible output.",
-      "Renderer A's `[→ ref]` presentation does not clearly communicate the resolved `/uri` destination at the point of the link."
+      "Renderer A applies link styling to the wrong apparent span and leaves raw Markdown delimiters visible.",
+      "Renderer A's trailing \"[→ ref]*][ref]\" is confusing and makes the link nesting difficult to understand.",
+      "Renderer A displays the reference definition as extra terminal output rather than using it solely to resolve the link."
     ],
-    "explanation": "Renderer A preserves the words and the link definition URL, but its styling and leftover syntax make the nesting and link boundaries misleading. Renderer B is plain, but it preserves the visible bracketed text and presents `/uri` alongside each link occurrence, making the result more understandable despite losing emphasis styling.",
-    "evaluated_at": "2026-07-17T08:15:10"
+    "explanation": "Renderer A preserves most text and the reference destination, but the result looks like broken Markdown and misleadingly represents the link boundaries. Renderer B is plain, but it preserves the visible text and exposes both link destinations in a readable enough linear form.",
+    "evaluated_at": "2026-07-17T09:14:33"
   },
   {
     "section": "Links",
